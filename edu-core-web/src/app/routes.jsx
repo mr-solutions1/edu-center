@@ -7,6 +7,7 @@ import {
 
 import RootLayout from './RootLayout';
 import ProtectedRoute from '../shared/components/ProtectedRoute';
+import { RootErrorBoundary } from '../shared/components/ErrorBoundary';
 
 // Lazy loading pages
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage'));
@@ -43,6 +44,10 @@ const StyleguidePage = lazy(
 );
 
 const router = createBrowserRouter([
+  {
+    path: '/',
+    errorElement: <RootErrorBoundary />,
+    children: [
   {
     path: '/login',
     element: (
@@ -235,6 +240,8 @@ const router = createBrowserRouter([
   {
     path: '*',
     element: <Navigate to="/" replace />,
+  },
+    ],
   },
 ]);
 

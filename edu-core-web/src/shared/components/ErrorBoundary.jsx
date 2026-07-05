@@ -1,6 +1,39 @@
 import React from 'react';
+import { useRouteError } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/button';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
+
+export const RootErrorBoundary = () => {
+  const error = useRouteError();
+  console.error('Root Error Boundary caught an error:', error);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center space-y-6 bg-slate-50">
+      <div className="p-4 bg-red-50 rounded-2xl shadow-sm">
+        <AlertTriangle className="h-12 w-12 text-red-500" />
+      </div>
+      <div className="space-y-2">
+        <h2 className="text-3xl font-black text-primary">عذراً، حدث خطأ غير متوقع</h2>
+        <p className="text-muted-foreground max-w-md mx-auto font-medium">
+          نواجه مشكلة تقنية في تشغيل التطبيق. يرجى محاولة إعادة تحميل الصفحة.
+        </p>
+        {process.env.NODE_ENV === 'development' && (
+          <pre className="mt-4 p-4 bg-red-50 text-red-700 text-xs rounded-xl overflow-auto max-w-full text-left" dir="ltr">
+            {error?.message || JSON.stringify(error)}
+          </pre>
+        )}
+      </div>
+      <Button
+        onClick={() => window.location.reload()}
+        size="lg"
+        className="gap-2"
+      >
+        <RefreshCcw className="h-5 w-5" />
+        إعادة تحميل الصفحة
+      </Button>
+    </div>
+  );
+};
 
 class ErrorBoundary extends React.Component {
   constructor(props) {

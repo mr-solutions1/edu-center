@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { loginSchema } from '../validations/loginSchema';
 
+import { cn } from '@/shared/utils';
 import { Button } from '@/shared/components/ui/button';
 import {
   Card,
