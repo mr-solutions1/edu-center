@@ -7,6 +7,7 @@ import { useAuth } from '../AuthContext';
 import { loginSchema } from '../validations/loginSchema';
 
 import { cn } from '@/shared/utils';
+import { LogIn } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import {
   Card,
@@ -47,22 +48,24 @@ const LoginPage = () => {
 
   return (
     <div
-      className="flex items-center justify-center min-h-screen bg-primary px-4 relative overflow-hidden"
+      className="flex items-center justify-center min-h-screen bg-primary px-4 relative overflow-hidden font-sans"
       dir="rtl"
     >
       {/* Background Decorative Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white/10 rounded-full blur-[120px]" />
 
-      <Card className="w-full max-w-md border-none shadow-2xl bg-white/95 backdrop-blur-sm relative z-10 rounded-3xl overflow-hidden">
-        <div className="h-2 bg-secondary w-full" />
-        <CardHeader className="space-y-4 pt-8">
-          <div className="flex flex-col items-center space-y-2">
-             <h1 className="text-3xl font-black text-primary tracking-tight">أكاديمية ركان</h1>
-             <div className="h-1 w-12 bg-secondary rounded-full" />
+      <Card className="w-full max-w-md border-none shadow-2xl bg-white/95 backdrop-blur-md relative z-10 rounded-[2rem] overflow-hidden">
+        <div className="h-2.5 bg-secondary w-full shadow-sm" />
+        <CardHeader className="space-y-4 pt-10 pb-6">
+          <div className="flex flex-col items-center space-y-3">
+             <div className="p-3 bg-primary/5 rounded-2xl mb-1">
+                <h1 className="text-4xl font-black text-primary tracking-tighter">أكاديمية ركان</h1>
+             </div>
+             <div className="h-1.5 w-16 bg-secondary rounded-full" />
           </div>
-          <CardTitle className="text-xl text-center font-bold text-gray-800">
-            تسجيل الدخول للنظام
+          <CardTitle className="text-xl text-center font-bold text-gray-700 pt-2">
+            بوابة دخول النظام
           </CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -111,13 +114,20 @@ const LoginPage = () => {
               )}
             </div>
           </CardContent>
-          <CardFooter className="px-8 pb-10">
+          <CardFooter className="px-8 pb-12">
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl text-lg font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0"
+              className="w-full h-14 rounded-2xl text-xl font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 gap-3"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'جاري الدخول...' : 'تسجيل الدخول'}
+              {isSubmitting ? (
+                'جاري الدخول...'
+              ) : (
+                <>
+                  <span>تسجيل الدخول</span>
+                  <LogIn className="h-5 w-5" />
+                </>
+              )}
             </Button>
           </CardFooter>
         </form>
