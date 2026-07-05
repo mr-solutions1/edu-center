@@ -8,6 +8,8 @@ import { loginSchema } from '../validations/loginSchema';
 
 import { cn } from '@/shared/utils';
 import { LogIn } from 'lucide-react';
+import BrandedHeader from '@/shared/components/layout/BrandedHeader';
+import BrandedFooter from '@/shared/components/layout/BrandedFooter';
 import { Button } from '@/shared/components/ui/button';
 import {
   Card,
@@ -47,15 +49,15 @@ const LoginPage = () => {
   };
 
   return (
-    <div
-      className="flex items-center justify-center min-h-screen bg-primary px-4 relative overflow-hidden font-sans"
-      dir="rtl"
-    >
-      {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white/10 rounded-full blur-[120px]" />
+    <div className="min-h-screen flex flex-col bg-slate-50" dir="rtl">
+      <BrandedHeader />
 
-      <Card className="w-full max-w-md border-none shadow-2xl bg-white/95 backdrop-blur-md relative z-10 rounded-[2rem] overflow-hidden">
+      <main className="flex-1 flex items-center justify-center py-12 px-4 relative overflow-hidden font-sans">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/10 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
+
+      <Card className="w-full max-w-md border-none shadow-2xl bg-white relative z-10 rounded-[2rem] overflow-hidden border border-slate-100">
         <div className="h-2.5 bg-secondary w-full shadow-sm" />
         <CardHeader className="space-y-4 pt-10 pb-6">
           <div className="flex flex-col items-center space-y-3">
@@ -132,6 +134,9 @@ const LoginPage = () => {
           </CardFooter>
         </form>
       </Card>
+      </main>
+
+      <BrandedFooter />
     </div>
   );
 };

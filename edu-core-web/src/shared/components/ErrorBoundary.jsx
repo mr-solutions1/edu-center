@@ -1,5 +1,7 @@
 import React from 'react';
 import { useRouteError } from 'react-router-dom';
+import BrandedHeader from './layout/BrandedHeader';
+import BrandedFooter from './layout/BrandedFooter';
 import { Button } from '@/shared/components/ui/button';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
@@ -8,15 +10,15 @@ export const RootErrorBoundary = () => {
   console.error('Root Error Boundary caught an error:', error);
 
   return (
-    <div
-      className="flex items-center justify-center min-h-screen bg-primary px-4 relative overflow-hidden"
-      dir="rtl"
-    >
-      {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white/10 rounded-full blur-[120px]" />
+    <div className="min-h-screen flex flex-col bg-slate-50" dir="rtl">
+      <BrandedHeader />
 
-      <div className="w-full max-w-md p-8 text-center space-y-6 bg-white/95 backdrop-blur-sm relative z-10 rounded-3xl shadow-2xl border-none overflow-hidden">
+      <main className="flex-1 flex items-center justify-center py-12 px-4 relative overflow-hidden">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/10 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
+
+      <div className="w-full max-w-md p-8 text-center space-y-6 bg-white relative z-10 rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
         <div className="absolute top-0 left-0 h-2 bg-secondary w-full" />
 
         <div className="flex flex-col items-center space-y-4 pt-4">
@@ -50,6 +52,9 @@ export const RootErrorBoundary = () => {
           إعادة تحميل الصفحة
         </Button>
       </div>
+      </main>
+
+      <BrandedFooter />
     </div>
   );
 };
