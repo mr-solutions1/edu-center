@@ -9,13 +9,13 @@ const Navbar = () => {
 
   return (
     <header
-      className="h-16 bg-card border-b px-8 flex items-center justify-between sticky top-0 z-30"
+      className="h-16 bg-white/80 backdrop-blur-md border-b px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm"
       dir="rtl"
     >
       <div className="flex items-center gap-4">
         {/* Mobile menu trigger could go here */}
-        <div className="text-sm font-medium hidden md:block">
-          أهلاً بك في نظام Edu-Core
+        <div className="text-sm font-bold text-primary hidden md:block">
+          أهلاً بك في نظام أكاديمية ركان الإداري
         </div>
       </div>
 

@@ -5,19 +5,22 @@ import { cn } from '../../utils';
 const DataTable = ({ columns, data, isLoading, className }) => {
   return (
     <div
-      className={cn('relative overflow-x-auto border rounded-lg', className)}
+      className={cn('relative overflow-x-auto border-none shadow-sm rounded-2xl bg-white', className)}
     >
       <table className="w-full text-sm text-right text-foreground">
-        <thead className="text-xs uppercase bg-muted/50 text-muted-foreground border-b">
+        <thead className="text-xs uppercase bg-primary text-primary-foreground border-b">
           <tr>
             {columns.map((col, idx) => (
-              <th key={idx} scope="col" className="px-6 py-3 font-semibold">
+              <th key={idx} scope="col" className={cn(
+                "px-6 py-4 font-bold tracking-wider first:rounded-tr-2xl last:rounded-tl-2xl",
+                idx === 0 && "pr-8"
+              )}>
                 {col.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, ridx) => (
               <tr key={ridx} className="animate-pulse">
@@ -32,10 +35,13 @@ const DataTable = ({ columns, data, isLoading, className }) => {
             data.map((row, ridx) => (
               <tr
                 key={ridx}
-                className="bg-white dark:bg-slate-950 hover:bg-muted/30 transition-colors"
+                className="bg-white hover:bg-secondary/5 transition-all duration-200 group"
               >
                 {columns.map((col, cidx) => (
-                  <td key={cidx} className="px-6 py-4 whitespace-nowrap">
+                  <td key={cidx} className={cn(
+                    "px-6 py-4 whitespace-nowrap font-medium text-gray-600 group-hover:text-primary transition-colors",
+                    cidx === 0 && "pr-8"
+                  )}>
                     {col.cell ? col.cell(row) : row[col.accessor]}
                   </td>
                 ))}
