@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Download, Calendar } from 'lucide-react';
+import { Download } from 'lucide-react';
 import React, { useState } from 'react';
 
 import { reportsApi } from '../services/reportsApi';
