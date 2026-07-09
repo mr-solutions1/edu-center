@@ -44,7 +44,7 @@ export const RootErrorBoundary = () => {
               الصفحة أو العودة للرئيسية.
             </p>
 
-            {process.env.NODE_ENV === 'development' && (
+            {import.meta.env.DEV && (
               <div
                 className="mt-4 p-3 bg-red-50 text-red-700 text-[10px] rounded-xl overflow-auto max-h-32 text-left font-mono"
                 dir="ltr"
