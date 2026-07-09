@@ -36,4 +36,9 @@ export const teacherApi = {
     const response = await apiClient.delete(`/v1/teachers/${id}`);
     return response.data;
   },
+
+  getTeacherProfile: async () => {
+    const response = await apiClient.get('/v1/teachers/profile');
+    return response.data;
+  },
 };

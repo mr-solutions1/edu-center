@@ -1,5 +1,6 @@
 import { UserRole } from '../../shared/constants/enums.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
+import { pdfService } from '../../shared/services/pdf.service.js';
 import Lesson from '../lessons/lesson.model.js';
 
 /**
@@ -288,12 +289,73 @@ export const exportCSV = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Export report as PDF (Mock)
+ * @desc    Export report as PDF
+ * @route   GET /api/v1/reports/export-pdf
  */
 export const exportPDF = asyncHandler(async (req, res) => {
-  res.status(200).json({
-    success: true,
-    message:
-      'PDF export triggered. In a production environment, this would generate a PDF stream using a library like PDFKit or Puppeteer.',
-  });
+  const { month, year } = req.query;
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0, 23, 59, 59, 999);
+
+  const report = await Lesson.aggregate([
+    {
+      $match: {
+        lessonDate: { $gte: start, $lte: end },
+        status: 'COMPLETED',
+      },
+    },
+    {
+      $group: {
+        _id: '$teacherId',
+        totalLessons: { $sum: 1 },
+        grossValue: { $sum: '$lessonPrice' },
+        teacherShare: { $sum: '$teacherEarnings' },
+        instituteShare: { $sum: '$instituteRevenue' },
+      },
+    },
+    {
+      $lookup: {
+        from: 'teachers',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'teacher',
+      },
+    },
+    { $unwind: '$teacher' },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'teacher.userId',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+  ]);
+
+  const doc = pdfService.initDocument(res, `تقرير الأداء الشهري - ${month}/${year}`);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename=report-${month}-${year}.pdf`
+  );
+
+  pdfService.addHeader(doc, `تقرير المعلمين لشهر ${month} سنة ${year}`);
+
+  const headers = ['المعلم', 'عدد الحصص', 'الإجمالي', 'نصيب المعلم', 'نصيب الأكاديمية'];
+  const colWidths = [150, 80, 80, 90, 90];
+
+  const rows = report.map(row => [
+    `${row.user.firstName} ${row.user.lastName}`,
+    row.totalLessons,
+    (row.grossValue / 1000).toFixed(3),
+    (row.teacherShare / 1000).toFixed(3),
+    (row.instituteShare / 1000).toFixed(3)
+  ]);
+
+  pdfService.drawTable(doc, 140, headers, rows, colWidths);
+
+  pdfService.addFooters(doc);
+  doc.end();
 });

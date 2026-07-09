@@ -30,6 +30,17 @@ const envSchema = z.object({
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_WHATSAPP_FROM: z.string().optional(),
+
+  // Email Configuration
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().transform(Number).optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
+
+  // File Upload Configuration
+  MAX_FILE_SIZE: z.string().transform(Number).default('5242880'), // 5MB
+  UPLOAD_PATH: z.string().default('uploads'),
 });
 
 const _env = envSchema.safeParse(process.env);

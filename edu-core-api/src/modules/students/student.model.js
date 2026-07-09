@@ -15,7 +15,6 @@ const studentSchema = new mongoose.Schema(
     },
     studentCode: {
       type: String,
-      unique: true,
       required: true,
     },
     parentName: {
@@ -99,6 +98,7 @@ const studentSchema = new mongoose.Schema(
 );
 
 // Indexes
+studentSchema.index({ studentCode: 1 }, { unique: true });
 studentSchema.index({ status: 1 });
 studentSchema.index({ grade: 1 });
 studentSchema.index({ searchBlob: 'text' });

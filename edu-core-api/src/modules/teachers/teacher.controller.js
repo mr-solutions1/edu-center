@@ -9,6 +9,14 @@ export const createTeacher = asyncHandler(async (req, res) => {
   });
 });
 
+export const getProfile = asyncHandler(async (req, res) => {
+  const teacher = await teacherService.getTeacherByUserId(req.user.id);
+  res.status(200).json({
+    success: true,
+    data: teacher,
+  });
+});
+
 export const getAllTeachers = asyncHandler(async (req, res) => {
   const { teachers, pagination } = await teacherService.getAllTeachers(
     req.query

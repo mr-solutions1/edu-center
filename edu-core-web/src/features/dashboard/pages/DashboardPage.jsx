@@ -134,7 +134,7 @@ const DashboardPage = () => {
                 </p>
               )}
               <Button asChild variant="outline" className="w-full">
-                <Link href="/scheduling">عرض الجدول الكامل</Link>
+                <Link to="/scheduling">عرض الجدول الكامل</Link>
               </Button>
             </div>
           </div>

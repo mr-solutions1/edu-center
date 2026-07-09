@@ -4,8 +4,11 @@ export const findById = async (id, session = null) => {
   return Lesson.findById(id).session(session);
 };
 
-export const find = async (filter, session = null) => {
-  return Lesson.find(filter).session(session);
+export const find = async (filter, options = {}) => {
+  const { session = null, populate = null } = options;
+  const query = Lesson.find(filter).session(session);
+  if (populate) query.populate(populate);
+  return query;
 };
 
 export const findOne = async (filter, session = null) => {

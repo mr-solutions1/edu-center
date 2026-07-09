@@ -16,7 +16,6 @@ const teacherSchema = new mongoose.Schema(
     },
     employeeCode: {
       type: String,
-      unique: true,
       required: true,
     },
     whatsapp: {

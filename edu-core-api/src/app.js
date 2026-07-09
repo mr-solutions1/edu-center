@@ -53,6 +53,9 @@ app.use(cookieParser());
 // 5. Compression
 app.use(compression());
 
+// Static Files for Uploads
+app.use('/uploads', express.static(env.UPLOAD_PATH));
+
 // 6. Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

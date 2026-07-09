@@ -107,3 +107,34 @@ export const changePassword = asyncHandler(async (req, res) => {
     .status(200)
     .json({ success: true, message: 'تم تغيير كلمة المرور بنجاح' });
 });
+
+/**
+ * @desc    Update user avatar
+ * @route   PATCH /api/v1/users/:id/avatar
+ * @access  Private
+ */
+export const updateAvatar = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (req.user.role !== UserRole.ADMIN && req.user.id !== id) {
+    throw new ForbiddenError('غير مسموح لك بتعديل صورة هذا المستخدم');
+  }
+
+  if (!req.file) {
+    throw new ForbiddenError('يرجى اختيار صورة للرفع');
+  }
+
+  const avatarUrl = `/uploads/profiles/${req.file.filename}`;
+
+  const user = await User.findByIdAndUpdate(
+    id,
+    { avatarUrl },
+    { new: true }
+  ).select('-passwordHash');
+
+  if (!user) {
+    throw new NotFoundError('المستخدم غير موجود');
+  }
+
+  res.status(200).json({ success: true, data: user });
+});

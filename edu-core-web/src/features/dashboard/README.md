@@ -9,14 +9,14 @@ The Dashboard serves as the primary entry point for all users, providing a high-
   - `ADMIN`: Full access to students, teachers, lessons, and revenue metrics.
   - `ACCOUNTANT`: Access to financial metrics and student/teacher counts.
   - `RECEPTIONIST`: Access to student and lesson counts only.
-  - `TEACHER`: Minimal dashboard (currently a placeholder for their schedule).
+  - `TEACHER`: Professional dashboard with personal schedule and performance stats.
 
 ## Milestone 4 Status (Placeholder)
 This implementation is intentionally minimal as it depends on data from future milestones.
 
 ### Pending Integrations:
 1. **Lessons Data (Milestone 7):** The "Upcoming Schedule" widget needs to be wired to the lessons collection once the scheduling logic exists.
-2. **Payroll Data (Milestone 9):** Revenue metrics currently use mock aggregates; they must be wired to the payroll aggregation pipelines.
+2. **Payroll Data:** Revenue metrics use real-time aggregation from completed lessons.
 3. **Activity Logs (Milestone 13):** The "Recent Activity" feed needs to be wired to the `activitylogs` collection.
 
 ## Improvements for Milestone 11

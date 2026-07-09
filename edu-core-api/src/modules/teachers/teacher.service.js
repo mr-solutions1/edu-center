@@ -52,16 +52,13 @@ export const getAllTeachers = async (query = {}) => {
       skip,
       limit: Number(limit),
       sort: { createdAt: -1 },
+      populate: { path: 'userId', select: 'firstName lastName email phone' },
     }),
     teacherRepository.countDocuments(filter),
   ]);
 
-  const populatedTeachers = await Promise.all(
-    teachers.map((t) => t.populate('userId', 'firstName lastName email phone'))
-  );
-
   return {
-    teachers: populatedTeachers,
+    teachers,
     pagination: {
       total,
       page: Number(page),
@@ -78,6 +75,17 @@ export const getTeacherById = async (id) => {
   const teacher = await teacherRepository.findById(id);
   if (!teacher) {
     throw new NotFoundError('المعلم غير موجود');
+  }
+  return teacher.populate('userId', 'firstName lastName email phone');
+};
+
+/**
+ * Get teacher by User ID
+ */
+export const getTeacherByUserId = async (userId) => {
+  const teacher = await teacherRepository.findOne({ userId });
+  if (!teacher) {
+    throw new NotFoundError('بيانات المعلم غير موجودة');
   }
   return teacher.populate('userId', 'firstName lastName email phone');
 };

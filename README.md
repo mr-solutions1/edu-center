@@ -2,54 +2,63 @@
 نظام إدارة أكاديمية ركان المتكامل
 
 ## Overview
-**أكاديمية ركان** is a production-grade Educational Management Platform (ERP) designed to streamline the operations of educational institutes. It features a robust Node.js API and a modern React/Vite frontend.
+**أكاديمية ركان** هو نظام متكامل لإدارة المؤسسات التعليمية (ERP) مصمم لتبسيط عمليات المعاهد التعليمية. يتميز بواجهة خلفية قوية مبنية بـ Node.js وواجهة أمامية حديثة بـ React/Vite.
 
-### 🚀 Production URLs
-- **Frontend**: [https://app.rakaninstitutekw.com](https://app.rakaninstitutekw.com)
-- **Backend API**: [https://rakaninstitutekw.com/api](https://rakaninstitutekw.com/api)
-- **Landing Page**: [https://rakaninstitutekw.com](https://rakaninstitutekw.com)
+### 🚀 روابط الإنتاج
+- **الواجهة الأمامية**: [https://app.rakaninstitutekw.com](https://app.rakaninstitutekw.com)
+- **واجهة البرمجة (API)**: [https://rakaninstitutekw.com/api](https://rakaninstitutekw.com/api)
+- **الصفحة الرئيسية**: [https://rakaninstitutekw.com](https://rakaninstitutekw.com)
 
-## 🏗️ Architecture
-The system is built as a monorepo consisting of:
-- `edu-core-api`: Node.js/Express backend with MongoDB Atlas.
-- `edu-core-web`: React/Vite frontend hosted on Vercel.
+## 🏗️ المعمارية التقنية
+يتكون النظام من:
+- `edu-core-api`: Node.js/Express backend مع قاعدة بيانات MongoDB Atlas.
+- `edu-core-web`: React/Vite frontend مستضاف على Vercel.
 
-## ✨ Key Features
-- **Smart Scheduling**: Conflict-aware lesson management.
-- **Financial Module**: Automated teacher payroll and student payment tracking.
-- **Role-Based Access Control (RBAC)**: Admin, Receptionist, Teacher, and Accountant roles.
-- **Branded UI**: Custom-designed interface matching Rakan Academy's identity.
+## ✨ المميزات الرئيسية
+- **الجدولة الذكية**: إدارة الحصص مع كشف التعارضات.
+- **النظام المالي**: حساب رواتب المعلمين وتتبع مدفوعات الطلاب آلياً.
+- **التقارير**: تصدير تقارير احترافية بصيغة PDF و CSV مع دعم كامل للغة العربية.
+- **لوحة تحكم للمعلم**: واجهة مخصصة للمعلمين لمتابعة جداولهم وحضور طلابهم.
+- **إدارة الملفات**: رفع وتتبع صور البروفايل والمستندات.
 
-## 🛠️ Tech Stack
-- **Frontend**: React 19, Vite, Tailwind CSS, Shadcn/UI, TanStack Query.
-- **Backend**: Node.js, Express, Mongoose, JWT (Access/Refresh Tokens), Winston Logging.
-- **Database**: MongoDB Atlas (Cloud).
-- **Deployment**: Vercel (Web), Hostinger Cloud (API).
-
-## 🚀 Getting Started
-
-### Prerequisites
+## 🛠️ المتطلبات
 - Node.js v20+
-- MongoDB instance (Atlas recommended)
+- MongoDB (يفضل Atlas)
 
-### Backend Setup
+## 🚀 البدء السريع (Local Development)
+
+### 1. إعداد الواجهة الخلفية (Backend)
 ```bash
 cd edu-core-api
 npm install
-cp .env.example .env # Configure your Atlas URI and Secrets
+cp .env.example .env # قم بتعديل القيم في ملف .env
+# تأكد من وضع MONGO_URI و JWT Secrets
+```
+
+**إنشاء حساب المدير وتهيئة البيانات:**
+```bash
+# إنشاء حساب المدير (Admin)
+npm run create-admin
+
+# تهيئة بيانات تجريبية (عربي)
+npm run seed
+```
+
+**تشغيل الخادم:**
+```bash
 npm run dev
 ```
 
-### Frontend Setup
+### 2. إعداد الواجهة الأمامية (Frontend)
 ```bash
 cd edu-core-web
 npm install
-cp .env.example .env # Configure VITE_API_BASE_URL
+cp .env.example .env # تأكد من صحة VITE_API_BASE_URL
 npm run dev
 ```
 
-## 📖 Documentation
-Detailed deployment and configuration steps can be found in [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
+## 📖 التوثيق
+يمكن العثور على تفاصيل النشر والإعداد المتقدم في [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
 
 ---
-© 2026 Rakan Academy. All rights reserved.
+© 2026 أكاديمية ركان. جميع الحقوق محفوظة.

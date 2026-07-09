@@ -20,7 +20,13 @@ const menuItems = [
     icon: LayoutDashboard,
     label: 'لوحة التحكم',
     path: '/',
-    roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT'],
+    roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'TEACHER'],
+  },
+  {
+    icon: UserSquare2,
+    label: 'ملفي الشخصي',
+    path: '/teacher/profile',
+    roles: ['TEACHER'],
   },
   {
     icon: Users,

@@ -9,6 +9,7 @@ import {
 import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
+import { upload } from '../../shared/middlewares/upload.js';
 import { validate } from '../../shared/middlewares/validate.js';
 
 const router = express.Router();
@@ -23,6 +24,11 @@ router.post(
   userController.createUser
 );
 router.patch('/:id', validate(updateUserSchema), userController.updateUser);
+router.patch(
+  '/:id/avatar',
+  upload.single('avatar'),
+  userController.updateAvatar
+);
 router.post(
   '/:id/change-password',
   validate(changePasswordSchema),

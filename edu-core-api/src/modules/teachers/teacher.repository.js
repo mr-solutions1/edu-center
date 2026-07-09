@@ -13,8 +13,15 @@ export const create = async (data, session = null) => {
 };
 
 export const find = async (filter, options = {}) => {
-  const { skip = 0, limit = 10, sort = { createdAt: -1 } } = options;
-  return Teacher.find(filter).sort(sort).skip(skip).limit(limit);
+  const {
+    skip = 0,
+    limit = 10,
+    sort = { createdAt: -1 },
+    populate,
+  } = options;
+  const query = Teacher.find(filter).sort(sort).skip(skip).limit(limit);
+  if (populate) query.populate(populate);
+  return query;
 };
 
 export const countDocuments = async (filter) => {
