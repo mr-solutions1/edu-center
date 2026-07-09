@@ -5,13 +5,12 @@
 **أكاديمية ركان** هو نظام متكامل لإدارة المؤسسات التعليمية (ERP) مصمم لتبسيط عمليات المعاهد التعليمية. يتميز بواجهة خلفية قوية مبنية بـ Node.js وواجهة أمامية حديثة بـ React/Vite.
 
 ### 🚀 روابط الإنتاج
-- **الواجهة الأمامية**: [https://app.rakaninstitutekw.com](https://app.rakaninstitutekw.com)
-- **واجهة البرمجة (API)**: [https://api.rakaninstitutekw.com/api/v1](https://api.rakaninstitutekw.com/api/v1)
-- **الصفحة الرئيسية**: [https://rakaninstitutekw.com](https://rakaninstitutekw.com)
+- **الواجهة الأمامية**: [https://rakan.flowship.site](https://rakan.flowship.site)
+- **واجهة البرمجة (API)**: [https://rakan-api.flowship.site/api/v1](https://rakan-api.flowship.site/api/v1)
 
 ## 🏗️ المعمارية التقنية
 يتكون النظام من:
-- `edu-core-api`: Node.js/Express backend مع قاعدة بيانات MongoDB Atlas.
+- `edu-core-api`: Node.js/Express backend مستضاف على VPS مع قاعدة بيانات MongoDB محلية.
 - `edu-core-web`: React/Vite frontend مستضاف على Vercel.
 
 ## ✨ المميزات الرئيسية

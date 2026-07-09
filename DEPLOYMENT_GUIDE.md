@@ -12,60 +12,49 @@
 
 ---
 
-## 2. Database Setup (MongoDB Atlas)
+## 2. Database Setup (Local MongoDB on VPS)
 
-Since you are using Hostinger Cloud Hosting, **MongoDB Atlas** is the recommended solution.
+Since you are using a Hostinger VPS server, the database is hosted locally.
 
-1.  **Create an Account**: Sign up at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
-2.  **Create a Cluster**: Use the "Shared" (Free) tier or a dedicated tier.
-3.  **Network Access**:
-    *   Go to "Network Access" in Atlas.
-    *   Add the IP address of your Hostinger server (found in hPanel -> Server IP).
-    *   *Optional for development:* Add `0.0.0.0/0` (allow all), but remove it for production.
-4.  **Database User**: Create a user with `readWriteAnyDatabase` or specific permissions for your database.
-5.  **Get Connection String**:
-    *   Click "Connect" -> "Drivers" -> "Node.js".
-    *   Copy the URI (e.g., `mongodb+srv://<username>:<password>@cluster.mongodb.net/edu_core?retryWrites=true&w=majority`).
+1.  **Install MongoDB**: Ensure MongoDB Community Edition is installed on your VPS.
+2.  **Configuration**: By default, MongoDB listens on `127.0.0.1:27017`.
+3.  **Authentication**: It is recommended to enable authentication and create a dedicated user for the application.
+4.  **Connection String**: The connection string will be `mongodb://127.0.0.1:27017/edu_core` (or including credentials if enabled).
 
 ---
 
-## 3. Hosting the Backend (Hostinger Cloud Hosting)
+## 3. Hosting the Backend (Hostinger VPS)
 
-### Step 1: Prepare the API
-1.  Navigate to the `edu-core-api` directory.
-2.  Ensure `package.json` has `"type": "module"`.
-3.  Zip the contents of the `edu-core-api` folder (excluding `node_modules`).
+### Step 1: Prepare the Server
+1.  Ensure **Node.js (v22 LTS)** is installed on the VPS.
+2.  Use a process manager like **PM2** to keep the application running.
+3.  Setup a reverse proxy like **Nginx** to handle SSL (Let's Encrypt) and route traffic to the Node.js application (default port 5000).
 
-### Step 2: Hostinger hPanel Configuration
-1.  Log in to **Hostinger hPanel**.
-2.  Go to **Websites** -> **Manage** for `rakaninstitutekw.com`.
-3.  Locate the **Node.js** section (under Advanced).
-4.  **Create Application**:
-    *   **App Name**: `edu-core-api`.
-    *   **App URL**: `api.rakaninstitutekw.com`
-    *   **App Root**: `/public_html/api` (or preferred path).
-    *   **Startup File**: `src/server.js`.
-5.  **Upload Files**: Use the **File Manager** to upload and extract your zip file into the **App Root**.
+### Step 2: Deployment
+1.  Clone the repository or upload the files to the VPS.
+2.  Navigate to `edu-core-api`.
+3.  Install dependencies: `npm install`.
 
 ### Step 3: Environment Variables
-In the Hostinger Node.js configuration or via a `.env` file in the App Root:
+Create a `.env` file in the `edu-core-api` directory:
 ```env
 NODE_ENV=production
 PORT=5000
-MONGO_URI=your_mongodb_atlas_connection_string
+MONGO_URI=mongodb://127.0.0.1:27017/edu_core
 JWT_ACCESS_SECRET=your_super_secret_at_least_32_chars
 JWT_REFRESH_SECRET=your_other_super_secret_at_least_32_chars
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 # Supports multiple origins separated by commas
-CORS_ORIGIN=https://rakaninstitutekw.com,https://app.rakaninstitutekw.com
+CORS_ORIGIN=https://rakan.flowship.site
 # Domain for refresh token cookie (shared between api and app subdomains)
-COOKIE_DOMAIN=rakaninstitutekw.com
+COOKIE_DOMAIN=.flowship.site
 ```
 
-### Step 4: Install Dependencies & Start
-1.  In the Node.js hPanel section, click **"Run npm install"**.
-2.  Click **"Restart"** or **"Start"** the application.
+### Step 4: Start the Application
+```bash
+pm2 start src/server.js --name edu-core-api
+```
 
 ---
 
@@ -80,27 +69,27 @@ COOKIE_DOMAIN=rakaninstitutekw.com
     *   Build Command: `npm run build`.
     *   Output Directory: `dist`.
 6.  **Environment Variables**:
-    *   `VITE_API_BASE_URL`: `https://api.rakaninstitutekw.com/api/v1`
+    *   `VITE_API_BASE_URL`: `https://rakan-api.flowship.site/api/v1`
 7.  **Domain Setup**:
     *   In Vercel Project Settings -> **Domains**.
-    *   Add `app.rakaninstitutekw.com`.
+    *   Add `rakan.flowship.site`.
     *   Follow the DNS instructions to point the CNAME to Vercel.
 8.  Click **Deploy**.
 
 ---
 
 ## 5. Summary of Domains
-*   **Frontend**: [https://app.rakaninstitutekw.com](https://app.rakaninstitutekw.com)
-*   **Backend API**: [https://api.rakaninstitutekw.com/api/v1](https://api.rakaninstitutekw.com/api/v1)
-*   **Database**: MongoDB Atlas (Cloud)
+*   **Frontend**: [https://rakan.flowship.site](https://rakan.flowship.site)
+*   **Backend API**: [https://rakan-api.flowship.site/api/v1](https://rakan-api.flowship.site/api/v1)
+*   **Database**: Local MongoDB (VPS)
 
 ---
 
 ## 6. Backup & Data Security
 
-### Database Backups (MongoDB Atlas)
-1.  **Automatic Backups**: Atlas provides built-in snapshots. Go to **Deployment -> Backup** in the Atlas portal to configure retention policies.
-2.  **Manual Export**: Use `mongoexport` or the **Database Tools** to download a JSON/CSV copy of your data.
+### Database Backups (Local MongoDB)
+1.  **Scheduled Backups**: Use `mongodump` with a cron job to create regular backups.
+2.  **Off-site Storage**: Ensure backups are moved to a separate secure storage periodically.
 
 ### Environment Safety
 *   **DO NOT** commit `.env` files to version control.
