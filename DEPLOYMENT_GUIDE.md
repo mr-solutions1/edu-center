@@ -42,7 +42,7 @@ Since you are using Hostinger Cloud Hosting, **MongoDB Atlas** is the recommende
 3.  Locate the **Node.js** section (under Advanced).
 4.  **Create Application**:
     *   **App Name**: `edu-core-api`.
-    *   **App URL**: `rakaninstitutekw.com/api` (If allowed by your plan) or use a subdomain like `api.rakaninstitutekw.com`.
+    *   **App URL**: `api.rakaninstitutekw.com`
     *   **App Root**: `/public_html/api` (or preferred path).
     *   **Startup File**: `src/server.js`.
 5.  **Upload Files**: Use the **File Manager** to upload and extract your zip file into the **App Root**.
@@ -80,7 +80,7 @@ COOKIE_DOMAIN=rakaninstitutekw.com
     *   Build Command: `npm run build`.
     *   Output Directory: `dist`.
 6.  **Environment Variables**:
-    *   `VITE_API_BASE_URL`: `https://rakaninstitutekw.com/api`
+    *   `VITE_API_BASE_URL`: `https://api.rakaninstitutekw.com/api/v1`
 7.  **Domain Setup**:
     *   In Vercel Project Settings -> **Domains**.
     *   Add `app.rakaninstitutekw.com`.
@@ -91,7 +91,7 @@ COOKIE_DOMAIN=rakaninstitutekw.com
 
 ## 5. Summary of Domains
 *   **Frontend**: [https://app.rakaninstitutekw.com](https://app.rakaninstitutekw.com)
-*   **Backend API**: [https://rakaninstitutekw.com/api](https://rakaninstitutekw.com/api)
+*   **Backend API**: [https://api.rakaninstitutekw.com/api/v1](https://api.rakaninstitutekw.com/api/v1)
 *   **Database**: MongoDB Atlas (Cloud)
 
 ---

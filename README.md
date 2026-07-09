@@ -6,7 +6,7 @@
 
 ### 🚀 روابط الإنتاج
 - **الواجهة الأمامية**: [https://app.rakaninstitutekw.com](https://app.rakaninstitutekw.com)
-- **واجهة البرمجة (API)**: [https://rakaninstitutekw.com/api](https://rakaninstitutekw.com/api)
+- **واجهة البرمجة (API)**: [https://api.rakaninstitutekw.com/api/v1](https://api.rakaninstitutekw.com/api/v1)
 - **الصفحة الرئيسية**: [https://rakaninstitutekw.com](https://rakaninstitutekw.com)
 
 ## 🏗️ المعمارية التقنية
