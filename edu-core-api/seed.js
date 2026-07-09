@@ -1,16 +1,23 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 
 // Models
-import User from './src/modules/users/user.model.js';
-import Teacher from './src/modules/teachers/teacher.model.js';
-import Student from './src/modules/students/student.model.js';
-import Lesson from './src/modules/lessons/lesson.model.js';
-import Payment from './src/modules/payments/payment.model.js';
 import Course from './src/modules/courses/course.model.js';
 import Group from './src/modules/groups/group.model.js';
-import { UserRole, Gender, EducationalLevels, StudentStatus, LessonStatus, PaymentStatus, CompensationType } from './src/shared/constants/enums.js';
+import Lesson from './src/modules/lessons/lesson.model.js';
+import Payment from './src/modules/payments/payment.model.js';
+import Student from './src/modules/students/student.model.js';
+import Teacher from './src/modules/teachers/teacher.model.js';
+import User from './src/modules/users/user.model.js';
+import {
+  UserRole,
+  Gender,
+  StudentStatus,
+  LessonStatus,
+  PaymentStatus,
+  CompensationType,
+} from './src/shared/constants/enums.js';
 
 dotenv.config();
 
@@ -35,7 +42,7 @@ async function seedData() {
       Payment.deleteMany({}),
       Course.deleteMany({}),
       Group.deleteMany({}),
-      User.deleteMany({ role: { $ne: UserRole.ADMIN } })
+      User.deleteMany({ role: { $ne: UserRole.ADMIN } }),
     ]);
 
     const salt = await bcrypt.genSalt(12);
@@ -50,7 +57,7 @@ async function seedData() {
         lastName: 'علي',
         phone: '90001111',
         role: UserRole.TEACHER,
-        isActive: true
+        isActive: true,
       },
       {
         email: 'sara.teacher@rakan.com',
@@ -59,7 +66,7 @@ async function seedData() {
         lastName: 'محمود',
         phone: '90002222',
         role: UserRole.TEACHER,
-        isActive: true
+        isActive: true,
       },
       {
         email: 'mona.teacher@rakan.com',
@@ -68,8 +75,8 @@ async function seedData() {
         lastName: 'العنزي',
         phone: '90003333',
         role: UserRole.TEACHER,
-        isActive: true
-      }
+        isActive: true,
+      },
     ]);
 
     const teachers = await Teacher.insertMany([
@@ -81,7 +88,7 @@ async function seedData() {
         gender: Gender.MALE,
         hourlyRate: 15000,
         compensationType: CompensationType.PER_LESSON,
-        isActive: true
+        isActive: true,
       },
       {
         userId: teacherUsers[1]._id,
@@ -91,7 +98,7 @@ async function seedData() {
         gender: Gender.FEMALE,
         hourlyRate: 12000,
         compensationType: CompensationType.PER_LESSON,
-        isActive: true
+        isActive: true,
       },
       {
         userId: teacherUsers[2]._id,
@@ -101,8 +108,8 @@ async function seedData() {
         gender: Gender.FEMALE,
         hourlyRate: 14000,
         compensationType: CompensationType.PER_LESSON,
-        isActive: true
-      }
+        isActive: true,
+      },
     ]);
 
     console.log('🎓 Creating Students...');
@@ -116,7 +123,7 @@ async function seedData() {
         grade: 'ثانوي',
         subjects: ['رياضيات'],
         status: StudentStatus.ACTIVE,
-        monthlyFee: 50000
+        monthlyFee: 50000,
       },
       {
         studentCode: 'STU002',
@@ -127,7 +134,7 @@ async function seedData() {
         grade: 'متوسط',
         subjects: ['لغة عربية'],
         status: StudentStatus.ACTIVE,
-        monthlyFee: 40000
+        monthlyFee: 40000,
       },
       {
         studentCode: 'STU003',
@@ -138,8 +145,8 @@ async function seedData() {
         grade: 'ثانوي',
         subjects: ['لغة إنجليزية', 'فيزياء'],
         status: StudentStatus.ACTIVE,
-        monthlyFee: 65000
-      }
+        monthlyFee: 65000,
+      },
     ]);
 
     console.log('📅 Creating Lessons...');
@@ -149,7 +156,7 @@ async function seedData() {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    const lessons = await Lesson.insertMany([
+    const createdLessons = await Lesson.insertMany([
       {
         studentId: students[0]._id,
         teacherId: teachers[0]._id,
@@ -162,7 +169,7 @@ async function seedData() {
         status: LessonStatus.COMPLETED,
         lessonPrice: 15000,
         teacherEarnings: 10500,
-        instituteRevenue: 4500
+        instituteRevenue: 4500,
       },
       {
         studentId: students[1]._id,
@@ -176,7 +183,7 @@ async function seedData() {
         status: LessonStatus.SCHEDULED,
         lessonPrice: 12000,
         teacherEarnings: 8400,
-        instituteRevenue: 3600
+        instituteRevenue: 3600,
       },
       {
         studentId: students[2]._id,
@@ -190,8 +197,8 @@ async function seedData() {
         status: LessonStatus.SCHEDULED,
         lessonPrice: 18000,
         teacherEarnings: 12600,
-        instituteRevenue: 5400
-      }
+        instituteRevenue: 5400,
+      },
     ]);
 
     console.log('📚 Creating Courses...');
@@ -201,48 +208,46 @@ async function seedData() {
         code: 'MATH-101',
         subject: 'رياضيات',
         educationalLevel: 'ثانوي',
-        isActive: true
+        isActive: true,
       },
       {
         name: 'لغة عربية - متوسط',
         code: 'ARB-202',
         subject: 'لغة عربية',
         educationalLevel: 'متوسط',
-        isActive: true
-      }
+        isActive: true,
+      },
     ]);
 
     console.log('👥 Creating Groups...');
-    const groups = await Group.insertMany([
+    await Group.insertMany([
       {
         name: 'مجموعة النخبة - رياضيات',
         courseId: courses[0]._id,
         teacherId: teachers[0]._id,
         students: [students[0]._id, students[2]._id],
-        schedule: [
-          { day: 'Sunday', startTime: '16:00', endTime: '17:30' }
-        ],
-        isActive: true
-      }
+        schedule: [{ day: 'Sunday', startTime: '16:00', endTime: '17:30' }],
+        isActive: true,
+      },
     ]);
 
     console.log('💰 Creating Payments...');
     await Payment.insertMany([
       {
         studentId: students[0]._id,
-        lessonId: lessons[0]._id,
+        lessonId: createdLessons[0]._id,
         amount: 15000,
         dueDate: yesterday,
         status: PaymentStatus.PAID,
         paidDate: yesterday,
-        paymentMethod: 'CASH'
+        paymentMethod: 'CASH',
       },
       {
         studentId: students[1]._id,
-        lessonId: lessons[1]._id,
+        lessonId: createdLessons[1]._id,
         amount: 12000,
         dueDate: today,
-        status: PaymentStatus.PENDING
+        status: PaymentStatus.PENDING,
       },
       {
         studentId: students[2]._id,
@@ -250,13 +255,12 @@ async function seedData() {
         dueDate: today,
         status: PaymentStatus.PAID,
         paidDate: today,
-        paymentMethod: 'K-NET'
-      }
+        paymentMethod: 'K-NET',
+      },
     ]);
 
     console.log('\n✨ Seeding Complete! ✨');
     console.log('Created: 3 Teachers, 3 Students, 3 Lessons, 3 Payments.');
-
   } catch (error) {
     console.error('❌ Error during seeding:', error);
   } finally {

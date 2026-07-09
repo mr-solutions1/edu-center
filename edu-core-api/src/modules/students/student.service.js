@@ -98,7 +98,9 @@ export const getStudentsByTeacherId = async (teacherUserId) => {
     m.default.findOne({ userId: teacherUserId })
   );
 
-  if (!teacher) return [];
+  if (!teacher) {
+    return [];
+  }
 
   const lessons = await import('../lessons/lesson.model.js').then((m) =>
     m.default.find({ teacherId: teacher._id }).distinct('studentId')

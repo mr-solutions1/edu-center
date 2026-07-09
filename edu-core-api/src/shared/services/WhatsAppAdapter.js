@@ -40,7 +40,9 @@ class WhatsAppAdapter {
 
       return { success: true };
     } catch (error) {
-      logger.error(`[WhatsAppAdapter] Failed to send WhatsApp: ${error.message}`);
+      logger.error(
+        `[WhatsAppAdapter] Failed to send WhatsApp: ${error.message}`
+      );
       return { success: false, error: error.message };
     }
   }

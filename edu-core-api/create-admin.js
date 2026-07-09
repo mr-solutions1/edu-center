@@ -1,17 +1,19 @@
-import mongoose from 'mongoose';
 import readline from 'readline';
-import dotenv from 'dotenv';
+
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 
 // Load env vars
 dotenv.config();
 
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
 });
 
-const question = (query) => new Promise((resolve) => rl.question(query, resolve));
+const question = (query) =>
+  new Promise((resolve) => rl.question(query, resolve));
 
 async function createAdmin() {
   console.log('\n🚀 سكربت إنشاء مستخدم Admin لأكاديمية ركان\n');
@@ -41,16 +43,23 @@ async function createAdmin() {
     };
 
     // Define User Model Inline to avoid dependency issues during script run
-    const userSchema = new mongoose.Schema({
-      email: { type: String, required: true, unique: true },
-      passwordHash: { type: String, required: true },
-      firstName: { type: String, required: true },
-      lastName: { type: String, required: true },
-      phone: { type: String, required: true, unique: true },
-      role: { type: String, enum: Object.values(UserRole), default: UserRole.ADMIN },
-      isActive: { type: Boolean, default: true },
-      deletedAt: { type: Date, default: null },
-    }, { timestamps: true });
+    const userSchema = new mongoose.Schema(
+      {
+        email: { type: String, required: true, unique: true },
+        passwordHash: { type: String, required: true },
+        firstName: { type: String, required: true },
+        lastName: { type: String, required: true },
+        phone: { type: String, required: true, unique: true },
+        role: {
+          type: String,
+          enum: Object.values(UserRole),
+          default: UserRole.ADMIN,
+        },
+        isActive: { type: Boolean, default: true },
+        deletedAt: { type: Date, default: null },
+      },
+      { timestamps: true }
+    );
 
     const User = mongoose.models.User || mongoose.model('User', userSchema);
 
@@ -71,7 +80,7 @@ async function createAdmin() {
       lastName,
       phone,
       role: UserRole.ADMIN,
-      isActive: true
+      isActive: true,
     });
 
     await admin.save();
@@ -79,7 +88,6 @@ async function createAdmin() {
     console.log('\n✨ تم إنشاء مستخدم Admin بنجاح! ✨');
     console.log(`📧 البريد الإلكتروني: ${email}`);
     console.log('----------------------------------\n');
-
   } catch (error) {
     console.error('❌ حدث خطأ:', error.message);
   } finally {

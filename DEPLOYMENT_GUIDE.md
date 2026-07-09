@@ -57,7 +57,10 @@ JWT_ACCESS_SECRET=your_super_secret_at_least_32_chars
 JWT_REFRESH_SECRET=your_other_super_secret_at_least_32_chars
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
-CORS_ORIGIN=https://app.rakaninstitutekw.com
+# Supports multiple origins separated by commas
+CORS_ORIGIN=https://rakaninstitutekw.com,https://app.rakaninstitutekw.com
+# Domain for refresh token cookie (shared between api and app subdomains)
+COOKIE_DOMAIN=rakaninstitutekw.com
 ```
 
 ### Step 4: Install Dependencies & Start
@@ -103,7 +106,15 @@ CORS_ORIGIN=https://app.rakaninstitutekw.com
 *   **DO NOT** commit `.env` files to version control.
 *   Rotate `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` every 6 months for enhanced security.
 
-## 7. Maintenance & Logs
-*   **API Logs**: Check Hostinger Node.js logs or `stderr.log` in your App Root.
-*   **Database**: Manage collections and performance via MongoDB Atlas Dashboard.
-*   **Frontend**: Monitor deployments and analytics via Vercel Dashboard.
+## 7. Node.js 22 & Performance Optimization
+
+The system is fully optimized for **Node.js 22 LTS**.
+
+*   **Immediate Startup**: The API is configured to call `listen()` immediately. Database and background job initialization happen asynchronously to prevent Hostinger's 3-second timeout from killing the process.
+*   **Memory Management**: Node.js 22's V8 engine optimizations are leveraged. The `/health` endpoint monitors `rss` and `heapUsed` to ensure stability.
+*   **Security Headers**: Production mode automatically enables strict CORS and `trust proxy` for secure header propagation through Hostinger's load balancers.
+
+## 8. Maintenance & Logs
+*   **API Logs**: Access via Hostinger hPanel -> **Runtime Logs**. This captures all `stdout` and `stderr` output from Winston.
+*   **Database**: Use the MongoDB Atlas Dashboard to monitor connection pooling and slow queries.
+*   **Frontend**: All UI-related logs and performance metrics are available in the Vercel Dashboard.

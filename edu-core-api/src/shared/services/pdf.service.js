@@ -1,9 +1,9 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import ArabicReshaper from 'arabic-persian-reshaper';
 import bidiFactory from 'bidi-js';
 import PDFDocument from 'pdfkit';
-import ArabicReshaper from 'arabic-persian-reshaper';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const bidi = bidiFactory();
@@ -11,7 +11,10 @@ const bidi = bidiFactory();
 class PDFService {
   constructor() {
     this.fonts = {
-      regular: path.join(__dirname, '../../../assets/fonts/Tajawal-Regular.ttf'),
+      regular: path.join(
+        __dirname,
+        '../../../assets/fonts/Tajawal-Regular.ttf'
+      ),
       bold: path.join(__dirname, '../../../assets/fonts/Tajawal-Bold.ttf'),
     };
     this.colors = {
@@ -27,7 +30,9 @@ class PDFService {
    * Reshape and reorder Arabic text for PDF rendering
    */
   processArabicText(text) {
-    if (!text) return '';
+    if (!text) {
+      return '';
+    }
     // 1. Reshape Arabic characters (contextual forms)
     const reshaped = ArabicReshaper.ArabicShaper.convertArabic(text);
     // 2. Apply Bidi algorithm for RTL reordering
@@ -39,7 +44,7 @@ class PDFService {
   /**
    * Initialize a new PDF document with standard branding
    */
-  initDocument(res, title) {
+  initDocument(res, _title) {
     const doc = new PDFDocument({
       size: 'A4',
       margin: 50,
@@ -60,16 +65,16 @@ class PDFService {
    */
   addHeader(doc, title) {
     // Top Bar
-    doc
-      .rect(0, 0, doc.page.width, 40)
-      .fill(this.colors.primary);
+    doc.rect(0, 0, doc.page.width, 40).fill(this.colors.primary);
 
     // Academy Name (Arabic)
     doc
       .fillColor('#FFFFFF')
       .font('Tajawal-Bold')
       .fontSize(16)
-      .text(this.processArabicText('أكاديمية ركان'), 50, 12, { align: 'right' });
+      .text(this.processArabicText('أكاديمية ركان'), 50, 12, {
+        align: 'right',
+      });
 
     // Report Title
     doc
@@ -79,12 +84,16 @@ class PDFService {
       .text(this.processArabicText(title), 50, 70, { align: 'center' });
 
     // Generation Date
-    const dateStr = new Date().toLocaleString('ar-KW', { timeZone: 'Asia/Kuwait' });
+    const dateStr = new Date().toLocaleString('ar-KW', {
+      timeZone: 'Asia/Kuwait',
+    });
     doc
       .fontSize(10)
       .font('Tajawal')
       .fillColor(this.colors.lightText)
-      .text(`${this.processArabicText('تاريخ الإنشاء:')} ${dateStr}`, 50, 100, { align: 'left' });
+      .text(`${this.processArabicText('تاريخ الإنشاء:')} ${dateStr}`, 50, 100, {
+        align: 'left',
+      });
 
     // Divider
     doc
@@ -139,7 +148,9 @@ class PDFService {
     const margin = 50;
 
     // Table Header
-    doc.rect(margin, currentY, doc.page.width - 100, 25).fill(this.colors.primary);
+    doc
+      .rect(margin, currentY, doc.page.width - 100, 25)
+      .fill(this.colors.primary);
     doc.fillColor('#FFFFFF').font('Tajawal-Bold').fontSize(11);
 
     let currentX = doc.page.width - margin;
@@ -163,7 +174,9 @@ class PDFService {
         currentY = 150;
 
         // Re-draw headers on new page
-        doc.rect(margin, currentY, doc.page.width - 100, 25).fill(this.colors.primary);
+        doc
+          .rect(margin, currentY, doc.page.width - 100, 25)
+          .fill(this.colors.primary);
         doc.fillColor('#FFFFFF').font('Tajawal-Bold');
         let hX = doc.page.width - margin;
         headers.forEach((header, i) => {
@@ -195,7 +208,11 @@ class PDFService {
       currentY += 20;
 
       // Bottom border for row
-      doc.moveTo(margin, currentY).lineTo(doc.page.width - margin, currentY).strokeColor(this.colors.border).stroke();
+      doc
+        .moveTo(margin, currentY)
+        .lineTo(doc.page.width - margin, currentY)
+        .strokeColor(this.colors.border)
+        .stroke();
     });
 
     return currentY;

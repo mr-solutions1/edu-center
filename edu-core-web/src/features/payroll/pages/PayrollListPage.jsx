@@ -13,8 +13,8 @@ import { formatMoney } from '@/shared/utils/money';
 const PayrollListPage = () => {
   const queryClient = useQueryClient();
   const [selectedTeacher, setSelectedTeacher] = useState('');
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
-  const [year, setYear] = useState(new Date().getFullYear());
+  const [month] = useState(new Date().getMonth() + 1);
+  const [year] = useState(new Date().getFullYear());
 
   const { data, isLoading } = useQuery({
     queryKey: ['payroll', { teacherId: selectedTeacher, month, year }],

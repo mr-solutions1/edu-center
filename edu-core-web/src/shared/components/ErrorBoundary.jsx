@@ -40,8 +40,8 @@ export const RootErrorBoundary = () => {
               عذراً، حدث خطأ غير متوقع
             </h2>
             <p className="text-gray-600 max-w-xs mx-auto font-medium leading-relaxed">
-              نواجه مشكلة تقنية في تشغيل التطبيق. يرجى محاولة إعادة تحميل
-              الصفحة أو العودة للرئيسية.
+              نواجه مشكلة تقنية في تشغيل التطبيق. يرجى محاولة إعادة تحميل الصفحة
+              أو العودة للرئيسية.
             </p>
 
             {process.env.NODE_ENV === 'development' && (

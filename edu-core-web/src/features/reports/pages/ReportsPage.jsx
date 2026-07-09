@@ -45,7 +45,9 @@ const ReportsPage = () => {
 
   const handleExportPDF = async () => {
     const data = await reportsApi.exportPDF({ month, year });
-    const url = window.URL.createObjectURL(new Blob([data], { type: 'application/pdf' }));
+    const url = window.URL.createObjectURL(
+      new Blob([data], { type: 'application/pdf' })
+    );
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', `report-${month}-${year}.pdf`);

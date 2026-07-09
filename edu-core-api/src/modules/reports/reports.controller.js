@@ -1,6 +1,6 @@
 import { UserRole } from '../../shared/constants/enums.js';
-import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import { pdfService } from '../../shared/services/pdf.service.js';
+import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import Lesson from '../lessons/lesson.model.js';
 
 /**
@@ -333,7 +333,10 @@ export const exportPDF = asyncHandler(async (req, res) => {
     { $unwind: '$user' },
   ]);
 
-  const doc = pdfService.initDocument(res, `تقرير الأداء الشهري - ${month}/${year}`);
+  const doc = pdfService.initDocument(
+    res,
+    `تقرير الأداء الشهري - ${month}/${year}`
+  );
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader(
@@ -343,15 +346,21 @@ export const exportPDF = asyncHandler(async (req, res) => {
 
   pdfService.addHeader(doc, `تقرير المعلمين لشهر ${month} سنة ${year}`);
 
-  const headers = ['المعلم', 'عدد الحصص', 'الإجمالي', 'نصيب المعلم', 'نصيب الأكاديمية'];
+  const headers = [
+    'المعلم',
+    'عدد الحصص',
+    'الإجمالي',
+    'نصيب المعلم',
+    'نصيب الأكاديمية',
+  ];
   const colWidths = [150, 80, 80, 90, 90];
 
-  const rows = report.map(row => [
+  const rows = report.map((row) => [
     `${row.user.firstName} ${row.user.lastName}`,
     row.totalLessons,
     (row.grossValue / 1000).toFixed(3),
     (row.teacherShare / 1000).toFixed(3),
-    (row.instituteShare / 1000).toFixed(3)
+    (row.instituteShare / 1000).toFixed(3),
   ]);
 
   pdfService.drawTable(doc, 140, headers, rows, colWidths);

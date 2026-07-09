@@ -20,7 +20,9 @@ export const getGroup = asyncHandler(async (req, res) => {
     .populate('courseId')
     .populate('teacherId')
     .populate('students');
-  if (!group) throw new NotFoundError('المجموعة غير موجودة');
+  if (!group) {
+    throw new NotFoundError('المجموعة غير موجودة');
+  }
   res.status(200).json({ success: true, data: group });
 });
 
@@ -29,7 +31,9 @@ export const updateGroup = asyncHandler(async (req, res) => {
     new: true,
     runValidators: true,
   });
-  if (!group) throw new NotFoundError('المجموعة غير موجودة');
+  if (!group) {
+    throw new NotFoundError('المجموعة غير موجودة');
+  }
   res.status(200).json({ success: true, data: group });
 });
 
@@ -38,6 +42,8 @@ export const deleteGroup = asyncHandler(async (req, res) => {
     deletedAt: new Date(),
     isActive: false,
   });
-  if (!group) throw new NotFoundError('المجموعة غير موجودة');
+  if (!group) {
+    throw new NotFoundError('المجموعة غير موجودة');
+  }
   res.status(204).send();
 });

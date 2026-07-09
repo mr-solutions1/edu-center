@@ -15,7 +15,9 @@ export const create = async (data, session = null) => {
 export const find = async (filter, options = {}) => {
   const { skip = 0, limit = 10, sort = { createdAt: -1 }, populate } = options;
   const query = Student.find(filter).sort(sort).skip(skip).limit(limit);
-  if (populate) query.populate(populate);
+  if (populate) {
+    query.populate(populate);
+  }
   return query;
 };
 

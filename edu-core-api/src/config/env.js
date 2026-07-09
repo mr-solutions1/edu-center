@@ -20,7 +20,9 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
   // CORS & Security
-  CORS_ORIGIN: z.string().transform((val) => val.split(',').map((s) => s.trim())),
+  CORS_ORIGIN: z
+    .string()
+    .transform((val) => val.split(',').map((s) => s.trim())),
   COOKIE_DOMAIN: z.string().optional(),
 
   // Logging

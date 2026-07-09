@@ -11,8 +11,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { dashboardApi } from '../services/dashboardApi';
-import { activityLogApi } from '@/features/activity-log/services/activityLogApi';
 
+import { activityLogApi } from '@/features/activity-log/services/activityLogApi';
 import { useAuth } from '@/features/auth/AuthContext';
 import ErrorState from '@/shared/components/ErrorState/ErrorState';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';

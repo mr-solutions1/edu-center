@@ -71,7 +71,14 @@ const WeekScheduleGrid = ({ lessons = [], onLessonClick }) => {
                 return (
                   <div
                     key={lesson._id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => onLessonClick?.(lesson)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        onLessonClick?.(lesson);
+                      }
+                    }}
                     className={cn(
                       'absolute inset-x-1 rounded p-2 text-[10px] leading-tight cursor-pointer shadow-sm border border-primary/20',
                       'bg-primary/10 text-primary-foreground hover:bg-primary/20 transition-all',

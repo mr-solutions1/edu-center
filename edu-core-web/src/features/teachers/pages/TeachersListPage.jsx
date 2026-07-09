@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, FileUp } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 
 import TeacherFormDialog from '../components/TeacherFormDialog';

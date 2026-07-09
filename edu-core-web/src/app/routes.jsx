@@ -23,8 +23,8 @@ const TeacherStudentsPage = lazy(
 const TeachersListPage = lazy(
   () => import('../features/teachers/pages/TeachersListPage')
 );
-const TeacherProfilePage = lazy(() =>
-  import('../features/teachers/pages/TeacherProfilePage')
+const TeacherProfilePage = lazy(
+  () => import('../features/teachers/pages/TeacherProfilePage')
 );
 const SchedulePage = lazy(
   () => import('../features/scheduling/pages/SchedulePage')
@@ -44,8 +44,8 @@ const GroupsPage = lazy(() => import('../features/groups/pages/GroupsPage'));
 const SettingsPage = lazy(
   () => import('../features/settings/pages/SettingsPage')
 );
-const ActivityLogPage = lazy(() =>
-  import('../features/activity-log/pages/ActivityLogPage')
+const ActivityLogPage = lazy(
+  () => import('../features/activity-log/pages/ActivityLogPage')
 );
 const StyleguidePage = lazy(
   () => import('../features/dashboard/pages/StyleguidePage')
@@ -99,16 +99,16 @@ const router = createBrowserRouter([
               </ProtectedRoute>
             ),
           },
-      {
-        path: '/teacher/profile',
-        element: (
-          <ProtectedRoute roles={['TEACHER']}>
-            <Suspense fallback={<div>جاري التحميل...</div>}>
-              <TeacherProfilePage />
-            </Suspense>
-          </ProtectedRoute>
-        ),
-      },
+          {
+            path: '/teacher/profile',
+            element: (
+              <ProtectedRoute roles={['TEACHER']}>
+                <Suspense fallback={<div>جاري التحميل...</div>}>
+                  <TeacherProfilePage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
           {
             path: '/settings',
             element: (

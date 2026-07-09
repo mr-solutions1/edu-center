@@ -25,7 +25,7 @@ const BrandedFooter = () => {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="#"
+                  href="https://rakaninstitutekw.com/#services"
                   className="text-gray-600 hover:text-primary text-sm font-bold transition-colors"
                 >
                   الخدمات التعليمية
@@ -33,7 +33,7 @@ const BrandedFooter = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://rakaninstitutekw.com/#teachers"
                   className="text-gray-600 hover:text-primary text-sm font-bold transition-colors"
                 >
                   نخبة المدرسين
@@ -41,7 +41,7 @@ const BrandedFooter = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://rakaninstitutekw.com/#reviews"
                   className="text-gray-600 hover:text-primary text-sm font-bold transition-colors"
                 >
                   آراء الطلاب
@@ -49,7 +49,7 @@ const BrandedFooter = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://rakaninstitutekw.com/#faq"
                   className="text-gray-600 hover:text-primary text-sm font-bold transition-colors"
                 >
                   الأسئلة الشائعة
@@ -87,13 +87,17 @@ const BrandedFooter = () => {
           </p>
           <div className="flex items-center gap-4">
             <a
-              href="#"
+              href="https://instagram.com/rakan_academy"
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition-all"
             >
               <Instagram className="h-4 w-4" />
             </a>
             <a
-              href="#"
+              href="https://twitter.com/rakan_academy"
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition-all"
             >
               <Twitter className="h-4 w-4" />

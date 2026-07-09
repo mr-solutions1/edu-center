@@ -1,8 +1,9 @@
 import express from 'express';
+
 import * as groupController from './group.controller.js';
+import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
-import { UserRole } from '../../shared/constants/enums.js';
 
 const router = express.Router();
 

@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import React from 'react';
+
 import { studentApi } from '../services/studentApi';
+
 import DataTable from '@/shared/components/DataTable/DataTable';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
 
@@ -22,7 +24,11 @@ const TeacherStudentsPage = () => {
     <div className="space-y-6 text-right" dir="rtl">
       <PageHeader title="طلابي" description="قائمة الطلاب المسجلين في حصصك" />
       <div className="bg-card p-4 border rounded-xl shadow-sm">
-        <DataTable columns={columns} data={data?.data || []} isLoading={isLoading} />
+        <DataTable
+          columns={columns}
+          data={data?.data || []}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

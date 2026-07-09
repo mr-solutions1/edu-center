@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
@@ -27,10 +26,8 @@ import userRoutes from './modules/users/user.routes.js';
 import { AppError } from './shared/errors/AppError.js';
 import logger from './shared/services/logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const pkg = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8')
+  fs.readFileSync(path.join(import.meta.dirname, '../package.json'), 'utf8')
 );
 
 const app = express();

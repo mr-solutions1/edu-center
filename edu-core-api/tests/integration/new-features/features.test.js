@@ -1,15 +1,16 @@
 import fs from 'fs';
 import path from 'path';
+
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
+
 import app from '../../../src/app.js';
+import { env } from '../../../src/config/env.js';
 import User from '../../../src/modules/users/user.model.js';
 import { UserRole } from '../../../src/shared/constants/enums.js';
-import { env } from '../../../src/config/env.js';
 import { connectDB, closeDB, clearDB } from '../setup.js';
-import jwt from 'jsonwebtoken';
 
 describe('Integration: New Features (Upload & PDF)', () => {
-  let adminToken;
   let adminId;
 
   beforeAll(async () => {
@@ -27,12 +28,10 @@ describe('Integration: New Features (Upload & PDF)', () => {
     });
     adminId = admin._id;
 
-    const res = await request(app).post('/api/v1/auth/login').send({
+    await request(app).post('/api/v1/auth/login').send({
       email: 'test-admin-features@rakan.com',
       password: 'password123',
     });
-
-    adminToken = res.body.data.accessToken;
   });
 
   afterAll(async () => {
@@ -41,7 +40,10 @@ describe('Integration: New Features (Upload & PDF)', () => {
 
   describe('File Uploads', () => {
     it('should upload a user avatar successfully', async () => {
-      const testImagePath = path.join(process.cwd(), 'tests/fixtures/test-image.png');
+      const testImagePath = path.join(
+        process.cwd(),
+        'tests/fixtures/test-image.png'
+      );
       if (!fs.existsSync(path.dirname(testImagePath))) {
         fs.mkdirSync(path.dirname(testImagePath), { recursive: true });
       }
@@ -60,7 +62,10 @@ describe('Integration: New Features (Upload & PDF)', () => {
         .attach('avatar', testImagePath);
 
       if (res.status === 401) {
-          console.log('Failing Auth with manual token:', JSON.stringify(res.body));
+        console.log(
+          'Failing Auth with manual token:',
+          JSON.stringify(res.body)
+        );
       }
 
       expect(res.status).toBe(200);
