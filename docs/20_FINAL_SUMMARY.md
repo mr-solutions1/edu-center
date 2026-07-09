@@ -6,8 +6,8 @@ The migration and transformation of the legacy system into **Rakan Academy Enter
 
 ### Key Milestones Achieved:
 1.  **Rebranded Visual Identity**: A custom-designed UI matching Rakan Academy's branding (Deep Blue & Gold) with "Tajawal" typography and a professional, responsive layout.
-2.  **Infrastructure & Deployment**: Successfully deployed to production (app.rakaninstitutekw.com) using Vercel for the frontend, Hostinger Cloud Hosting for the backend, and MongoDB Atlas for a scalable, cloud-native database.
-3.  **Cross-Subdomain Authentication**: Implemented secure JWT-based authentication with cookies that work seamlessly across `app.rakaninstitutekw.com` and `rakaninstitutekw.com/api`.
+2.  **Infrastructure & Deployment**: Configured for production (`rakan.flowship.site`) using Vercel for the frontend, Hostinger VPS for the backend, and local MongoDB for the database.
+3.  **Cross-Subdomain Authentication**: Implemented secure JWT-based authentication with cookies that work seamlessly across `rakan.flowship.site` and `rakan-api.flowship.site`.
 4.  **Operational Core**: Completed Students, Teachers, Scheduling, Payments, and Payroll modules with full transactional integrity and real-time conflict detection.
 5.  **Performance & Reliability**: Integrated health monitoring, global error boundaries, and Zod-validated data flows.
 

@@ -28,7 +28,7 @@ Phase E — Extended Capability (COMPLETED ✅)
   M12 Notifications ..................... ✅
        ↓
 Phase F — Go-Live (COMPLETED ✅)
-  M14 Deployment ......................... ✅ (Vercel + Hostinger + Atlas)
+  M14 Deployment ......................... ✅ (Vercel + Hostinger VPS + Local MongoDB)
   M15 Testing ............................ ✅
 ```
 

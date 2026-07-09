@@ -22,19 +22,19 @@ const BrandedHeader = () => {
         <div className="hidden md:flex items-center gap-8">
           <nav className="flex items-center gap-6">
             <a
-              href="https://rakaninstitutekw.com/"
+              href="https://rakan.flowship.site/"
               className="text-sm font-bold text-gray-600 hover:text-primary transition-colors"
             >
               الرئيسية
             </a>
             <a
-              href="https://rakaninstitutekw.com/#services"
+              href="https://rakan.flowship.site/#services"
               className="text-sm font-bold text-gray-600 hover:text-primary transition-colors"
             >
               خدماتنا
             </a>
             <a
-              href="https://rakaninstitutekw.com/#contact"
+              href="https://rakan.flowship.site/#contact"
               className="text-sm font-bold text-gray-600 hover:text-primary transition-colors"
             >
               تواصل معنا

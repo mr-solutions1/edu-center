@@ -25,7 +25,7 @@ const BrandedFooter = () => {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="https://rakaninstitutekw.com/#services"
+                  href="https://rakan.flowship.site/#services"
                   className="text-gray-600 hover:text-primary text-sm font-bold transition-colors"
                 >
                   الخدمات التعليمية
@@ -33,7 +33,7 @@ const BrandedFooter = () => {
               </li>
               <li>
                 <a
-                  href="https://rakaninstitutekw.com/#teachers"
+                  href="https://rakan.flowship.site/#teachers"
                   className="text-gray-600 hover:text-primary text-sm font-bold transition-colors"
                 >
                   نخبة المدرسين
@@ -41,7 +41,7 @@ const BrandedFooter = () => {
               </li>
               <li>
                 <a
-                  href="https://rakaninstitutekw.com/#reviews"
+                  href="https://rakan.flowship.site/#reviews"
                   className="text-gray-600 hover:text-primary text-sm font-bold transition-colors"
                 >
                   آراء الطلاب
@@ -49,7 +49,7 @@ const BrandedFooter = () => {
               </li>
               <li>
                 <a
-                  href="https://rakaninstitutekw.com/#faq"
+                  href="https://rakan.flowship.site/#faq"
                   className="text-gray-600 hover:text-primary text-sm font-bold transition-colors"
                 >
                   الأسئلة الشائعة
@@ -75,7 +75,7 @@ const BrandedFooter = () => {
               </li>
               <li className="flex items-center gap-3 text-gray-600 text-sm font-bold">
                 <Mail className="h-4 w-4 text-secondary" />
-                <span>noonm222@rakaninstitutekw.com</span>
+                <span>info@flowship.site</span>
               </li>
             </ul>
           </div>

@@ -71,9 +71,9 @@ Grouped by milestone (see `07_MIGRATION_PLAN.md` for milestone definitions). Wit
 - [x] Role/permission management UI (ADMIN only)
 
 ## Milestone 14 — Deployment
-- [x] Hostinger Cloud Hosting provisioning per updated `DEPLOYMENT_GUIDE.md`
-- [x] Vercel project setup (app.rakaninstitutekw.com)
-- [x] MongoDB Atlas setup & backup configuration
+- [x] Hostinger VPS provisioning per updated `DEPLOYMENT_GUIDE.md`
+- [x] Vercel project setup (rakan.flowship.site)
+- [x] Local MongoDB setup & backup configuration
 
 ## Milestone 15 — Testing
 - [x] Unit tests for all `shared/services` (especially `commissionCalculator`, conflict detection)
