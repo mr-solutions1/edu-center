@@ -8,6 +8,8 @@ import Teacher from './src/modules/teachers/teacher.model.js';
 import Student from './src/modules/students/student.model.js';
 import Lesson from './src/modules/lessons/lesson.model.js';
 import Payment from './src/modules/payments/payment.model.js';
+import Course from './src/modules/courses/course.model.js';
+import Group from './src/modules/groups/group.model.js';
 import { UserRole, Gender, EducationalLevels, StudentStatus, LessonStatus, PaymentStatus, CompensationType } from './src/shared/constants/enums.js';
 
 dotenv.config();
@@ -31,6 +33,8 @@ async function seedData() {
       Student.deleteMany({}),
       Lesson.deleteMany({}),
       Payment.deleteMany({}),
+      Course.deleteMany({}),
+      Group.deleteMany({}),
       User.deleteMany({ role: { $ne: UserRole.ADMIN } })
     ]);
 
@@ -109,7 +113,7 @@ async function seedData() {
         parentPhone: '60001111',
         area: 'حولي',
         address: 'شارع تونس، ق 4',
-        grade: 'الصف العاشر',
+        grade: 'ثانوي',
         subjects: ['رياضيات'],
         status: StudentStatus.ACTIVE,
         monthlyFee: 50000
@@ -120,7 +124,7 @@ async function seedData() {
         parentPhone: '60002222',
         area: 'السالمية',
         address: 'شارع الخليج، ق 2',
-        grade: 'الصف الثامن',
+        grade: 'متوسط',
         subjects: ['لغة عربية'],
         status: StudentStatus.ACTIVE,
         monthlyFee: 40000
@@ -131,7 +135,7 @@ async function seedData() {
         parentPhone: '60003333',
         area: 'الجابرية',
         address: 'ق 1، شارع 10',
-        grade: 'الصف الثاني عشر',
+        grade: 'ثانوي',
         subjects: ['لغة إنجليزية', 'فيزياء'],
         status: StudentStatus.ACTIVE,
         monthlyFee: 65000
@@ -187,6 +191,38 @@ async function seedData() {
         lessonPrice: 18000,
         teacherEarnings: 12600,
         instituteRevenue: 5400
+      }
+    ]);
+
+    console.log('📚 Creating Courses...');
+    const courses = await Course.insertMany([
+      {
+        name: 'تأسيس رياضيات - ثانوي',
+        code: 'MATH-101',
+        subject: 'رياضيات',
+        educationalLevel: 'ثانوي',
+        isActive: true
+      },
+      {
+        name: 'لغة عربية - متوسط',
+        code: 'ARB-202',
+        subject: 'لغة عربية',
+        educationalLevel: 'متوسط',
+        isActive: true
+      }
+    ]);
+
+    console.log('👥 Creating Groups...');
+    const groups = await Group.insertMany([
+      {
+        name: 'مجموعة النخبة - رياضيات',
+        courseId: courses[0]._id,
+        teacherId: teachers[0]._id,
+        students: [students[0]._id, students[2]._id],
+        schedule: [
+          { day: 'Sunday', startTime: '16:00', endTime: '17:30' }
+        ],
+        isActive: true
       }
     ]);
 

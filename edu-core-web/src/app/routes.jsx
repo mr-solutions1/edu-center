@@ -17,6 +17,9 @@ const DashboardPage = lazy(
 const StudentsListPage = lazy(
   () => import('../features/students/pages/StudentsListPage')
 );
+const TeacherStudentsPage = lazy(
+  () => import('../features/students/pages/TeacherStudentsPage')
+);
 const TeachersListPage = lazy(
   () => import('../features/teachers/pages/TeachersListPage')
 );
@@ -36,6 +39,8 @@ const SalariesListPage = lazy(
   () => import('../features/salaries/pages/SalariesListPage')
 );
 const ReportsPage = lazy(() => import('../features/reports/pages/ReportsPage'));
+const CoursesPage = lazy(() => import('../features/courses/pages/CoursesPage'));
+const GroupsPage = lazy(() => import('../features/groups/pages/GroupsPage'));
 const SettingsPage = lazy(
   () => import('../features/settings/pages/SettingsPage')
 );
@@ -212,6 +217,48 @@ const router = createBrowserRouter([
                   }
                 >
                   <TeachersListPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/courses',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Courses...
+                    </div>
+                  }
+                >
+                  <CoursesPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/groups',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Groups...
+                    </div>
+                  }
+                >
+                  <GroupsPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/teacher/students',
+            element: (
+              <ProtectedRoute roles={['TEACHER']}>
+                <Suspense fallback={<div>جاري التحميل...</div>}>
+                  <TeacherStudentsPage />
                 </Suspense>
               </ProtectedRoute>
             ),

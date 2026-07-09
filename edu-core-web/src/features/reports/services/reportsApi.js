@@ -34,4 +34,12 @@ export const reportsApi = {
     });
     return response.data;
   },
+
+  exportPDF: async ({ month, year }) => {
+    const response = await apiClient.get('/v1/reports/export-pdf', {
+      params: { month, year },
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };

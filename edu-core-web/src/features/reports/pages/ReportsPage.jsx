@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Download } from 'lucide-react';
+import { Download, FileText } from 'lucide-react';
 import React, { useState } from 'react';
 
 import { reportsApi } from '../services/reportsApi';
@@ -32,12 +32,23 @@ const ReportsPage = () => {
     enabled: reportType === 'level',
   });
 
-  const handleExport = async () => {
+  const handleExportCSV = async () => {
     const data = await reportsApi.exportCSV({ month, year });
     const url = window.URL.createObjectURL(new Blob([data]));
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', `report-${month}-${year}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  const handleExportPDF = async () => {
+    const data = await reportsApi.exportPDF({ month, year });
+    const url = window.URL.createObjectURL(new Blob([data], { type: 'application/pdf' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `report-${month}-${year}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -135,9 +146,13 @@ const ReportsPage = () => {
               الشهر الماضي
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={handleExport}>
+          <Button variant="outline" size="sm" onClick={handleExportCSV}>
             <Download className="ml-2 h-4 w-4" />
             تصدير CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportPDF}>
+            <FileText className="ml-2 h-4 w-4" />
+            تصدير PDF
           </Button>
           <select
             value={reportType}
