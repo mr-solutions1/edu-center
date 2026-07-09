@@ -8,6 +8,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  BookOpen,
 } from 'lucide-react';
 import React from 'react';
 import { NavLink } from 'react-router-dom';
