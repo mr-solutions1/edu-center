@@ -40,3 +40,8 @@ export const deleteStudent = asyncHandler(async (req, res) => {
   await studentService.deleteStudent(req.params.id);
   res.status(204).send();
 });
+
+export const getTeacherStudents = asyncHandler(async (req, res) => {
+  const students = await studentService.getStudentsByTeacherId(req.user.id);
+  res.status(200).json({ success: true, data: students });
+});

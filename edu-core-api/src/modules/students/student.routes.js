@@ -21,6 +21,8 @@ router.post(
 
 router.get('/', studentController.getAllStudents);
 
+router.get('/my-students', studentController.getTeacherStudents);
+
 router.get('/:id', studentController.getStudent);
 
 router.patch(

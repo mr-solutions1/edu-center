@@ -91,6 +91,23 @@ export const updateStudent = async (id, updateData) => {
 };
 
 /**
+ * Get students for a specific teacher (via lessons)
+ */
+export const getStudentsByTeacherId = async (teacherUserId) => {
+  const teacher = await import('../teachers/teacher.model.js').then((m) =>
+    m.default.findOne({ userId: teacherUserId })
+  );
+
+  if (!teacher) return [];
+
+  const lessons = await import('../lessons/lesson.model.js').then((m) =>
+    m.default.find({ teacherId: teacher._id }).distinct('studentId')
+  );
+
+  return studentRepository.find({ _id: { $in: lessons } });
+};
+
+/**
  * Soft delete student
  */
 export const deleteStudent = async (id) => {

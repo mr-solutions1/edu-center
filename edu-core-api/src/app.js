@@ -10,6 +10,8 @@ import morgan from 'morgan';
 import { env } from './config/env.js';
 import activityLogRoutes from './modules/activity-log/activityLog.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
+import courseRoutes from './modules/courses/course.routes.js';
+import groupRoutes from './modules/groups/group.routes.js';
 import lessonRoutes from './modules/lessons/lesson.routes.js';
 import paymentRoutes from './modules/payments/payment.routes.js';
 import payrollRoutes from './modules/payroll/payroll.routes.js';
@@ -111,6 +113,8 @@ app.get('/health', (req, res) => {
 
 // 9. API Routes Integration
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/courses', courseRoutes);
+app.use('/api/v1/groups', groupRoutes);
 app.use('/api/v1/reports', reportsRoutes);
 app.use('/api/v1/students', studentRoutes);
 app.use('/api/v1/teachers', teacherRoutes);

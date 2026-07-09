@@ -128,10 +128,10 @@ const SettingsPage = () => {
           }
           className="bg-transparent border-none text-sm"
         >
-          <option value="ADMIN">ADMIN</option>
-          <option value="RECEPTIONIST">RECEPTIONIST</option>
-          <option value="TEACHER">TEACHER</option>
-          <option value="ACCOUNTANT">ACCOUNTANT</option>
+          <option value="ADMIN">مدير</option>
+          <option value="RECEPTIONIST">موظف استقبال</option>
+          <option value="TEACHER">معلم</option>
+          <option value="ACCOUNTANT">محاسب</option>
         </select>
       ),
     },

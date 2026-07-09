@@ -25,4 +25,9 @@ export const studentApi = {
     const response = await apiClient.delete(`/v1/students/${id}`);
     return response.data;
   },
+
+  getTeacherStudents: async () => {
+    const response = await apiClient.get('/v1/students/my-students');
+    return response.data;
+  },
 };

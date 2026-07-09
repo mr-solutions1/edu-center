@@ -30,8 +30,26 @@ const menuItems = [
   },
   {
     icon: Users,
+    label: 'طلابي',
+    path: '/teacher/students',
+    roles: ['TEACHER'],
+  },
+  {
+    icon: Users,
     label: 'الطلاب',
     path: '/students',
+    roles: ['ADMIN', 'RECEPTIONIST'],
+  },
+  {
+    icon: BookOpen,
+    label: 'الدورات',
+    path: '/courses',
+    roles: ['ADMIN', 'RECEPTIONIST'],
+  },
+  {
+    icon: Users,
+    label: 'المجموعات',
+    path: '/groups',
     roles: ['ADMIN', 'RECEPTIONIST'],
   },
   { icon: UserSquare2, label: 'المعلمون', path: '/teachers', roles: ['ADMIN'] },
