@@ -64,7 +64,7 @@ const ReportsPage = () => {
 
   const setToLastMonth = () => {
     const now = new Date();
-    let m = now.getMonth();
+    let m = now.getMonth(); // 0-indexed month of current date is last month (e.g. if today is Oct (9), now.getMonth() returns 9 which represents Oct, but in 1-based format it matches October)
     let y = now.getFullYear();
     if (m === 0) {
       m = 12;
@@ -146,13 +146,31 @@ const ReportsPage = () => {
       <PageHeader title="تقارير الأداء" description="تحليل الإيرادات والأداء">
         <div className="flex flex-wrap gap-2 justify-end">
           <div className="flex gap-1 border rounded-md p-1 bg-muted/50">
-            <Button variant="ghost" size="sm" onClick={setToThisMonth}>
+            <Button
+              variant={month === new Date().getMonth() + 1 && year === new Date().getFullYear() ? "secondary" : "ghost"}
+              size="sm"
+              onClick={setToThisMonth}
+            >
               الشهر الحالي
             </Button>
-            <Button variant="ghost" size="sm" onClick={setToLastMonth}>
+            <Button
+              variant={
+                (() => {
+                  const lastMonthDate = new Date();
+                  lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+                  return month === lastMonthDate.getMonth() + 1 && year === lastMonthDate.getFullYear();
+                })() ? "secondary" : "ghost"
+              }
+              size="sm"
+              onClick={setToLastMonth}
+            >
               الشهر الماضي
             </Button>
-            <Button variant="ghost" size="sm" onClick={setToThisYear}>
+            <Button
+              variant={year === new Date().getFullYear() ? "secondary" : "ghost"}
+              size="sm"
+              onClick={setToThisYear}
+            >
               السنة الحالية
             </Button>
           </div>
