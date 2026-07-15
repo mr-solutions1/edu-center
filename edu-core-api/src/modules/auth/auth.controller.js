@@ -72,24 +72,9 @@ export const login = asyncHandler(async (req, res) => {
  * @route   POST /api/v1/auth/refresh
  */
 export const refresh = asyncHandler(async (req, res) => {
-  const refreshSource = req.get('x-refresh-source') || 'Unknown';
-  const refreshInstance = req.get('x-refresh-instance') || 'Unknown';
-  const origin = req.get('origin') || 'Unknown';
-  const referer = req.get('referer') || 'Unknown';
-  const userAgent = req.get('user-agent') || 'Unknown';
-  const cookieHeaderPresent = req.headers.cookie ? 'yes' : 'no';
-
-  console.log(`[BACKEND_REFRESH_TELEMETRY_START]`);
-  console.log(`X-Refresh-Source: ${refreshSource}`);
-  console.log(`X-Refresh-Instance: ${refreshInstance}`);
-  console.log(`Origin: ${origin}`);
-  console.log(`Referer: ${referer}`);
-  console.log(`User-Agent: ${userAgent}`);
-  console.log(`Cookie Header Present: ${cookieHeaderPresent}`);
-  console.log(`[BACKEND_REFRESH_TELEMETRY_END]`);
-
   const { refreshToken } = req.cookies;
   const ipAddress = req.ip;
+  const userAgent = req.get('user-agent');
 
   const {
     accessToken,

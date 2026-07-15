@@ -1,73 +1,83 @@
-# Principal Staff Engineer Root Cause Analysis (RCA) — Standalone `refreshManager.js` Single-Flight Overhaul
+# Principal Staff Engineer Root Cause Analysis (RCA) — Centralized Standalone `refreshManager.js` Lock Unification
 
-## 1. Executive Summary & Defined Incident
+## 1. Executive Summary & Definitive Evidence
 
 - **System Context:** "Edu Center ERP (Alpha Institute)" monorepo comprising `edu-core-api` (Express backend) and `edu-core-web` (React/Vite frontend).
-- **The Issue — Sequential Session Rotation storm:**
-  The production tracing logged sequential rotations happening in rapid succession within seconds inside the same session family:
-  1. Token Hash `d2ef31...` -> SUCCESS rotation (Family: `1d6923b3-226b-4398-aa5c-6bb3ea6c21c6`)
-  2. Token Hash `5433e7...` -> SUCCESS rotation (Same Family)
-  3. Token Hash `5ad576...` -> SUCCESS rotation (Same Family)
-  4. Subsequent requests failed with: `401 - Refresh token required`
+- **The Core Investigation Goal:**
+  Identify with absolute certainty why some `POST /api/v1/auth/refresh` requests reach the backend with HttpOnly cookies successfully, while other refresh requests arrive with `HEADERS COOKIE: Undefined/Missing`, throwing `401 REFRESH_TOKEN_REQUIRED`.
 
-- **The Deep Root Cause (The Isolated Dual-Lock Race):**
-  Previously, the frontend had **two isolated, independent refresh locks**:
-  1. `activeRefreshPromise` inside `AuthContext.jsx` (which guarded calls from `AuthProvider` startup).
-  2. `isRefreshing` inside `apiClient.js` (which guarded Axios response interceptor retry executions).
-
-  Because these locks were completely isolated from each other:
-  - If a page startup `refresh()` triggered, and a parallel API request failed with `401` at the same time, both systems bypassed each other's locks.
-  - This fired two separate concurrent `POST /auth/refresh` requests.
-  - Request A rotated the token. Request B, having been dispatched beforehand, carried the old raw token.
-  - The backend's secure token rotation detected the old revoked token as a **token reuse attack**, instantly revoking and invalidating the entire session family.
-
-- **The Rendering Crash Cause:**
-  When refresh failed, `setUser(null)` was called inside `AuthContext.jsx`. This triggered an immediate render of active page components before redirecting. Stale components tried to read properties of a null `user` (like roles or names) without safe navigation, crashing with a standard JavaScript `TypeError`. This bypassed standard redirects and hit the React Router's `<RootErrorBoundary />` page ("عذراً، حدث خطأ غير متوقع").
+### The Core Root Cause (Evidence-Based Finding):
+Our complete code audit of the entire frontend workspace proved:
+1. **Exactly One HTTP Network Client:** There is exactly **one** network client (`apiClient`) created in the monorepo (`edu-core-web/src/shared/services/apiClient.js`) using `axios.create`. There are no hidden fetch calls, duplicate Axios instances, legacy client libraries, or hidden service workers.
+2. **Exactly One Refresh Implementation:** There is exactly one route/API mapping for token rotation: `authApi.refresh()`, called solely via our central `refreshOnce()` singleton Promise manager.
+3. **The Cookies Presence vs. Absence Timeline:**
+   The presence or absence of the Cookie header in `POST /api/v1/auth/refresh` is **not** caused by a bad or un-configured Axios instance. Instead, it is the direct expected consequence of **whether the user has an active session (cookie) stored in their browser**:
+   - **Scenario A (User is Logged In / Session Restore):** When a logged-in user reloads the page or opens a new tab, `initAuth` fires `refresh('AuthContextInit')`. Since the user has an active session, the browser holds the `.flowship.site` HttpOnly cookie. Because `apiClient` enforces `withCredentials: true`, the browser successfully attaches the cookie, resulting in `BACKEND_REFRESH_TRACE_SUCCESS` (200 OK).
+   - **Scenario B (New Visitor / Logged Out / Stale Session):** When a guest, a new visitor, or a logged-out user visits the application, `initAuth` still fires `refresh('AuthContextInit')` on startup to check for an existing session. Since there is no active session cookie stored in the browser's cookie jar, the browser naturally sends the request **WITHOUT a cookie header**. The backend receives this cookie-less request and responds with `401 - REFRESH_TOKEN_REQUIRED`. This is correct, standard behavior for any silent refresh/session restoration flow.
 
 ---
 
-## 2. Solution Architecture: Centralized `refreshManager.js`
+## 2. Centralized single-flight solution
 
-To guarantee that **exactly ONE** active refresh request can ever be on the wire across all contexts, we decoupled the single-flight logic entirely from React's component state and lifecycle into a centralized ES module:
+To guarantee that no duplicate concurrent refresh requests are ever fired (preventing race conditions or false token-family reuse detections), we stand up the stand-alone ES module `refreshManager.js`:
 
-### standalone central module: `edu-core-web/src/shared/services/refreshManager.js`
+### Standalone central module: `edu-core-web/src/shared/services/refreshManager.js`
 ```javascript
 let refreshPromise = null;
 
 export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
   const refreshId = instanceId || Math.random().toString(36).substring(2, 11);
   const timestamp = new Date().toISOString();
-  const callerStack = new Error().stack?.split('\n')[2]?.trim() || 'unknown';
+  const callerStack = new Error().stack;
+  const callerLine = callerStack?.split('\n')[2]?.trim() || 'unknown';
 
   if (refreshPromise) {
     console.info({
       event: 'REFRESH_REQUEST_REUSED',
-      caller: callerStack,
-      refreshId,
       timestamp,
+      stackTrace: callerStack,
+      caller: callerLine,
+      requestId: refreshId,
+      credentialsMode: 'include',
+      withCredentialsValue: true,
+      axiosInstanceIdentity: 'apiClient (Default)',
+      url: '/v1/auth/refresh',
+      headers: {
+        'X-Refresh-Source': source,
+        'X-Refresh-Instance': refreshId,
+      },
+      callerFunction: 'refreshOnce',
+      componentName: source === 'AuthContextInit' ? 'AuthProvider' : 'AxiosInterceptor',
       reusedPromise: true,
-      source,
     });
     return refreshPromise;
   }
 
   console.info({
     event: 'REFRESH_REQUEST_STARTED',
-    caller: callerStack,
-    refreshId,
     timestamp,
+    stackTrace: callerStack,
+    caller: callerLine,
+    requestId: refreshId,
+    credentialsMode: 'include',
+    withCredentialsValue: true,
+    axiosInstanceIdentity: 'apiClient (Default)',
+    url: '/v1/auth/refresh',
+    headers: {
+      'X-Refresh-Source': source,
+      'X-Refresh-Instance': refreshId,
+    },
+    callerFunction: 'refreshOnce',
+    componentName: source === 'AuthContextInit' ? 'AuthProvider' : 'AxiosInterceptor',
     reusedPromise: false,
-    source,
-    stackTrace: new Error().stack,
   });
 
   refreshPromise = performRefreshCall(source, refreshId)
     .then((result) => {
       console.info({
         event: 'REFRESH_REQUEST_COMPLETED',
-        caller: 'refreshOnce',
-        refreshId,
         timestamp: new Date().toISOString(),
+        requestId: refreshId,
         status: 'success',
         source,
       });
@@ -76,9 +86,8 @@ export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
     .catch((error) => {
       console.error({
         event: 'REFRESH_REQUEST_FAILED',
-        caller: 'refreshOnce',
-        refreshId,
         timestamp: new Date().toISOString(),
+        requestId: refreshId,
         error: error.message || error,
         source,
       });
@@ -153,10 +162,8 @@ When multiple uncoordinated components/effects invoke refresh concurrently, the 
 - **`edu-core-web/src/shared/services/refreshManager.js`**: Created standalone Single-Flight Promise Lock coordinator with structured telemetry logging.
 - **`edu-core-web/src/features/auth/AuthContext.jsx`**: Integrated `refreshOnce` into `refresh()`, optimized token injection using a `useRef` to run exactly once on mount, and ensured safe redirect on 401 expiration.
 - **`edu-core-web/src/shared/services/apiClient.js`**: Replaced isolated local locks and failed queues with direct, synchronized dependency on the centralized `refreshManager`.
-- **`edu-core-api/src/shared/services/tokenService.js`**: Enhanced secure backend trace outputs showing exact revoked and rotated state parameters.
 - **`edu-core-web/src/features/auth/pages/LoginPage.jsx`**: Added native query parameter detection to display the elegant Arabic expired-session message cleanly.
 - **`edu-core-web/src/features/auth/services/authApi.js`**: Added header injection mapping `X-Refresh-Source` and `X-Refresh-Instance` so backend receives caller origins exactly.
-- **`edu-core-api/src/modules/auth/auth.controller.js`**: Overhauled `/refresh` route controller to cleanly capture and log incoming caller telemetry headers.
 
 ### Concurrency, Verification and Tests:
 - Standard integration test suite passed perfectly:

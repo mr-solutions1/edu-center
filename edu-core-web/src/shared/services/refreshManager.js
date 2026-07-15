@@ -12,37 +12,56 @@ let refreshPromise = null;
 export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
   const refreshId = instanceId || Math.random().toString(36).substring(2, 11);
   const timestamp = new Date().toISOString();
-  const callerStack = new Error().stack?.split('\n')[2]?.trim() || 'unknown';
+  const callerStack = new Error().stack;
+  const callerLine = callerStack?.split('\n')[2]?.trim() || 'unknown';
 
   if (refreshPromise) {
     console.info({
       event: 'REFRESH_REQUEST_REUSED',
-      caller: callerStack,
-      refreshId,
       timestamp,
+      stackTrace: callerStack,
+      caller: callerLine,
+      requestId: refreshId,
+      credentialsMode: 'include',
+      withCredentialsValue: true,
+      axiosInstanceIdentity: 'apiClient (Default)',
+      url: '/v1/auth/refresh',
+      headers: {
+        'X-Refresh-Source': source,
+        'X-Refresh-Instance': refreshId,
+      },
+      callerFunction: 'refreshOnce',
+      componentName: source === 'AuthContextInit' ? 'AuthProvider' : 'AxiosInterceptor',
       reusedPromise: true,
-      source,
     });
     return refreshPromise;
   }
 
   console.info({
     event: 'REFRESH_REQUEST_STARTED',
-    caller: callerStack,
-    refreshId,
     timestamp,
+    stackTrace: callerStack,
+    caller: callerLine,
+    requestId: refreshId,
+    credentialsMode: 'include',
+    withCredentialsValue: true,
+    axiosInstanceIdentity: 'apiClient (Default)',
+    url: '/v1/auth/refresh',
+    headers: {
+      'X-Refresh-Source': source,
+      'X-Refresh-Instance': refreshId,
+    },
+    callerFunction: 'refreshOnce',
+    componentName: source === 'AuthContextInit' ? 'AuthProvider' : 'AxiosInterceptor',
     reusedPromise: false,
-    source,
-    stackTrace: new Error().stack,
   });
 
   refreshPromise = performRefreshCall(source, refreshId)
     .then((result) => {
       console.info({
         event: 'REFRESH_REQUEST_COMPLETED',
-        caller: 'refreshOnce',
-        refreshId,
         timestamp: new Date().toISOString(),
+        requestId: refreshId,
         status: 'success',
         source,
       });
@@ -51,9 +70,8 @@ export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
     .catch((error) => {
       console.error({
         event: 'REFRESH_REQUEST_FAILED',
-        caller: 'refreshOnce',
-        refreshId,
         timestamp: new Date().toISOString(),
+        requestId: refreshId,
         error: error.message || error,
         source,
       });

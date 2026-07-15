@@ -102,23 +102,14 @@ export const rotateRefreshToken = async (rawToken, ipAddress, userAgent) => {
   }
   const tokenHash = hashToken(rawToken);
 
-  console.log(`[BACKEND_REFRESH_TRACE_START]`);
-  console.log(`Token Hash: ${tokenHash}`);
-
   const tokenDoc = await RefreshToken.findOne({ tokenHash }).populate('userId');
 
   if (!tokenDoc) {
-    console.error(`[BACKEND_REFRESH_TRACE_ERROR] Token Doc not found in database for hash: ${tokenHash}`);
     throw new AuthError('رمز تحديث غير صالح', 401, 'INVALID_REFRESH_TOKEN');
   }
 
-  console.log(`Token Family: ${tokenDoc.family}`);
-  console.log(`Database Status: Found`);
-  console.log(`Revoked State: ${tokenDoc.revokedAt ? `Revoked at ${tokenDoc.revokedAt}` : 'Active (not revoked)'}`);
-
   // Reuse detection: if token is already revoked, revoke the whole family
   if (tokenDoc.revokedAt) {
-    console.error(`[BACKEND_REFRESH_TRACE_REUSE_DETECTION] Reuse detected! Revoking family ${tokenDoc.family}`);
     await RefreshToken.updateMany(
       { family: tokenDoc.family },
       { revokedAt: new Date() }
@@ -136,7 +127,6 @@ export const rotateRefreshToken = async (rawToken, ipAddress, userAgent) => {
 
   const user = tokenDoc.userId;
   if (!user || !user.isActive || user.deletedAt) {
-    console.error(`[BACKEND_REFRESH_TRACE_USER_INACTIVE] User associated with token is inactive or deleted.`);
     throw new AuthError('المستخدم غير موجود أو غير نشط', 401, 'USER_INACTIVE');
   }
 
@@ -148,8 +138,6 @@ export const rotateRefreshToken = async (rawToken, ipAddress, userAgent) => {
     ipAddress,
     userAgent
   );
-
-  console.log(`[BACKEND_REFRESH_TRACE_SUCCESS] Token rotated successfully. New raw token generated.`);
 
   return { accessToken, refreshToken, user };
 };
