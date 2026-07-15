@@ -29,7 +29,7 @@ export const RootErrorBoundary = () => {
             </div>
             <div className="space-y-2">
               <h1 className="text-2xl font-black text-primary tracking-tight">
-                أكاديمية ركان
+                أكاديمية ألفا العالمية
               </h1>
               <div className="h-1 w-12 bg-secondary rounded-full mx-auto" />
             </div>

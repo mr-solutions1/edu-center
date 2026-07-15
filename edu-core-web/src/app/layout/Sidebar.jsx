@@ -13,6 +13,7 @@ import {
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
+import logoAlpha from '@/assets/logo_alpha.jpeg';
 import { useAuth } from '../../features/auth/AuthContext';
 import { cn } from '../../shared/utils';
 
@@ -93,11 +94,14 @@ const Sidebar = () => {
       className="w-64 bg-primary text-primary-foreground flex flex-col h-screen sticky top-0 shadow-xl"
       dir="rtl"
     >
-      <div className="p-6 border-b border-primary-foreground/10">
-        <h1 className="text-xl font-bold tracking-tight">أكاديمية ركان</h1>
-        <p className="text-[10px] text-secondary font-medium uppercase tracking-widest mt-1">
-          نظام الإدارة المتكامل
-        </p>
+      <div className="p-5 border-b border-primary-foreground/10 flex items-center gap-3 bg-black/5">
+        <img src={logoAlpha} alt="Alpha Logo" className="w-11 h-11 rounded-lg object-cover bg-white p-0.5 shadow-sm" />
+        <div>
+          <h1 className="text-base font-black tracking-tight leading-tight">معهد ألفا العالمي</h1>
+          <p className="text-[9px] text-secondary font-medium uppercase tracking-widest mt-0.5">
+            نظام الإدارة المتكامل
+          </p>
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-2">

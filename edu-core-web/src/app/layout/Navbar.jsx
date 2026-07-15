@@ -15,7 +15,7 @@ const Navbar = () => {
       <div className="flex items-center gap-4">
         {/* Mobile menu trigger could go here */}
         <div className="text-sm font-bold text-primary hidden md:block">
-          أهلاً بك في نظام أكاديمية ركان الإداري
+          أهلاً بك في نظام معهد ألفا العالمي الإداري
         </div>
       </div>
 

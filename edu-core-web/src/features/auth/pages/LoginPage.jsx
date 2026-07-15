@@ -7,6 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { loginSchema } from '../validations/loginSchema';
 
+import logoAlpha from '@/assets/logo_alpha.jpeg';
 import BrandedFooter from '@/shared/components/layout/BrandedFooter';
 import BrandedHeader from '@/shared/components/layout/BrandedHeader';
 import { Button } from '@/shared/components/ui/button';
@@ -61,10 +62,8 @@ const LoginPage = () => {
           <div className="h-2.5 bg-secondary w-full shadow-sm" />
           <CardHeader className="space-y-4 pt-10 pb-6">
             <div className="flex flex-col items-center space-y-3">
-              <div className="p-3 bg-primary/5 rounded-2xl mb-1">
-                <h1 className="text-4xl font-black text-primary tracking-tighter">
-                  أكاديمية ركان
-                </h1>
+              <div className="p-1 rounded-2xl mb-1">
+                <img src={logoAlpha} alt="Alpha Logo" className="h-28 w-auto object-contain rounded-xl shadow-sm" />
               </div>
               <div className="h-1.5 w-16 bg-secondary rounded-full" />
             </div>
