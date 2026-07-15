@@ -1,5 +1,6 @@
 import { Phone } from 'lucide-react';
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 import logoAlpha from '@/assets/logo_alpha.jpeg';
 import { Button } from '../ui/button';
@@ -11,12 +12,12 @@ const BrandedHeader = () => {
       dir="rtl"
     >
       <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <img src={logoAlpha} alt="Alpha Logo" className="h-12 w-auto object-contain rounded-lg" />
           <span className="text-xl font-black text-primary tracking-tighter">
             أكاديمية ألفا العالمية
           </span>
-        </div>
+        </Link>
 
         <div className="hidden md:flex items-center gap-8">
           <nav className="flex items-center gap-6">
