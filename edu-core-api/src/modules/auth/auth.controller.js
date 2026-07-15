@@ -14,9 +14,13 @@ const setRefreshCookie = (res, token) => {
   res.cookie('refreshToken', token, {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
-    sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+    // Using 'lax' instead of 'none' in production because the frontend and backend share the registrable domain (flowship.site),
+    // which makes them Same-Site. 'lax' prevents modern browsers (Safari ITP, Chrome third-party cookie restrictions, and
+    // Incognito modes) from blocking or omitting the cookie, whilst retaining defense against cross-site CSRF.
+    sameSite: 'lax',
     maxAge,
-    domain: env.COOKIE_DOMAIN || undefined,
+    // Only set domain in production to prevent browsers from rejecting cookies on 'localhost' or local testing IPs.
+    domain: env.NODE_ENV === 'production' ? env.COOKIE_DOMAIN : undefined,
   });
 };
 
@@ -27,8 +31,8 @@ const clearRefreshCookie = (res) => {
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
-    sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: env.COOKIE_DOMAIN || undefined,
+    sameSite: 'lax',
+    domain: env.NODE_ENV === 'production' ? env.COOKIE_DOMAIN : undefined,
   });
 };
 
