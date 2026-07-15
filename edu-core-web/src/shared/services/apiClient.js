@@ -13,7 +13,7 @@ const getBaseURL = () => {
 
   // Fallback to localhost during development or test runs if we are not in production
   if (import.meta.env.MODE === 'development' || import.meta.env.MODE === 'test') {
-    return 'http://localhost:5000/api/v1';
+    return 'http://localhost:5000/api';
   }
 
   throw new Error(
