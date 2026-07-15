@@ -44,6 +44,21 @@ export const injectAuthFunctions = (refreshFn, tokenFn) => {
 // Request interceptor to attach Access Token
 apiClient.interceptors.request.use(
   (config) => {
+    // Proactively enforce withCredentials on every single outgoing request
+    config.withCredentials = true;
+
+    if (config.url?.includes('/auth/refresh')) {
+      const requestId = Math.random().toString(36).substring(2, 11);
+      config.headers['X-Refresh-Request-ID'] = requestId;
+      console.group(`[REFRESH_TRACE_REQ] ID: ${requestId}`);
+      console.log(`Timestamp: ${new Date().toISOString()}`);
+      console.log(`URL: ${config.url}`);
+      console.log(`baseURL: ${config.baseURL}`);
+      console.log(`withCredentials: ${config.withCredentials}`);
+      console.log(`headers:`, JSON.parse(JSON.stringify(config.headers)));
+      console.log(`Stack trace:`, new Error().stack);
+      console.groupEnd();
+    }
     const token = getAccessToken?.();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -69,9 +84,29 @@ const processQueue = (error, token = null) => {
 
 // Response interceptor for error handling and silent refresh
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.config?.url?.includes('/auth/refresh')) {
+      const requestId = response.config.headers['X-Refresh-Request-ID'];
+      console.group(`[REFRESH_TRACE_RES_SUCCESS] ID: ${requestId}`);
+      console.log(`Timestamp: ${new Date().toISOString()}`);
+      console.log(`Status: ${response.status}`);
+      console.log(`Data:`, response.data);
+      console.groupEnd();
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
+
+    if (originalRequest?.url?.includes('/auth/refresh')) {
+      const requestId = originalRequest.headers['X-Refresh-Request-ID'] || 'unknown';
+      console.group(`[REFRESH_TRACE_RES_ERROR] ID: ${requestId}`);
+      console.log(`Timestamp: ${new Date().toISOString()}`);
+      console.log(`Status: ${error.response?.status}`);
+      console.log(`Error Message:`, error.response?.data || error.message);
+      console.log(`Stack trace:`, new Error().stack);
+      console.groupEnd();
+    }
 
     // If error is 401 and not a retry and not the refresh request itself, and we have a refresh function
     if (
@@ -80,11 +115,14 @@ apiClient.interceptors.response.use(
       !originalRequest.url?.includes('/auth/refresh') &&
       refreshAuthToken
     ) {
+      console.log(`[INTERCEPTOR_401] Intercepted 401 for ${originalRequest.url}. isRefreshing: ${isRefreshing}`);
       if (isRefreshing) {
+        console.log(`[INTERCEPTOR_QUEUED] Queuing request for ${originalRequest.url}`);
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
+            console.log(`[INTERCEPTOR_QUEUED_RESOLVED] Retrying queued request for ${originalRequest.url}`);
             originalRequest.headers.Authorization = `Bearer ${token}`;
             originalRequest.withCredentials = true; // explicitly enforce credentials on queued retried requests
             return apiClient(originalRequest);
@@ -96,12 +134,15 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        console.log(`[INTERCEPTOR_TRIGGER_REFRESH] Triggering token refresh...`);
         const newToken = await refreshAuthToken();
+        console.log(`[INTERCEPTOR_REFRESH_SUCCESS] Successfully refreshed token. Processing queue...`);
         processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         originalRequest.withCredentials = true; // explicitly enforce credentials on retried requests
         return apiClient(originalRequest);
       } catch (refreshError) {
+        console.error(`[INTERCEPTOR_REFRESH_FAILED] Token refresh failed.`, refreshError);
         processQueue(refreshError, null);
         return Promise.reject(refreshError);
       } finally {

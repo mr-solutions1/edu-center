@@ -11,6 +11,8 @@ import { injectAuthFunctions } from '../../shared/services/apiClient';
 
 const AuthContext = createContext(null);
 
+let activeRefreshPromise = null;
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
@@ -33,16 +35,35 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const refresh = useCallback(async () => {
-    try {
-      const { data } = await authApi.refresh();
-      setUser(data.user);
-      setAccessToken(data.accessToken);
-      return data.accessToken;
-    } catch (error) {
-      setUser(null);
-      setAccessToken(null);
-      throw error;
+    if (activeRefreshPromise) {
+      console.log('[AUTH_CONTEXT_REFRESH] Returning existing active refresh promise.');
+      return activeRefreshPromise;
     }
+
+    const callerId = Math.random().toString(36).substring(2, 11);
+    console.group(`[AUTH_CONTEXT_REFRESH_START] Caller ID: ${callerId}`);
+    console.log(`Timestamp: ${new Date().toISOString()}`);
+    console.log(`Stack trace:`, new Error().stack);
+    console.groupEnd();
+
+    activeRefreshPromise = (async () => {
+      try {
+        const { data } = await authApi.refresh();
+        console.log(`[AUTH_CONTEXT_REFRESH_SUCCESS] Caller ID: ${callerId}`);
+        setUser(data.user);
+        setAccessToken(data.accessToken);
+        return data.accessToken;
+      } catch (error) {
+        console.error(`[AUTH_CONTEXT_REFRESH_FAILED] Caller ID: ${callerId}`, error);
+        setUser(null);
+        setAccessToken(null);
+        throw error;
+      } finally {
+        activeRefreshPromise = null;
+      }
+    })();
+
+    return activeRefreshPromise;
   }, []);
 
   useEffect(() => {
@@ -51,6 +72,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
+      console.log(`[AUTH_CONTEXT_INIT_AUTH] Initializing auth...`);
       try {
         await refresh();
       } catch {
