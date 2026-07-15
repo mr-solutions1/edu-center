@@ -29,6 +29,9 @@ const apiClient = axios.create({
   },
 });
 
+// Explicitly reinforce withCredentials defaults on the client instance
+apiClient.defaults.withCredentials = true;
+
 // To be injected from AuthProvider to avoid circular dependency
 let refreshAuthToken = null;
 let getAccessToken = null;
@@ -83,6 +86,7 @@ apiClient.interceptors.response.use(
         })
           .then((token) => {
             originalRequest.headers.Authorization = `Bearer ${token}`;
+            originalRequest.withCredentials = true; // explicitly enforce credentials on queued retried requests
             return apiClient(originalRequest);
           })
           .catch((err) => Promise.reject(err));
@@ -95,6 +99,7 @@ apiClient.interceptors.response.use(
         const newToken = await refreshAuthToken();
         processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        originalRequest.withCredentials = true; // explicitly enforce credentials on retried requests
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);

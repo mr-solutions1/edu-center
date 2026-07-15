@@ -2,22 +2,30 @@ import apiClient from '../../../shared/services/apiClient';
 
 export const authApi = {
   login: async (credentials) => {
-    const response = await apiClient.post('/v1/auth/login', credentials);
+    const response = await apiClient.post('/v1/auth/login', credentials, {
+      withCredentials: true,
+    });
     return response.data;
   },
 
   refresh: async () => {
-    const response = await apiClient.post('/v1/auth/refresh');
+    const response = await apiClient.post('/v1/auth/refresh', null, {
+      withCredentials: true,
+    });
     return response.data;
   },
 
   logout: async () => {
-    const response = await apiClient.post('/v1/auth/logout');
+    const response = await apiClient.post('/v1/auth/logout', null, {
+      withCredentials: true,
+    });
     return response.data;
   },
 
   logoutAll: async () => {
-    const response = await apiClient.post('/v1/auth/logout-all');
+    const response = await apiClient.post('/v1/auth/logout-all', null, {
+      withCredentials: true,
+    });
     return response.data;
   },
 
