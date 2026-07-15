@@ -104,12 +104,28 @@ export const rotateRefreshToken = async (rawToken, ipAddress, userAgent) => {
 
   const tokenDoc = await RefreshToken.findOne({ tokenHash }).populate('userId');
 
+  console.info('[BACKEND_TOKEN_ROTATION_START] ' + JSON.stringify({
+    timestamp: new Date().toISOString(),
+    tokenHash,
+    tokenFound: !!tokenDoc,
+    family: tokenDoc?.family,
+    revokedAt: tokenDoc?.revokedAt,
+    expiresAt: tokenDoc?.expiresAt,
+  }, null, 2));
+
   if (!tokenDoc) {
     throw new AuthError('رمز تحديث غير صالح', 401, 'INVALID_REFRESH_TOKEN');
   }
 
   // Reuse detection: if token is already revoked, revoke the whole family
   if (tokenDoc.revokedAt) {
+    console.error('[BACKEND_TOKEN_REUSE_DETECTED] ' + JSON.stringify({
+      timestamp: new Date().toISOString(),
+      tokenHash,
+      family: tokenDoc.family,
+      revokedAt: tokenDoc.revokedAt,
+    }, null, 2));
+
     await RefreshToken.updateMany(
       { family: tokenDoc.family },
       { revokedAt: new Date() }
@@ -138,6 +154,12 @@ export const rotateRefreshToken = async (rawToken, ipAddress, userAgent) => {
     ipAddress,
     userAgent
   );
+
+  console.info('[BACKEND_TOKEN_ROTATION_SUCCESS] ' + JSON.stringify({
+    timestamp: new Date().toISOString(),
+    family: tokenDoc.family,
+    newHash: hashToken(refreshToken),
+  }, null, 2));
 
   return { accessToken, refreshToken, user };
 };

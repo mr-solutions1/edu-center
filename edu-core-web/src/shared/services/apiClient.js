@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { isRefreshing, getRefreshPromise } from './refreshManager';
+import { isRefreshing, getRefreshPromise, getTabId } from './refreshManager';
 
 const getBaseURL = () => {
   const viteApiUrl = import.meta.env.VITE_API_BASE_URL;
@@ -42,26 +42,46 @@ export const injectAuthFunctions = (refreshFn, tokenFn) => {
   getAccessToken = tokenFn;
 };
 
+let apiRequestCounter = 0;
+
 // Request interceptor to attach Access Token
 apiClient.interceptors.request.use(
   (config) => {
     // Proactively enforce withCredentials on every single outgoing request
     config.withCredentials = true;
+    const currentApiReqCount = ++apiRequestCounter;
 
+    // Attach tracing headers for all auth refresh requests
     if (config.url?.includes('/auth/refresh')) {
-      const requestId = Math.random().toString(36).substring(2, 11);
+      const tabId = getTabId();
+      const requestId = config.headers['X-Refresh-Instance'] || Math.random().toString(36).substring(2, 11);
+
       config.headers['X-Refresh-Request-ID'] = requestId;
-      console.group(`[REFRESH_TRACE_REQ] ID: ${requestId}`);
-      console.log(`Timestamp: ${new Date().toISOString()}`);
-      console.log(`URL: ${config.url}`);
-      console.log(`baseURL: ${config.baseURL}`);
-      console.log(`withCredentials: ${config.withCredentials}`);
-      console.log(`headers:`, JSON.parse(JSON.stringify(config.headers)));
-      console.log(`Stack trace:`, new Error().stack);
-      console.groupEnd();
+      config.headers['X-Refresh-Tab-ID'] = tabId;
+      if (!config.headers['X-Refresh-Source']) {
+        config.headers['X-Refresh-Source'] = 'AxiosInterceptor';
+      }
     }
+
+    const requestDetails = {
+      traceEvent: 'AXIOS_REQUEST_INTERCEPTOR_FIRED',
+      apiReqNumber: currentApiReqCount,
+      timestamp: new Date().toISOString(),
+      perfTimeMs: performance.now(),
+      url: config.url,
+      baseURL: config.baseURL,
+      method: config.method?.toUpperCase(),
+      headers: JSON.parse(JSON.stringify(config.headers || {})),
+      withCredentials: config.withCredentials,
+      adapter: config.adapter ? (typeof config.adapter === 'string' ? config.adapter : 'function') : 'default',
+      data: config.data,
+      hasSignal: !!config.signal,
+    };
+
+    console.info('[EVIDENCE_TRACE] ' + JSON.stringify(requestDetails, null, 2));
+
     const token = getAccessToken?.();
-    if (token) {
+    if (token && !config.url?.includes('/auth/refresh')) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -72,28 +92,32 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling and silent refresh
 apiClient.interceptors.response.use(
   (response) => {
-    if (response.config?.url?.includes('/auth/refresh')) {
-      const requestId = response.config.headers['X-Refresh-Request-ID'];
-      console.group(`[REFRESH_TRACE_RES_SUCCESS] ID: ${requestId}`);
-      console.log(`Timestamp: ${new Date().toISOString()}`);
-      console.log(`Status: ${response.status}`);
-      console.log(`Data:`, response.data);
-      console.groupEnd();
-    }
+    const currentApiResCount = apiRequestCounter;
+    console.info('[EVIDENCE_TRACE] ' + JSON.stringify({
+      traceEvent: 'AXIOS_RESPONSE_SUCCESS',
+      apiReqNumber: currentApiResCount,
+      timestamp: new Date().toISOString(),
+      perfTimeMs: performance.now(),
+      url: response.config?.url,
+      status: response.status,
+      data: response.data,
+    }, null, 2));
+
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
+    const currentApiResCount = apiRequestCounter;
 
-    if (originalRequest?.url?.includes('/auth/refresh')) {
-      const requestId = originalRequest.headers['X-Refresh-Request-ID'] || 'unknown';
-      console.group(`[REFRESH_TRACE_RES_ERROR] ID: ${requestId}`);
-      console.log(`Timestamp: ${new Date().toISOString()}`);
-      console.log(`Status: ${error.response?.status}`);
-      console.log(`Error Message:`, error.response?.data || error.message);
-      console.log(`Stack trace:`, new Error().stack);
-      console.groupEnd();
-    }
+    console.error('[EVIDENCE_TRACE] ' + JSON.stringify({
+      traceEvent: 'AXIOS_RESPONSE_ERROR',
+      apiReqNumber: currentApiResCount,
+      timestamp: new Date().toISOString(),
+      perfTimeMs: performance.now(),
+      url: originalRequest?.url,
+      status: error.response?.status,
+      errorMsg: error.response?.data || error.message,
+    }, null, 2));
 
     // If error is 401 and not a retry and not the refresh request itself, and we have a refresh function
     if (
@@ -103,15 +127,21 @@ apiClient.interceptors.response.use(
       refreshAuthToken
     ) {
       const activeRefreshing = isRefreshing();
-      console.log(`[INTERCEPTOR_401] Intercepted 401 for ${originalRequest.url}. activeRefreshing: ${activeRefreshing}`);
+
+      console.info('[EVIDENCE_TRACE] ' + JSON.stringify({
+        traceEvent: 'INTERCEPTOR_401_HANDLED',
+        apiReqNumber: currentApiResCount,
+        timestamp: new Date().toISOString(),
+        perfTimeMs: performance.now(),
+        url: originalRequest.url,
+        activeRefreshing,
+      }, null, 2));
 
       if (activeRefreshing) {
-        console.log(`[INTERCEPTOR_QUEUED] A refresh is already active. Waiting for existing refresh promise...`);
         const activePromise = getRefreshPromise();
         if (activePromise) {
           return activePromise
             .then((token) => {
-              console.log(`[INTERCEPTOR_QUEUED_RESOLVED] Retrying queued request for ${originalRequest.url}`);
               originalRequest.headers.Authorization = `Bearer ${token}`;
               originalRequest.withCredentials = true;
               return apiClient(originalRequest);
@@ -123,14 +153,11 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        console.log(`[INTERCEPTOR_TRIGGER_REFRESH] Triggering token refresh via unified refreshAuthToken...`);
         const newToken = await refreshAuthToken('AxiosInterceptor');
-        console.log(`[INTERCEPTOR_REFRESH_SUCCESS] Successfully refreshed token.`);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         originalRequest.withCredentials = true;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        console.error(`[INTERCEPTOR_REFRESH_FAILED] Token refresh failed.`, refreshError);
         return Promise.reject(refreshError);
       }
     }

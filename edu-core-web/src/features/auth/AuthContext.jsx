@@ -9,14 +9,53 @@ import React, {
 
 import { authApi } from './services/authApi';
 import { injectAuthFunctions } from '../../shared/services/apiClient';
-import { refreshOnce } from '../../shared/services/refreshManager';
+import { refreshOnce, broadcastLogin, broadcastLogout, getTabId } from '../../shared/services/refreshManager';
 
 const AuthContext = createContext(null);
+
+let authProviderRenders = 0;
+
+// Module-scoped bootstrap states to survive React StrictMode mounts/unmounts
+let bootstrapPromise = null;
+let hasBootstrapped = false;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const renderCountRef = useRef(0);
+  renderCountRef.current++;
+  authProviderRenders++;
+
+  console.info('[EVIDENCE_TRACE] ' + JSON.stringify({
+    traceEvent: 'AUTH_PROVIDER_RENDERED',
+    timestamp: new Date().toISOString(),
+    perfTimeMs: performance.now(),
+    renderCountThisInstance: renderCountRef.current,
+    globalRendersCount: authProviderRenders,
+    currentState: {
+      hasUser: !!user,
+      hasAccessToken: !!accessToken,
+      isLoading,
+    }
+  }, null, 2));
+
+  useEffect(() => {
+    console.info('[EVIDENCE_TRACE] ' + JSON.stringify({
+      traceEvent: 'AUTH_PROVIDER_MOUNTED',
+      timestamp: new Date().toISOString(),
+      perfTimeMs: performance.now(),
+    }, null, 2));
+
+    return () => {
+      console.info('[EVIDENCE_TRACE] ' + JSON.stringify({
+        traceEvent: 'AUTH_PROVIDER_UNMOUNTED',
+        timestamp: new Date().toISOString(),
+        perfTimeMs: performance.now(),
+      }, null, 2));
+    };
+  }, []);
 
   // Store accessToken in a ref to avoid re-injecting auth functions on token changes
   const accessTokenRef = useRef(accessToken);
@@ -30,6 +69,7 @@ export const AuthProvider = ({ children }) => {
     const { data } = await authApi.login(credentials);
     setUser(data.user);
     setAccessToken(data.accessToken);
+    broadcastLogin();
     return data.user;
   };
 
@@ -39,6 +79,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       setAccessToken(null);
+      broadcastLogout();
     }
   }, []);
 
@@ -66,12 +107,40 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      console.log(`[AUTH_CONTEXT_INIT_AUTH] Initializing auth...`);
+      // Exactly ONE bootstrap promise can exist across the entire loading sequence
+      if (hasBootstrapped) {
+        console.info('[EVIDENCE_TRACE] Already bootstrapped. Skipping initAuth.');
+        setIsLoading(false);
+        return;
+      }
+
+      if (bootstrapPromise) {
+        console.info('[EVIDENCE_TRACE] Reusing existing bootstrap promise.');
+        try {
+          await bootstrapPromise;
+        } catch {
+          // Silent fail
+        } finally {
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      console.info('[EVIDENCE_TRACE] ' + JSON.stringify({
+        traceEvent: 'INIT_AUTH_EFFECT_TRIGGERED',
+        timestamp: new Date().toISOString(),
+        perfTimeMs: performance.now(),
+        tabId: getTabId(),
+      }, null, 2));
+
+      bootstrapPromise = refresh('AuthContextInit');
+
       try {
-        await refresh('AuthContextInit');
+        await bootstrapPromise;
       } catch {
         // Silent fail - user just needs to login
       } finally {
+        hasBootstrapped = true;
         setIsLoading(false);
       }
     };

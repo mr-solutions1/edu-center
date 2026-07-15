@@ -76,18 +76,51 @@ export const refresh = asyncHandler(async (req, res) => {
   const ipAddress = req.ip;
   const userAgent = req.get('user-agent');
 
-  const {
-    accessToken,
-    refreshToken: newRefreshToken,
-    user,
-  } = await authService.refresh(refreshToken, ipAddress, userAgent);
+  const reqId = req.headers['x-refresh-request-id'] || 'unknown';
+  const tabId = req.headers['x-refresh-tab-id'] || 'unknown';
+  const source = req.headers['x-refresh-source'] || 'unknown';
 
-  setRefreshCookie(res, newRefreshToken);
+  console.info('[BACKEND_REFRESH_TRACE_RECEIVED] ' + JSON.stringify({
+    timestamp: new Date().toISOString(),
+    reqId,
+    tabId,
+    source,
+    cookiePresent: !!refreshToken,
+    origin: req.get('origin'),
+    referer: req.get('referer'),
+    userAgent,
+  }, null, 2));
 
-  res.status(200).json({
-    success: true,
-    data: { user, accessToken },
-  });
+  try {
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+      user,
+    } = await authService.refresh(refreshToken, ipAddress, userAgent);
+
+    setRefreshCookie(res, newRefreshToken);
+
+    console.info('[BACKEND_REFRESH_TRACE_SUCCESS] ' + JSON.stringify({
+      timestamp: new Date().toISOString(),
+      reqId,
+      tabId,
+      status: 200,
+    }, null, 2));
+
+    res.status(200).json({
+      success: true,
+      data: { user, accessToken },
+    });
+  } catch (err) {
+    console.error('[BACKEND_REFRESH_TRACE_ERROR] ' + JSON.stringify({
+      timestamp: new Date().toISOString(),
+      reqId,
+      tabId,
+      status: err.statusCode || 401,
+      errorMsg: err.message,
+    }, null, 2));
+    throw err;
+  }
 });
 
 /**
