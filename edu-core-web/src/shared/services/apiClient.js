@@ -50,6 +50,20 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Response interceptor for error handling and silent refresh
 apiClient.interceptors.response.use(
   (response) => response,
@@ -63,14 +77,30 @@ apiClient.interceptors.response.use(
       !originalRequest.url?.includes('/auth/refresh') &&
       refreshAuthToken
     ) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return apiClient(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         const newToken = await refreshAuthToken();
+        processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
+        processQueue(refreshError, null);
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
