@@ -11,6 +11,7 @@ import ProtectedRoute from '../shared/components/ProtectedRoute';
 
 // Lazy loading pages
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage'));
+const LandingPage = lazy(() => import('../features/dashboard/pages/LandingPage'));
 const DashboardPage = lazy(
   () => import('../features/dashboard/pages/DashboardPage')
 );
@@ -63,6 +64,20 @@ const router = createBrowserRouter([
     errorElement: <RootErrorBoundary />,
     children: [
       {
+        path: '/',
+        element: (
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center min-h-screen">
+                Loading...
+              </div>
+            }
+          >
+            <LandingPage />
+          </Suspense>
+        ),
+      },
+      {
         path: '/login',
         element: (
           <Suspense
@@ -80,7 +95,7 @@ const router = createBrowserRouter([
         element: <RootLayout />,
         children: [
           {
-            path: '/',
+            path: '/dashboard',
             element: (
               <ProtectedRoute>
                 <Suspense

@@ -39,7 +39,7 @@ const LoginPage = () => {
     try {
       setError(null);
       await login(data);
-      const from = location.state?.from?.pathname || '/';
+      const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     } catch (err) {
       setError(
