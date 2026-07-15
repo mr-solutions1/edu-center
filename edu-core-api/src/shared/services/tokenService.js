@@ -12,6 +12,12 @@ import { AuthError } from '../errors/AuthError.js';
  * @returns {string}
  */
 const hashToken = (token) => {
+  if (!token) {
+    throw new Error('Refresh token is required for hashing');
+  }
+  if (typeof token !== 'string') {
+    throw new Error(`Invalid token type: ${typeof token}`);
+  }
   return crypto.createHash('sha256').update(token).digest('hex');
 };
 
@@ -91,6 +97,9 @@ export const verifyAccessToken = (token) => {
  * @returns {Promise<object>} { accessToken, refreshToken, user }
  */
 export const rotateRefreshToken = async (rawToken, ipAddress, userAgent) => {
+  if (!rawToken) {
+    throw new AuthError('رمز التحديث مطلوب', 401, 'REFRESH_TOKEN_REQUIRED');
+  }
   const tokenHash = hashToken(rawToken);
 
   const tokenDoc = await RefreshToken.findOne({ tokenHash }).populate('userId');
@@ -138,6 +147,7 @@ export const rotateRefreshToken = async (rawToken, ipAddress, userAgent) => {
  * @param {string} rawToken
  */
 export const revokeRefreshToken = async (rawToken) => {
+  if (!rawToken) return;
   const tokenHash = hashToken(rawToken);
   await RefreshToken.findOneAndUpdate({ tokenHash }, { revokedAt: new Date() });
 };
