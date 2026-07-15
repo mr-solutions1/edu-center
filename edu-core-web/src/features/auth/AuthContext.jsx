@@ -8,10 +8,9 @@ import React, {
 
 import { authApi } from './services/authApi';
 import { injectAuthFunctions } from '../../shared/services/apiClient';
+import { refreshOnce } from '../../shared/services/refreshManager';
 
 const AuthContext = createContext(null);
-
-let activeRefreshPromise = null;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -35,37 +34,21 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const refresh = useCallback(async () => {
-    if (activeRefreshPromise) {
-      console.log('[REFRESH_REQUEST_REUSED] Reusing active single-flight refresh promise.');
-      return activeRefreshPromise;
-    }
+    return refreshOnce(async () => {
+      const { data } = await authApi.refresh();
+      setUser(data.user);
+      setAccessToken(data.accessToken);
+      return data.accessToken;
+    }).catch((error) => {
+      setUser(null);
+      setAccessToken(null);
 
-    const callerId = Math.random().toString(36).substring(2, 11);
-    console.log(`[REFRESH_REQUEST_STARTED] ID: ${callerId} - Triggering single token rotation.`);
-
-    activeRefreshPromise = (async () => {
-      try {
-        const { data } = await authApi.refresh();
-        console.log(`[REFRESH_REQUEST_COMPLETED] ID: ${callerId} - Successfully rotated token.`);
-        setUser(data.user);
-        setAccessToken(data.accessToken);
-        return data.accessToken;
-      } catch (error) {
-        console.error(`[AUTH_CONTEXT_REFRESH_FAILED] ID: ${callerId}`, error);
-        setUser(null);
-        setAccessToken(null);
-
-        // Safely redirect to login without crashing the frontend render tree
-        if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-          window.location.href = '/login?expired=true';
-        }
-        throw error;
-      } finally {
-        activeRefreshPromise = null;
+      // Safely redirect to login without crashing the frontend render tree
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+        window.location.href = '/login?expired=true';
       }
-    })();
-
-    return activeRefreshPromise;
+      throw error;
+    });
   }, []);
 
   useEffect(() => {
