@@ -36,25 +36,22 @@ export const AuthProvider = ({ children }) => {
 
   const refresh = useCallback(async () => {
     if (activeRefreshPromise) {
-      console.log('[AUTH_CONTEXT_REFRESH] Returning existing active refresh promise.');
+      console.log('[REFRESH_REQUEST_REUSED] Reusing active single-flight refresh promise.');
       return activeRefreshPromise;
     }
 
     const callerId = Math.random().toString(36).substring(2, 11);
-    console.group(`[AUTH_CONTEXT_REFRESH_START] Caller ID: ${callerId}`);
-    console.log(`Timestamp: ${new Date().toISOString()}`);
-    console.log(`Stack trace:`, new Error().stack);
-    console.groupEnd();
+    console.log(`[REFRESH_REQUEST_STARTED] ID: ${callerId} - Triggering single token rotation.`);
 
     activeRefreshPromise = (async () => {
       try {
         const { data } = await authApi.refresh();
-        console.log(`[AUTH_CONTEXT_REFRESH_SUCCESS] Caller ID: ${callerId}`);
+        console.log(`[REFRESH_REQUEST_COMPLETED] ID: ${callerId} - Successfully rotated token.`);
         setUser(data.user);
         setAccessToken(data.accessToken);
         return data.accessToken;
       } catch (error) {
-        console.error(`[AUTH_CONTEXT_REFRESH_FAILED] Caller ID: ${callerId}`, error);
+        console.error(`[AUTH_CONTEXT_REFRESH_FAILED] ID: ${callerId}`, error);
         setUser(null);
         setAccessToken(null);
 
