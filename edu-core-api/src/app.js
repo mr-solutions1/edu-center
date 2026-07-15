@@ -39,11 +39,31 @@ app.set('trust proxy', 1);
 // 2. Correlation ID
 app.use(correlationIdMiddleware);
 
-// 3. Security Middlewares
+// 3. Security Middlewares & Dynamic CORS
+// Secure dynamic origin validation function that automatically allows any approved subdomains and tenants (*.flowship.site)
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // Allow non-browser requests (like Postman or server-to-server)
+
+  // Regex to securely allow any subdomain of flowship.site (HTTPS only in production)
+  const flowshipRegex = /^https:\/\/(?:[a-zA-Z0-9-]+\.)*flowship\.site$/;
+  if (flowshipRegex.test(origin)) {
+    return true;
+  }
+
+  // Fallback to explicit whitelist from environment variables (e.g. localhost during development/testing)
+  if (Array.isArray(env.CORS_ORIGIN) && env.CORS_ORIGIN.includes(origin)) {
+    return true;
+  }
+
+  return false;
+};
+
 app.use(helmet());
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      callback(null, isOriginAllowed(origin));
+    },
     credentials: true,
   })
 );

@@ -1,31 +1,12 @@
 {
-  "name": "rakan-institute",
-  "version": "0.1.0",
+  "name": "rakan-institute-monorepo",
+  "version": "1.0.0",
   "private": true,
+  "description": "Rakan Academy Monorepo - Enterprise ERP",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
     "prepare": "husky"
   },
-  "dependencies": {
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
-    "@prisma/config": "^7.8.0",
-    "@tanstack/react-query": "^5.101.2",
-    "@upstash/ratelimit": "^2.0.8",
-    "@upstash/redis": "^1.38.0",
-    "bcrypt": "^6.0.0",
-    "dotenv": "^17.4.2",
-    "jose": "^6.2.3",
-    "jsonwebtoken": "^9.0.3",
-    "next": "16.2.9",
-    "pg": "^8.22.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "zod": "^4.4.3"
-  },
+  "dependencies": {},
   "lint-staged": {
     "edu-core-api/src/**/*.js": [
       "cd edu-core-api && npx prettier --write",
@@ -37,16 +18,7 @@
     ]
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/bcrypt": "^6.0.0",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.9",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.8",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "lint-staged": "^17.0.8"
   }
 }

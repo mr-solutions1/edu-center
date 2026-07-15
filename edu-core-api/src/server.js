@@ -19,24 +19,33 @@ const server = app.listen(PORT, () => {
       // Connect to Database
       await connectDB();
 
-      // Setup simple daily check for notifications
-      const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
-      setInterval(async () => {
-        try {
-          await triggerLessonReminders();
-          await triggerPaymentReminders();
-        } catch (error) {
-          logger.error('Error in automated notification triggers:', error);
-        }
-      }, CHECK_INTERVAL);
+      // Coordinate background/scheduled jobs to run ONLY on PM2 instance 0 to avoid duplicates
+      const isInstanceZero = typeof process.env.NODE_APP_INSTANCE === 'undefined' || process.env.NODE_APP_INSTANCE === '0';
 
-      // Run once on startup (non-blocking)
-      triggerLessonReminders().catch((err) =>
-        logger.error('Startup Lesson Reminder failed:', err)
-      );
-      triggerPaymentReminders().catch((err) =>
-        logger.error('Startup Payment Reminder failed:', err)
-      );
+      if (isInstanceZero) {
+        logger.info('⏰ PM2 Instance 0 (or single process) detected. Initializing scheduled background tasks...');
+
+        // Setup simple daily check for notifications
+        const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+        setInterval(async () => {
+          try {
+            await triggerLessonReminders();
+            await triggerPaymentReminders();
+          } catch (error) {
+            logger.error('Error in automated notification triggers:', error);
+          }
+        }, CHECK_INTERVAL);
+
+        // Run once on startup (non-blocking)
+        triggerLessonReminders().catch((err) =>
+          logger.error('Startup Lesson Reminder failed:', err)
+        );
+        triggerPaymentReminders().catch((err) =>
+          logger.error('Startup Payment Reminder failed:', err)
+        );
+      } else {
+        logger.info(`PM2 Instance ${process.env.NODE_APP_INSTANCE} detected. Bypassing scheduled background tasks to prevent duplicate triggers.`);
+      }
 
       logger.info('✅ Background initializations complete');
     } catch (error) {
