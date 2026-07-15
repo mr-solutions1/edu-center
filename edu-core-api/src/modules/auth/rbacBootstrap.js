@@ -141,8 +141,18 @@ export const bootstrapRBAC = async (tenantId) => {
       for (const roleDef of DEFAULT_ROLES) {
         await Role.updateOne(
           { tenantId, key: roleDef.key },
-          { $setOnInsert: { ...roleDef, tenantId } },
-          { upsert: true, strict: false }
+          {
+            $setOnInsert: { ...roleDef, tenantId },
+            $set: {
+              name: roleDef.name,
+              description: roleDef.description,
+              permissions: roleDef.permissions
+            }
+          },
+          {
+            upsert: true,
+            strict: false          // ← Allow tenantId for now
+          }
         );
       }
       logger.info(`👥 Default Roles initialized/verified for tenant: ${tenantId}`);
