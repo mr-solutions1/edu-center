@@ -56,10 +56,11 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If error is 401 and not a retry and we have a refresh function
+    // If error is 401 and not a retry and not the refresh request itself, and we have a refresh function
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/refresh') &&
       refreshAuthToken
     ) {
       originalRequest._retry = true;
