@@ -9,21 +9,21 @@ export const authApi = {
   },
 
   refresh: async () => {
-    const response = await apiClient.post('/v1/auth/refresh', null, {
+    const response = await apiClient.post('/v1/auth/refresh', {}, {
       withCredentials: true,
     });
     return response.data;
   },
 
   logout: async () => {
-    const response = await apiClient.post('/v1/auth/logout', null, {
+    const response = await apiClient.post('/v1/auth/logout', {}, {
       withCredentials: true,
     });
     return response.data;
   },
 
   logoutAll: async () => {
-    const response = await apiClient.post('/v1/auth/logout-all', null, {
+    const response = await apiClient.post('/v1/auth/logout-all', {}, {
       withCredentials: true,
     });
     return response.data;
