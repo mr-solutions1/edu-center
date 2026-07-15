@@ -11,9 +11,10 @@ import {
   BookOpen,
   TrendingUp,
   Mail,
+  Globe,
 } from 'lucide-react';
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 
 import logoAlpha from '@/assets/logo_alpha.jpeg';
 import { useAuth } from '../../features/auth/AuthContext';
@@ -23,13 +24,19 @@ const menuItems = [
   {
     icon: LayoutDashboard,
     label: 'لوحة التحكم',
-    path: '/',
+    path: '/dashboard',
     roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'TEACHER', 'STUDENT', 'PARENT'],
   },
   {
     icon: Mail,
     label: 'صندوق الرسائل',
     path: '/inbox',
+    roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'TEACHER', 'STUDENT', 'PARENT'],
+  },
+  {
+    icon: Globe,
+    label: 'الموقع التعريفي',
+    path: '/',
     roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'TEACHER', 'STUDENT', 'PARENT'],
   },
   {
@@ -108,7 +115,7 @@ const Sidebar = () => {
       className="w-64 bg-primary text-primary-foreground flex flex-col h-screen sticky top-0 shadow-xl"
       dir="rtl"
     >
-      <div className="p-5 border-b border-primary-foreground/10 flex items-center gap-3 bg-black/5">
+      <Link to="/" className="p-5 border-b border-primary-foreground/10 flex items-center gap-3 bg-black/5 hover:bg-black/10 transition-colors">
         <img src={logoAlpha} alt="Alpha Logo" className="w-11 h-11 rounded-lg object-cover bg-white p-0.5 shadow-sm" />
         <div>
           <h1 className="text-base font-black tracking-tight leading-tight">معهد ألفا العالمي</h1>
@@ -116,7 +123,7 @@ const Sidebar = () => {
             نظام الإدارة المتكامل
           </p>
         </div>
-      </div>
+      </Link>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-2">
         {filteredItems.map((item) => (
