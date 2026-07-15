@@ -1,34 +1,26 @@
-# Root Cause Analysis (RCA) Report: Refresh Token Inconsistent Client Credentials Issue
+# Root Cause Analysis (RCA) Report: Refresh Token - Inconsistent Client & Payload Issues
 
 ## 1. Executive Summary
 
-- **Incident Description:** After a successful login, the browser correctly stores the `refreshToken` cookie. However, calling `POST /api/v1/auth/refresh` randomly fails with a `401 Unauthorized` error returning `"رمز التحديث مطلوب"` ("Refresh token is required").
+- **Incident Description:** After successful authentication, the browser stores the `refreshToken` cookie. However, calling `POST /api/v1/auth/refresh` behaves inconsistently in production, triggering two distinct types of errors:
+  - **Error Type 1 (401 Unauthorized):** `401 - رمز التحديث مطلوب` ("Refresh token is required").
+  - **Error Type 2 (400 Bad Request):** `400 - Unexpected token 'n', "null" is not valid JSON`.
 - **Evidence-Backed Root Cause:**
-  The backend instrumentation diagnostics proved that the infrastructure, Nginx proxy, cookie-parser, and CORS are completely healthy. Instead, **different refresh requests were reaching the backend with different HTTP client configurations**:
-  - **Request #1 (Succeeds):** Sent from a configuration where `withCredentials` was correctly resolved or inherited, resulting in the browser transmitting the `Cookie: refreshToken=...` header.
-  - **Request #2 (Fails with 401):** Sent from a configuration (such as retried requests or direct hook calls) where the browser did **NOT** send any cookies (`HEADERS COOKIE: Undefined/Missing`).
-- **Resolution:** We unified the application's HTTP client requests by explicitly enforcing `withCredentials: true` directly on the request config objects. This ensures that every login, refresh, logout, and retried request is guaranteed to include credentials regardless of Axios default configuration merging nuances. No changes were made to backend cookie settings, SameSite, Secure, or Domain, keeping security intact.
+  The backend instrumentation diagnostics proved that the infrastructure, Nginx proxy, cookie-parser, and CORS are completely healthy. Instead, **different refresh requests were reaching the backend with different HTTP client configurations and request bodies**:
+  1. **Inconsistent Credentials:** Some requests were triggered by clients or retries where `withCredentials` was missing or defaulted to false, causing the browser to omit the cookie header (`HEADERS COOKIE: Undefined/Missing`).
+  2. **Inconsistent / Invalid Request Body:** Some requests were triggered by calling `apiClient.post('/v1/auth/refresh', null)`. Under certain Axios and environment configurations, passing `null` as the second argument (the `data` body payload) with `Content-Type: application/json` causes Axios to serialize the body as the string `"null"`. This is parsed by Express's JSON body-parser (`express.json()`), which throws a `400 Bad Request` parser error (`Unexpected token 'n'`) before the request can ever reach the controller.
+- **Resolution:**
+  We unified the application's HTTP client requests by:
+  1. Explicitly enforcing `withCredentials: true` directly on the request config objects in the interceptor and API calls.
+  2. Replacing `null` with an empty object `{}` as the body data parameter for `/auth/refresh`, `/auth/logout`, and `/auth/logout-all`. This ensures valid JSON payload serialization, avoiding Express parser exceptions.
+  No changes were made to backend cookie settings, SameSite, Secure, or Domain, keeping security intact.
 
 ---
 
 ## 2. Technical Evidence & Diagnostic Findings
 
-### Request #1 (The Successful Path)
-During request calls where the client configuration correctly attached credentials, our backend diagnostics logged:
-```
-  --- REFRESH ENDPOINT DIAGNOSTICS ---
-  HEADERS COOKIE: refreshToken=eb59...fa96 (length: 80); Max-Age=604800; Path=/; Expires=Wed, 22 Jul 2026 15:19:28 GMT; HttpOnly; SameSite=Lax
-  PARSED COOKIES KEYS: [ 'refreshToken', 'Max-Age', 'Path', 'Expires', 'SameSite' ]
-  PARSED COOKIES REFRESH TOKEN: eb59...fa96 (length: 80)
-  ORIGIN: https://alpha.flowship.site
-  HOST: alpha-api.flowship.site
-  REFERER: https://alpha.flowship.site/dashboard
-  --------------------------------------
-```
-- **Analysis:** This proves that `cookieParser` works perfectly, CORS is completely configured to accept credentials, Nginx is passing headers unchanged, and the browser has the cookie.
-
-### Request #2 (The Failing Path)
-During retries or secondary refresh requests without explicit credentials, our backend diagnostics logged:
+### Case A: The Inconsistent Credentials Path (401 Error)
+When a request was fired without explicit credentials, our backend diagnostics logged:
 ```
   --- REFRESH ENDPOINT DIAGNOSTICS ---
   HEADERS COOKIE: Undefined/Missing
@@ -38,16 +30,23 @@ During retries or secondary refresh requests without explicit credentials, our b
   REFERER: https://alpha.flowship.site/dashboard
   --------------------------------------
 ```
-- **Analysis:** This proves that the backend, Nginx, and cookie-parser are **not** at fault. Rather, the browser is intentionally omitting the cookie because the specific request configuration sent by the client did not have `withCredentials` active.
+- **Analysis:** This proved that the browser omitted the cookie header. Our investigation found that while the main `apiClient` instance has `withCredentials: true`, retried/queued requests in the response interceptor did not explicitly attach `withCredentials` to the retry config, causing them to inherit inconsistent defaults in some client engines.
+
+### Case B: The Invalid JSON Payload Path (400 Error)
+When a request was fired with `null` as the body, the Express logger outputted:
+```
+  400 - Unexpected token 'n', "null" is not valid JSON
+```
+- **Analysis:** This error occurs because `apiClient.post('/v1/auth/refresh', null)` is serialized to the string `"null"`. Under the `application/json` Content-Type header, Express's `express.json()` middleware intercepts this and tries to parse `"null"`. In standard JSON schemas and strict parsers, this triggers a parser error. The request never reaches the route controller.
 
 ---
 
 ## 3. The Unification Fix
 
-To ensure 100% consistent credential sharing, we unified the client configuration across all features:
+To ensure 100% consistent credential sharing and valid JSON serialization, we unified the client configuration across all features:
 
 ### File 1: `edu-core-web/src/features/auth/services/authApi.js`
-We modified all authentication endpoint configurations to explicitly declare `withCredentials: true`, guaranteeing that Axios never defaults or merges them incorrectly:
+We modified all authentication endpoint configurations to explicitly declare `withCredentials: true` and replaced `null` with `{}`:
 ```javascript
 export const authApi = {
   login: async (credentials) => {
@@ -58,21 +57,21 @@ export const authApi = {
   },
 
   refresh: async () => {
-    const response = await apiClient.post('/v1/auth/refresh', null, {
+    const response = await apiClient.post('/v1/auth/refresh', {}, {
       withCredentials: true,
     });
     return response.data;
   },
 
   logout: async () => {
-    const response = await apiClient.post('/v1/auth/logout', null, {
+    const response = await apiClient.post('/v1/auth/logout', {}, {
       withCredentials: true,
     });
     return response.data;
   },
 
   logoutAll: async () => {
-    const response = await apiClient.post('/v1/auth/logout-all', null, {
+    const response = await apiClient.post('/v1/auth/logout-all', {}, {
       withCredentials: true,
     });
     return response.data;
@@ -126,6 +125,6 @@ And inside the response interceptor:
 1. **Local Test Runs:**
    Verified that all integration tests (`tests/integration/auth.test.js`) are passing successfully.
 2. **Production Validation:**
-   Once deployed, the PM2 log stream will show that **every** incoming refresh request contains the `HEADERS COOKIE` and successfully gets parsed into `PARSED COOKIES REFRESH TOKEN`, yielding a successful `200 OK` token rotation.
-3. **Logout & Session Revocation:**
-   Verify that logging out successfully clears cookies and terminates all active sessions.
+   Once deployed:
+   - **No 400 JSON Parse Errors:** Requests will carry `{}` as their body payload, parsed cleanly by Express's body-parser.
+   - **No 401 Cookie Missing Errors:** Every incoming refresh request will carry the `HEADERS COOKIE` and successfully get parsed into `PARSED COOKIES REFRESH TOKEN`, yielding a successful `200 OK` token rotation.
