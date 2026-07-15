@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from 'react';
 
 import { authApi } from './services/authApi';
@@ -16,6 +17,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Store accessToken in a ref to avoid re-injecting auth functions on token changes
+  const accessTokenRef = useRef(accessToken);
+  useEffect(() => {
+    accessTokenRef.current = accessToken;
+  }, [accessToken]);
+
+  const getAccessToken = useCallback(() => accessTokenRef.current, []);
 
   const login = async (credentials) => {
     const { data } = await authApi.login(credentials);
@@ -52,8 +61,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    injectAuthFunctions(refresh, () => accessToken);
-  }, [refresh, accessToken]);
+    injectAuthFunctions(refresh, getAccessToken);
+  }, [refresh, getAccessToken]);
 
   useEffect(() => {
     const initAuth = async () => {

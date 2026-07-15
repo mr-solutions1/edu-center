@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { isRefreshing, getRefreshPromise } from './refreshManager';
 
 const getBaseURL = () => {
   const viteApiUrl = import.meta.env.VITE_API_BASE_URL;
@@ -68,20 +69,6 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-let isRefreshing = false;
-let failedQueue = [];
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
-
 // Response interceptor for error handling and silent refresh
 apiClient.interceptors.response.use(
   (response) => {
@@ -115,38 +102,36 @@ apiClient.interceptors.response.use(
       !originalRequest.url?.includes('/auth/refresh') &&
       refreshAuthToken
     ) {
-      console.log(`[INTERCEPTOR_401] Intercepted 401 for ${originalRequest.url}. isRefreshing: ${isRefreshing}`);
-      if (isRefreshing) {
-        console.log(`[INTERCEPTOR_QUEUED] Queuing request for ${originalRequest.url}`);
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            console.log(`[INTERCEPTOR_QUEUED_RESOLVED] Retrying queued request for ${originalRequest.url}`);
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            originalRequest.withCredentials = true; // explicitly enforce credentials on queued retried requests
-            return apiClient(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
+      const activeRefreshing = isRefreshing();
+      console.log(`[INTERCEPTOR_401] Intercepted 401 for ${originalRequest.url}. activeRefreshing: ${activeRefreshing}`);
+
+      if (activeRefreshing) {
+        console.log(`[INTERCEPTOR_QUEUED] A refresh is already active. Waiting for existing refresh promise...`);
+        const activePromise = getRefreshPromise();
+        if (activePromise) {
+          return activePromise
+            .then((token) => {
+              console.log(`[INTERCEPTOR_QUEUED_RESOLVED] Retrying queued request for ${originalRequest.url}`);
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              originalRequest.withCredentials = true;
+              return apiClient(originalRequest);
+            })
+            .catch((err) => Promise.reject(err));
+        }
       }
 
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        console.log(`[INTERCEPTOR_TRIGGER_REFRESH] Triggering token refresh...`);
+        console.log(`[INTERCEPTOR_TRIGGER_REFRESH] Triggering token refresh via unified refreshAuthToken...`);
         const newToken = await refreshAuthToken();
-        console.log(`[INTERCEPTOR_REFRESH_SUCCESS] Successfully refreshed token. Processing queue...`);
-        processQueue(null, newToken);
+        console.log(`[INTERCEPTOR_REFRESH_SUCCESS] Successfully refreshed token.`);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        originalRequest.withCredentials = true; // explicitly enforce credentials on retried requests
+        originalRequest.withCredentials = true;
         return apiClient(originalRequest);
       } catch (refreshError) {
         console.error(`[INTERCEPTOR_REFRESH_FAILED] Token refresh failed.`, refreshError);
-        processQueue(refreshError, null);
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 

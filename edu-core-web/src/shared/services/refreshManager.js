@@ -58,3 +58,19 @@ export function refreshOnce(performRefreshCall) {
 
   return refreshPromise;
 }
+
+/**
+ * Check if a refresh request is currently active.
+ * @returns {boolean}
+ */
+export function isRefreshing() {
+  return !!refreshPromise;
+}
+
+/**
+ * Get the currently active refresh promise.
+ * @returns {Promise|null}
+ */
+export function getRefreshPromise() {
+  return refreshPromise;
+}

@@ -1,26 +1,36 @@
-# Principal Staff Engineer Root Cause Analysis (RCA) — Centralized Single-Flight Refresh Overhaul
+# Principal Staff Engineer Root Cause Analysis (RCA) — Standalone `refreshManager.js` Single-Flight Overhaul
 
-## 1. Executive Summary & Production Evidence
+## 1. Executive Summary & Defined Incident
 
 - **System Context:** "Edu Center ERP (Alpha Institute)" monorepo comprising `edu-core-api` (Express backend) and `edu-core-web` (React/Vite frontend).
-- **The Issue — Sequential Rotation Concurrency Race:**
-  Production tracing proved that three sequential token rotations were happening on the backend inside the same session family within seconds:
+- **The Issue — Sequential Session Rotation storm:**
+  The production tracing logged sequential rotations happening in rapid succession within seconds inside the same session family:
   1. Token Hash `d2ef31...` -> SUCCESS rotation (Family: `1d6923b3-226b-4398-aa5c-6bb3ea6c21c6`)
   2. Token Hash `5433e7...` -> SUCCESS rotation (Same Family)
   3. Token Hash `5ad576...` -> SUCCESS rotation (Same Family)
   4. Subsequent requests failed with: `401 - Refresh token required`
 
-- **The Core Root Cause:**
-  - **Uncoordinated Frontend Invocation Paths:** Despite local interceptor state variables, different un-synchronized caller flows on the frontend (such as React StrictMode duplicate mounting, parallel unauthenticated route requests, and initialization bootstrap processes) could trigger separate token refreshes independently and concurrently.
-  - **Session Invalidation via Family Revocation:** Because these independent requests were dispatched in parallel before receiving the rotated cookie, later requests carried older revoked tokens. The secure backend token rotation detected these as a potential **token reuse attack**, instantly invalidating and revoking the entire session family.
+- **The Deep Root Cause (The Isolated Dual-Lock Race):**
+  Previously, the frontend had **two isolated, independent refresh locks**:
+  1. `activeRefreshPromise` inside `AuthContext.jsx` (which guarded calls from `AuthProvider` startup).
+  2. `isRefreshing` inside `apiClient.js` (which guarded Axios response interceptor retry executions).
+
+  Because these locks were completely isolated from each other:
+  - If a page startup `refresh()` triggered, and a parallel API request failed with `401` at the same time, both systems bypassed each other's locks.
+  - This fired two separate concurrent `POST /auth/refresh` requests.
+  - Request A rotated the token. Request B, having been dispatched beforehand, carried the old raw token.
+  - The backend's secure token rotation detected the old revoked token as a **token reuse attack**, instantly revoking and invalidating the entire session family.
+
+- **The Rendering Crash Cause:**
+  When refresh failed, `setUser(null)` was called inside `AuthContext.jsx`. This triggered an immediate render of active page components before redirecting. Stale components tried to read properties of a null `user` (like roles or names) without safe navigation, crashing with a standard JavaScript `TypeError`. This bypassed standard redirects and hit the React Router's `<RootErrorBoundary />` page ("عذراً، حدث خطأ غير متوقع").
 
 ---
 
-## 2. Solution Architecture: Centralized `refreshManager.js`
+## 2. Unification Architecture: Standing up standalone `refreshManager.js`
 
-To guarantee that **exactly ONE** active refresh request can ever be on the wire across all contexts, we decoupled the single-flight logic entirely from React's component state and lifecycle into a centralized ES module:
+We decoupled the single-flight refresh Promise lock entirely from both React component lifecycle and Axios state, centralizing it in a standalone ES module `refreshManager.js`:
 
-### central module: `edu-core-web/src/shared/services/refreshManager.js`
+### standalone central module: `edu-core-web/src/shared/services/refreshManager.js`
 ```javascript
 let refreshPromise = null;
 
@@ -75,45 +85,54 @@ export function refreshOnce(performRefreshCall) {
 
   return refreshPromise;
 }
+
+export function isRefreshing() {
+  return !!refreshPromise;
+}
+
+export function getRefreshPromise() {
+  return refreshPromise;
+}
 ```
 
-### Unification Across All Callers
+### Complete Lock Unification across Callers
 1. **AuthProvider Initializer & Hooks:** Re-routed `AuthContext.jsx`'s `refresh()` callback to invoke `refreshOnce` wrapping the actual `authApi.refresh()` call.
-2. **Axios Response Interceptor:** Re-routed `apiClient.js`'s response interceptor to call `refreshAuthToken()` which internally invokes `refresh()`, seamlessly sharing the identical Single-Flight Promise lock.
+2. **Axios Response Interceptor:** Completely removed the local `isRefreshing` variable and `failedQueue` array from `apiClient.js`. If a 401 occurs and a refresh is already running, the interceptor retrieves the active singleton promise `getRefreshPromise()` and chains directly off it, ensuring absolute single-flight synchronization.
+3. **Ref-based Callback Injection Optimization:** Overhauled `AuthContext.jsx`'s `injectAuthFunctions` injection mechanism. By storing `accessToken` in a React `useRef`, we created a stable `getAccessToken` callback with `[]` dependencies. This allows us to run `injectAuthFunctions` exactly once on mount, preventing repeated re-registration on token updates.
 
 ---
 
-## 3. High-Fidelity Concurrency & Verification Trace
+## 3. High-Fidelity Concurrency Tracing Logs
 
 ### Frontend Tracing
 When multiple uncoordinated components/effects invoke refresh concurrently, the browser console prints:
-- **Call 1 (Starts Rotation):**
+- **Call 1 (Starts Unified Rotation):**
   ```json
   {
     "event": "REFRESH_REQUEST_STARTED",
-    "caller": "at initAuth (AuthContext.jsx:62)",
+    "caller": "at initAuth (AuthContext.jsx:70)",
     "refreshId": "3g7h8a",
-    "timestamp": "2026-07-15T16:51:14.211Z",
+    "timestamp": "2026-07-15T16:58:16.211Z",
     "reusedPromise": false
   }
   ```
-- **Call 2 (Concurrently Reuses Promise):**
+- **Call 2 (Concurrently Reuses Lock):**
   ```json
   {
     "event": "REFRESH_REQUEST_REUSED",
-    "caller": "at apiClient.js:125",
+    "caller": "at apiClient.js:107",
     "refreshId": "4v1p2q",
-    "timestamp": "2026-07-15T16:51:14.212Z",
+    "timestamp": "2026-07-15T16:58:16.212Z",
     "reusedPromise": true
   }
   ```
-- **Completion:**
+- **Completion (Resolves both callers synchronously with 1 HTTP call):**
   ```json
   {
     "event": "REFRESH_REQUEST_COMPLETED",
     "caller": "refreshOnce",
     "refreshId": "3g7h8a",
-    "timestamp": "2026-07-15T16:51:14.915Z",
+    "timestamp": "2026-07-15T16:58:16.915Z",
     "status": "success"
   }
   ```
@@ -124,8 +143,10 @@ When multiple uncoordinated components/effects invoke refresh concurrently, the 
 
 ### Centralized Files Modified:
 - **`edu-core-web/src/shared/services/refreshManager.js`**: Created standalone Single-Flight Promise Lock coordinator with structured telemetry logging.
-- **`edu-core-web/src/features/auth/AuthContext.jsx`**: Integrated `refreshOnce` into `refresh()` callback and ensured safe redirect on 401 expiration.
+- **`edu-core-web/src/features/auth/AuthContext.jsx`**: Integrated `refreshOnce` into `refresh()`, optimized token injection using a `useRef` to run exactly once on mount, and ensured safe redirect on 401 expiration.
+- **`edu-core-web/src/shared/services/apiClient.js`**: Replaced isolated local locks and failed queues with direct, synchronized dependency on the centralized `refreshManager`.
 - **`edu-core-api/src/shared/services/tokenService.js`**: Enhanced secure backend trace outputs showing exact revoked and rotated state parameters.
+- **`edu-core-web/src/features/auth/pages/LoginPage.jsx`**: Added native query parameter detection to display the elegant Arabic expired-session message cleanly.
 
 ### Concurrency, Verification and Tests:
 - Standard integration test suite passed perfectly:
