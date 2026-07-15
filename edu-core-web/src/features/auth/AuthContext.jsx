@@ -69,6 +69,9 @@ export const AuthProvider = ({ children }) => {
     const { data } = await authApi.login(credentials);
     setUser(data.user);
     setAccessToken(data.accessToken);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('flowship_logged_in', 'true');
+    }
     broadcastLogin();
     return data.user;
   };
@@ -79,6 +82,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       setAccessToken(null);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('flowship_logged_in');
+      }
       broadcastLogout();
     }
   }, []);
@@ -88,10 +94,16 @@ export const AuthProvider = ({ children }) => {
       const { data } = await authApi.refresh(src, instanceId);
       setUser(data.user);
       setAccessToken(data.accessToken);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('flowship_logged_in', 'true');
+      }
       return data.accessToken;
     }, source).catch((error) => {
       setUser(null);
       setAccessToken(null);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('flowship_logged_in');
+      }
 
       // Safely redirect to login without crashing the frontend render tree
       if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
@@ -123,6 +135,23 @@ export const AuthProvider = ({ children }) => {
         } finally {
           setIsLoading(false);
         }
+        return;
+      }
+
+      // Check if user has previously logged in. If not, skip silent refresh for immediate rendering.
+      const hasLoggedInFlag = typeof window !== 'undefined' &&
+        window.localStorage &&
+        window.localStorage.getItem('flowship_logged_in') === 'true';
+
+      if (!hasLoggedInFlag) {
+        console.info('[EVIDENCE_TRACE] ' + JSON.stringify({
+          traceEvent: 'INIT_AUTH_SKIPPED_ANONYMOUS',
+          timestamp: new Date().toISOString(),
+          perfTimeMs: performance.now(),
+          tabId: getTabId(),
+        }, null, 2));
+        hasBootstrapped = true;
+        setIsLoading(false);
         return;
       }
 

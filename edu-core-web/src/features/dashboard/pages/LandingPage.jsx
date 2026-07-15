@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import logoAlpha from '@/assets/logo_alpha.jpeg';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
+import { Input } from '@/shared/components/ui/input';
+import { Label } from '@/shared/components/ui/label';
 
 const LandingPage = () => {
   const navigate = useNavigate();
