@@ -1,4 +1,13 @@
 let refreshPromise = null;
+let lastRefreshTime = 0;
+
+/**
+ * Get the timestamp of the last successful refresh.
+ * @returns {number}
+ */
+export function getLastRefreshTime() {
+  return lastRefreshTime;
+}
 
 /**
  * Centrally coordinates all token refresh requests to guarantee exactly one
@@ -31,7 +40,8 @@ export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
         'X-Refresh-Instance': refreshId,
       },
       callerFunction: 'refreshOnce',
-      componentName: source === 'AuthContextInit' ? 'AuthProvider' : 'AxiosInterceptor',
+      componentName:
+        source === 'AuthContextInit' ? 'AuthProvider' : 'AxiosInterceptor',
       reusedPromise: true,
     });
     return refreshPromise;
@@ -52,12 +62,14 @@ export function refreshOnce(performRefreshCall, source = 'Other', instanceId) {
       'X-Refresh-Instance': refreshId,
     },
     callerFunction: 'refreshOnce',
-    componentName: source === 'AuthContextInit' ? 'AuthProvider' : 'AxiosInterceptor',
+    componentName:
+      source === 'AuthContextInit' ? 'AuthProvider' : 'AxiosInterceptor',
     reusedPromise: false,
   });
 
   refreshPromise = performRefreshCall(source, refreshId)
     .then((result) => {
+      lastRefreshTime = Date.now();
       console.info({
         event: 'REFRESH_REQUEST_COMPLETED',
         timestamp: new Date().toISOString(),

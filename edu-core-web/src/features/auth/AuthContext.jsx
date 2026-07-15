@@ -26,10 +26,19 @@ export const AuthProvider = ({ children }) => {
 
   const getAccessToken = useCallback(() => accessTokenRef.current, []);
 
+  // Store user in a ref to avoid re-injecting auth functions on user changes
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  const getCurrentUser = useCallback(() => userRef.current, []);
+
   const login = async (credentials) => {
     const { data } = await authApi.login(credentials);
     setUser(data.user);
     setAccessToken(data.accessToken);
+    localStorage.setItem('flowship_logged_in', 'true');
     return data.user;
   };
 
@@ -39,6 +48,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       setAccessToken(null);
+      localStorage.removeItem('flowship_logged_in');
     }
   }, []);
 
@@ -47,13 +57,18 @@ export const AuthProvider = ({ children }) => {
       const { data } = await authApi.refresh(src, instanceId);
       setUser(data.user);
       setAccessToken(data.accessToken);
+      localStorage.setItem('flowship_logged_in', 'true');
       return data.accessToken;
     }, source).catch((error) => {
       setUser(null);
       setAccessToken(null);
+      localStorage.removeItem('flowship_logged_in');
 
       // Safely redirect to login without crashing the frontend render tree
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+      if (
+        window.location.pathname !== '/login' &&
+        window.location.pathname !== '/'
+      ) {
         window.location.href = '/login?expired=true';
       }
       throw error;
@@ -61,12 +76,23 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    injectAuthFunctions(refresh, getAccessToken);
-  }, [refresh, getAccessToken]);
+    injectAuthFunctions(refresh, getAccessToken, getCurrentUser);
+  }, [refresh, getAccessToken, getCurrentUser]);
 
   useEffect(() => {
     const initAuth = async () => {
       console.log(`[AUTH_CONTEXT_INIT_AUTH] Initializing auth...`);
+      const hasSessionFlag =
+        localStorage.getItem('flowship_logged_in') === 'true';
+
+      if (!hasSessionFlag) {
+        console.log(
+          `[AUTH_CONTEXT_INIT_AUTH] No session flag found. Skipping silent refresh.`
+        );
+        setIsLoading(false);
+        return;
+      }
+
       try {
         await refresh('AuthContextInit');
       } catch {
