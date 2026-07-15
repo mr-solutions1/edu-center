@@ -24,6 +24,7 @@ import {
   TabsTrigger,
 } from '@/shared/components/ui/tabs';
 import { formatDate } from '@/shared/utils/date';
+import RbacSettings from '../components/RbacSettings';
 
 const SettingsPage = () => {
   const { user } = useAuth();
@@ -167,10 +168,11 @@ const SettingsPage = () => {
       <PageHeader title="الإعدادات" description="إدارة حسابك وتفضيلات النظام" />
 
       <Tabs defaultValue="account" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8">
+        <TabsList className={`grid w-full mb-8 ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'}`}>
           <TabsTrigger value="account">حسابي</TabsTrigger>
-          <TabsTrigger value="sessions">الجلسات</TabsTrigger>
+          <TabsTrigger value="sessions">الجلسات النشطة</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">المستخدمين</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="rbac">الأدوار والصلاحيات</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="account">
@@ -272,6 +274,12 @@ const SettingsPage = () => {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
+        )}
+
+        {isAdmin && (
+          <TabsContent value="rbac" className="space-y-6">
+            <RbacSettings />
           </TabsContent>
         )}
       </Tabs>

@@ -20,21 +20,70 @@ import StatCard from '@/shared/components/StatCard/StatCard';
 import { Button } from '@/shared/components/ui/button';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 
+import StudentDashboard from '../components/StudentDashboard';
+import ParentDashboard from '../components/ParentDashboard';
+
 const DashboardPage = () => {
   const { user } = useAuth();
 
   const isTeacher = user?.role === 'TEACHER';
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT';
+  const isStudent = user?.role === 'STUDENT';
+  const isParent = user?.role === 'PARENT';
+
+  // Customizable Widgets States
+  const storageKey = `dashboard_widgets_${user?.id || 'guest'}`;
+  const defaultWidgets = {
+    students: true,
+    teachers: true,
+    lessons: true,
+    revenue: true,
+  };
+
+  const [activeWidgets, setActiveWidgets] = useState(() => {
+    const saved = localStorage.getItem(storageKey);
+    return saved ? JSON.parse(saved) : defaultWidgets;
+  });
+
+  const [isCustomizing, setIsCustomizing] = useState(false);
+
+  const toggleWidget = (key) => {
+    const updated = { ...activeWidgets, [key]: !activeWidgets[key] };
+    setActiveWidgets(updated);
+    localStorage.setItem(storageKey, JSON.stringify(updated));
+    toast.success('تم تحديث إعداد التخطيط الشخصي للوحة التحكم');
+  };
+
+  // Unified redirection for Student Portal
+  if (isStudent) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="بوابة الطالب" description={`أهلاً بك مجدداً، ${user?.firstName} ${user?.lastName}`} />
+        <StudentDashboard />
+      </div>
+    );
+  }
+
+  // Unified redirection for Parent Portal
+  if (isParent) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="بوابة ولي الأمر" description={`أهلاً بك مجدداً، ${user?.firstName} ${user?.lastName}`} />
+        <ParentDashboard />
+      </div>
+    );
+  }
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: dashboardApi.getOverview,
+    enabled: !isStudent && !isParent,
   });
 
   const { data: logsData, isLoading: logsLoading } = useQuery({
     queryKey: ['recent-activity'],
     queryFn: () => activityLogApi.getLogs({ limit: 5 }),
-    enabled: !!isAdmin,
+    enabled: !!isAdmin && !isStudent && !isParent,
   });
 
   if (isError) {
@@ -45,11 +94,72 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-8 text-right" dir="rtl">
+
+      {/* Page Header with customized layout builders */}
       <PageHeader
         title="لوحة التحكم"
         description={`أهلاً بك مجدداً، ${user?.firstName} ${user?.lastName}`}
-      />
+      >
+        {isAdmin && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsCustomizing(!isCustomizing)}
+            className="rounded-xl text-xs font-bold border-secondary/30 text-secondary"
+          >
+            {isCustomizing ? 'إغلاق التخصيص' : 'تخصيص الـ Widgets'}
+          </Button>
+        )}
+      </PageHeader>
 
+      {/* Mini Widget Builder Drawer/Toggle Area */}
+      {isAdmin && isCustomizing && (
+        <Card className="border border-secondary/20 shadow-md bg-secondary/5 rounded-3xl p-4">
+          <CardHeader className="p-0 pb-3 border-b border-secondary/10">
+            <CardTitle className="text-xs font-black text-secondary">إعدادات تخصيص وترتيب بطاقات الأداء</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 pt-3 flex flex-wrap gap-4 text-xs font-bold text-slate-700">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={activeWidgets.students}
+                onChange={() => toggleWidget('students')}
+                className="h-4 w-4 rounded accent-secondary"
+              />
+              إجمالي الطلاب
+            </label>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={activeWidgets.teachers}
+                onChange={() => toggleWidget('teachers')}
+                className="h-4 w-4 rounded accent-secondary"
+              />
+              إجمالي المعلمين
+            </label>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={activeWidgets.lessons}
+                onChange={() => toggleWidget('lessons')}
+                className="h-4 w-4 rounded accent-secondary"
+              />
+              الحصص النشطة
+            </label>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={activeWidgets.revenue}
+                onChange={() => toggleWidget('revenue')}
+                className="h-4 w-4 rounded accent-secondary"
+              />
+              الإيرادات المالية
+            </label>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Render StatCards based on layout builder settings */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -57,28 +167,28 @@ const DashboardPage = () => {
           ))
         ) : (
           <>
-            {isAdmin && stats.totalStudents !== undefined && (
+            {isAdmin && activeWidgets.students && stats.totalStudents !== undefined && (
               <StatCard
                 label="إجمالي الطلاب"
                 value={stats.totalStudents}
                 icon={Users}
               />
             )}
-            {isAdmin && stats.totalTeachers !== undefined && (
+            {isAdmin && activeWidgets.teachers && stats.totalTeachers !== undefined && (
               <StatCard
                 label="إجمالي المعلمين"
                 value={stats.totalTeachers}
                 icon={GraduationCap}
               />
             )}
-            {isAdmin && stats.activeLessons !== undefined && (
+            {isAdmin && activeWidgets.lessons && stats.activeLessons !== undefined && (
               <StatCard
                 label="الحصص النشطة"
                 value={stats.activeLessons}
                 icon={Calendar}
               />
             )}
-            {isAdmin && stats.monthlyRevenue !== undefined && (
+            {isAdmin && activeWidgets.revenue && stats.monthlyRevenue !== undefined && (
               <StatCard
                 label="الإيرادات الشهرية"
                 value={`KD ${stats.monthlyRevenue}`}

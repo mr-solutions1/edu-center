@@ -1,3 +1,11 @@
+import mongoose from 'mongoose';
+import { multiTenantPlugin } from './shared/mongoose/multiTenantPlugin.js';
+mongoose.plugin(multiTenantPlugin);
+
+// Register Global Domain Event Listeners on startup
+import { registerDomainEventListeners } from './shared/services/eventListeners.js';
+registerDomainEventListeners();
+
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -7,13 +15,15 @@ import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import mongoose from 'mongoose';
 import morgan from 'morgan';
 
 import { env } from './config/env.js';
 import activityLogRoutes from './modules/activity-log/activityLog.routes.js';
 import { correlationIdMiddleware } from './shared/middlewares/correlation.js';
+import aiRoutes from './modules/auth/ai.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
+import crmRoutes from './modules/crm/lead.routes.js';
+import inboxRoutes from './modules/inbox/inbox.routes.js';
 import courseRoutes from './modules/courses/course.routes.js';
 import groupRoutes from './modules/groups/group.routes.js';
 import lessonRoutes from './modules/lessons/lesson.routes.js';
@@ -169,8 +179,68 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Advanced Performance and SaaS Health Monitoring Dashboard Endpoint
+app.get('/health/advanced', async (req, res) => {
+  const dbStates = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting',
+  };
+
+  try {
+    const Tenant = mongoose.model('Tenant');
+    const User = mongoose.model('User');
+    const AuditTrail = mongoose.model('AuditTrail');
+
+    const [totalTenants, totalUsers, totalAuditLogs] = await Promise.all([
+      Tenant.countDocuments({}),
+      User.countDocuments({ isActive: true }),
+      AuditTrail.countDocuments({}),
+    ]);
+
+    const memory = process.memoryUsage();
+
+    res.status(200).json({
+      success: true,
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      pid: process.pid,
+      system: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        cpuUsage: process.cpuUsage(),
+        memoryUsage: {
+          heapTotalMB: (memory.heapTotal / 1024 / 1024).toFixed(2),
+          heapUsedMB: (memory.heapUsed / 1024 / 1024).toFixed(2),
+          rssMB: (memory.rss / 1024 / 1024).toFixed(2),
+        },
+      },
+      database: {
+        status: dbStates[mongoose.connection.readyState] || 'unknown',
+        poolSize: mongoose.connection.getClient()?.options?.maxPoolSize || 10,
+      },
+      saasMetrics: {
+        activeTenants: totalTenants,
+        activeAccounts: totalUsers,
+        auditTrailLogsCount: totalAuditLogs,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'فشل تجميع المقاييس المتقدمة للنظام',
+      error: err.message,
+    });
+  }
+});
+
 // 9. API Routes Integration
+app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/crm', crmRoutes);
+app.use('/api/v1/inbox', inboxRoutes);
 app.use('/api/v1/courses', courseRoutes);
 app.use('/api/v1/groups', groupRoutes);
 app.use('/api/v1/reports', reportsRoutes);
@@ -196,16 +266,16 @@ app.use((err, req, res, _next) => {
 
   const response = {
     success: false,
-    error: {
-      code: err.code || 'INTERNAL_ERROR',
-      message: err.message || 'حدث خطأ داخلي في الخادم',
+    message: err.message || 'حدث خطأ داخلي في الخادم',
+    data: null,
+    meta: {
       correlationId: req.correlationId,
     },
+    errors: {
+      code: err.code || 'INTERNAL_ERROR',
+      details: err.details || null,
+    },
   };
-
-  if (err.details) {
-    response.error.details = err.details;
-  }
 
   // Log error
   if (err.statusCode >= 500) {

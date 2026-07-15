@@ -38,6 +38,31 @@ const userSchema = new mongoose.Schema(
       enum: Object.values(UserRole),
       default: UserRole.RECEPTIONIST,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: false, // Optional for retro-compatibility, required in SaaS operations
+    },
+    branchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      required: false,
+    },
+    accessibleBranches: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Branch',
+      },
+    ],
+    activeBranch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+    },
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+      required: false,
+    },
     avatarUrl: {
       type: String,
       default: null,
@@ -71,6 +96,9 @@ const userSchema = new mongoose.Schema(
 
 // Indexes
 userSchema.index({ role: 1 });
+userSchema.index({ tenantId: 1 });
+userSchema.index({ tenantId: 1, email: 1 });
+userSchema.index({ tenantId: 1, branchId: 1 });
 
 // Pre-save middleware to hash password
 userSchema.pre('save', async function (next) {

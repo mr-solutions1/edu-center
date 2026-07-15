@@ -9,6 +9,8 @@ import {
   Settings,
   LogOut,
   BookOpen,
+  TrendingUp,
+  Mail,
 } from 'lucide-react';
 import React from 'react';
 import { NavLink } from 'react-router-dom';
@@ -22,7 +24,13 @@ const menuItems = [
     icon: LayoutDashboard,
     label: 'لوحة التحكم',
     path: '/',
-    roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'TEACHER'],
+    roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'TEACHER', 'STUDENT', 'PARENT'],
+  },
+  {
+    icon: Mail,
+    label: 'صندوق الرسائل',
+    path: '/inbox',
+    roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'TEACHER', 'STUDENT', 'PARENT'],
   },
   {
     icon: UserSquare2,
@@ -40,6 +48,12 @@ const menuItems = [
     icon: Users,
     label: 'الطلاب',
     path: '/students',
+    roles: ['ADMIN', 'RECEPTIONIST'],
+  },
+  {
+    icon: TrendingUp,
+    label: 'إدارة العملاء CRM',
+    path: '/crm',
     roles: ['ADMIN', 'RECEPTIONIST'],
   },
   {

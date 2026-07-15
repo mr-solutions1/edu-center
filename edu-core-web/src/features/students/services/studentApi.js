@@ -30,4 +30,14 @@ export const studentApi = {
     const response = await apiClient.get('/v1/students/my-students');
     return response.data;
   },
+
+  getStudentDashboard: async () => {
+    const response = await apiClient.get('/v1/students/portal/student-dashboard');
+    return response.data;
+  },
+
+  getParentDashboard: async () => {
+    const response = await apiClient.get('/v1/students/portal/parent-dashboard');
+    return response.data;
+  },
 };

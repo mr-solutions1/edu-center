@@ -2,6 +2,8 @@ import React from 'react';
 
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import AiAssistantWidget from '../../shared/components/AiAssistantWidget/AiAssistantWidget';
+import CommandPalette from '../../shared/components/CommandPalette/CommandPalette';
 
 const AppShell = ({ children }) => {
   return (
@@ -13,6 +15,8 @@ const AppShell = ({ children }) => {
           {children}
         </main>
       </div>
+      <AiAssistantWidget />
+      <CommandPalette />
     </div>
   );
 };

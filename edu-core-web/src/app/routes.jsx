@@ -17,6 +17,12 @@ const DashboardPage = lazy(
 const StudentsListPage = lazy(
   () => import('../features/students/pages/StudentsListPage')
 );
+const CrmPage = lazy(
+  () => import('../features/students/pages/CrmPage')
+);
+const InboxPage = lazy(
+  () => import('../features/dashboard/pages/InboxPage')
+);
 const TeacherStudentsPage = lazy(
   () => import('../features/students/pages/TeacherStudentsPage')
 );
@@ -85,6 +91,38 @@ const router = createBrowserRouter([
                   }
                 >
                   <DashboardPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/inbox',
+            element: (
+              <ProtectedRoute>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Inbox...
+                    </div>
+                  }
+                >
+                  <InboxPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/crm',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'RECEPTIONIST']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading CRM...
+                    </div>
+                  }
+                >
+                  <CrmPage />
                 </Suspense>
               </ProtectedRoute>
             ),

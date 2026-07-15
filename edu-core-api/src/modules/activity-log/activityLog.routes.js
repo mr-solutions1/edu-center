@@ -15,4 +15,10 @@ router.get(
   activityLogController.getActivityLogs
 );
 
+router.get(
+  '/audit',
+  authorize(UserRole.ADMIN),
+  activityLogController.getAuditTrails
+);
+
 export default router;

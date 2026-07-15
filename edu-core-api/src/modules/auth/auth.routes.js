@@ -11,11 +11,21 @@ router.post('/login', validate(loginSchema), authController.login);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
 
+import * as rbacController from './rbac.controller.js';
+import { authorize } from '../../shared/middlewares/authorize.js';
+
 // Protected routes
 router.use(authenticate);
 router.post('/logout-all', authController.logoutAll);
 router.get('/me', authController.me);
 router.get('/sessions', authController.getSessions);
 router.delete('/sessions/:sessionId', authController.revokeSession);
+
+// Dynamic RBAC Management (Admin only)
+router.get('/permissions', authorize('ADMIN'), rbacController.getPermissions);
+router.get('/roles', authorize('ADMIN'), rbacController.getRoles);
+router.post('/roles', authorize('ADMIN'), rbacController.createRole);
+router.patch('/roles/:id', authorize('ADMIN'), rbacController.updateRole);
+router.delete('/roles/:id', authorize('ADMIN'), rbacController.deleteRole);
 
 export default router;

@@ -35,4 +35,29 @@ export const authApi = {
     const response = await apiClient.delete(`/v1/auth/sessions/${sessionId}`);
     return response.data;
   },
+
+  getPermissions: async () => {
+    const response = await apiClient.get('/v1/auth/permissions');
+    return response.data;
+  },
+
+  getRoles: async () => {
+    const response = await apiClient.get('/v1/auth/roles');
+    return response.data;
+  },
+
+  createRole: async (data) => {
+    const response = await apiClient.post('/v1/auth/roles', data);
+    return response.data;
+  },
+
+  updateRole: async (id, data) => {
+    const response = await apiClient.patch(`/v1/auth/roles/${id}`, data);
+    return response.data;
+  },
+
+  deleteRole: async (id) => {
+    const response = await apiClient.delete(`/v1/auth/roles/${id}`);
+    return response.data;
+  },
 };

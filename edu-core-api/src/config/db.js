@@ -24,6 +24,22 @@ export const connectDB = async (retries = 5, delay = 5000) => {
       const conn = await mongoose.connect(env.MONGO_URI, options);
       logger.info(`✅ MongoDB Connected: ${conn.connection.host}`);
 
+      // Run Tenant and Branch Bootstrap
+      try {
+        const { bootstrapTenantAndBranch } = await import('../modules/tenants/tenantBootstrap.js');
+        await bootstrapTenantAndBranch();
+      } catch (bootErr) {
+        logger.error(`⚠️ Tenant/Branch Bootstrap failed on startup: ${bootErr.message}`);
+      }
+
+      // Run Versioned Database Migrations
+      try {
+        const { runDatabaseMigrations } = await import('../shared/mongoose/migrationRunner.js');
+        await runDatabaseMigrations();
+      } catch (migrationErr) {
+        logger.error(`⚠️ Database migrations runner failed on startup: ${migrationErr.message}`);
+      }
+
       // Simplified connection monitoring
       mongoose.connection.on('error', (err) => {
         logger.error(`❌ MongoDB connection error: ${err}`);
