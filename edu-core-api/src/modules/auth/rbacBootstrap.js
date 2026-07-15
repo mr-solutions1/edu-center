@@ -139,19 +139,20 @@ export const bootstrapRBAC = async (tenantId) => {
     // 2. Ensure roles exist for the given tenant
     if (tenantId) {
       for (const roleDef of DEFAULT_ROLES) {
-        await Role.updateOne(
+        await Role.findOneAndUpdate(
           { tenantId, key: roleDef.key },
           {
-            $setOnInsert: { ...roleDef, tenantId },
-            $set: {
-              name: roleDef.name,
-              description: roleDef.description,
-              permissions: roleDef.permissions
-            }
+            name: roleDef.name,
+            description: roleDef.description,
+            permissions: roleDef.permissions,
+            tenantId   // ensure it's set
           },
           {
             upsert: true,
-            strict: false          // ← Allow tenantId for now
+            new: true,
+            runValidators: true,
+            setDefaultsOnInsert: true,
+            strict: false
           }
         );
       }
