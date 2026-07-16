@@ -10,6 +10,7 @@ import { loginSchema } from '../validations/loginSchema';
 import logoAlpha from '@/assets/logo_alpha.jpeg';
 import BrandedFooter from '@/shared/components/layout/BrandedFooter';
 import BrandedHeader from '@/shared/components/layout/BrandedHeader';
+import ErrorAlert from '@/shared/components/ErrorAlert/ErrorAlert';
 import { Button } from '@/shared/components/ui/button';
 import {
   Card,
@@ -30,7 +31,11 @@ const LoginPage = () => {
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('expired') === 'true') {
-      setError('انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.');
+      setError({
+        title: 'انتهت الجلسة',
+        message: 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.',
+        details: [],
+      });
     }
   }, [location]);
 
@@ -50,8 +55,11 @@ const LoginPage = () => {
       navigate(from, { replace: true });
     } catch (err) {
       setError(
-        err.response?.data?.error?.message ||
-          'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.'
+        err.parsed || {
+          title: 'فشل تسجيل الدخول',
+          message: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
+          details: [],
+        }
       );
     }
   };
@@ -81,9 +89,12 @@ const LoginPage = () => {
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-5 px-8">
               {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl font-medium animate-shake">
-                  {error}
-                </div>
+                <ErrorAlert
+                  title={error.title}
+                  message={error.message}
+                  details={error.details}
+                  onDismiss={() => setError(null)}
+                />
               )}
               <div className="space-y-2">
                 <label

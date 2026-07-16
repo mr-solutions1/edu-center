@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { isRefreshing, getRefreshPromise, getTabId } from './refreshManager';
+import { parseApiError } from '../utils/errorParser';
 
 const getBaseURL = () => {
   const viteApiUrl = import.meta.env.VITE_API_BASE_URL;
@@ -106,6 +107,11 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    // Centralized error parsing attached directly to the rejected error object
+    if (error) {
+      error.parsed = parseApiError(error);
+    }
+
     const originalRequest = error.config;
     const currentApiResCount = apiRequestCounter;
 
