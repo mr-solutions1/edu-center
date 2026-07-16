@@ -16,11 +16,11 @@ const teacherSchema = z.object({
   whatsapp: z.string().optional(),
   civilId: z.string().optional(),
   department: z.string().optional(),
-  gender: z.nativeEnum(Gender),
-  hourlyRate: z.coerce.number().min(0),
-  commissionModel: z.nativeEnum(CommissionModel),
-  teacherPercentage: z.coerce.number().min(0).max(1),
-  institutePercentage: z.coerce.number().min(0).max(1),
+  gender: z.nativeEnum(Gender).optional().default(Gender.MALE),
+  hourlyRate: z.coerce.number().min(0).optional().default(0),
+  commissionModel: z.nativeEnum(CommissionModel).optional().default(CommissionModel.SEVENTY_THIRTY),
+  teacherPercentage: z.coerce.number().min(0).max(1).optional().default(0.7),
+  institutePercentage: z.coerce.number().min(0).max(1).optional().default(0.3),
   availability: z
     .object({
       days: z.array(z.string()).default([]),
@@ -64,11 +64,23 @@ const TeacherFormDialog = ({
 
   React.useEffect(() => {
     if (open) {
-      const data = { ...initialData };
-      if (data.hourlyRate !== undefined) {
-        data.hourlyRate = toKWD(data.hourlyRate);
+      if (initialData) {
+        const data = { ...initialData };
+        if (data.hourlyRate !== undefined) {
+          data.hourlyRate = toKWD(data.hourlyRate);
+        }
+        reset(data);
+      } else {
+        reset({
+          userId: '',
+          gender: Gender.MALE,
+          hourlyRate: 0,
+          commissionModel: CommissionModel.SEVENTY_THIRTY,
+          teacherPercentage: 0.7,
+          institutePercentage: 0.3,
+          availability: { days: [], slots: [] },
+        });
       }
-      reset(data);
     }
   }, [open, reset, initialData]);
 
