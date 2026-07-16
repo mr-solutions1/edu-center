@@ -110,10 +110,22 @@ const StudentFormDialog = ({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 text-right" dir="rtl">
           <div className="space-y-2">
             <Label htmlFor="grade">المرحلة الدراسية</Label>
-            <Input id="grade" {...register('grade')} />
+            <select
+              id="grade"
+              {...register('grade')}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="تأسيس">تأسيس</option>
+              <option value="ابتدائي">ابتدائي</option>
+              <option value="متوسط">متوسط</option>
+              <option value="ثانوي">ثانوي</option>
+              <option value="جامعي">جامعي</option>
+              <option value="قدرات">قدرات</option>
+              <option value="تحصيلي">تحصيلي</option>
+            </select>
             {errors.grade && (
               <p className="text-xs text-red-500">{errors.grade.message}</p>
             )}
