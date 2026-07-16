@@ -27,12 +27,12 @@ import { formatDate } from '@/shared/utils/date';
 import RbacSettings from '../components/RbacSettings';
 
 const SettingsPage = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = hasPermission('rbac.manage');
 
   const { data: sessions, isLoading: loadingSessions } = useQuery({
     queryKey: ['sessions'],

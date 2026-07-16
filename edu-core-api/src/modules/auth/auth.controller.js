@@ -61,9 +61,14 @@ export const login = asyncHandler(async (req, res) => {
     userAgent,
   });
 
+  const permissionsAndRole = await authService.getUserPermissionsAndRole(user);
+  const userObj = user.toObject ? user.toObject() : JSON.parse(JSON.stringify(user));
+  userObj.permissions = permissionsAndRole.permissions;
+  userObj.roleDetails = permissionsAndRole.roleDetails;
+
   res.status(200).json({
     success: true,
-    data: { user, accessToken },
+    data: { user: userObj, accessToken },
   });
 });
 
@@ -107,9 +112,14 @@ export const refresh = asyncHandler(async (req, res) => {
       status: 200,
     }, null, 2));
 
+    const permissionsAndRole = await authService.getUserPermissionsAndRole(user);
+    const userObj = user.toObject ? user.toObject() : JSON.parse(JSON.stringify(user));
+    userObj.permissions = permissionsAndRole.permissions;
+    userObj.roleDetails = permissionsAndRole.roleDetails;
+
     res.status(200).json({
       success: true,
-      data: { user, accessToken },
+      data: { user: userObj, accessToken },
     });
   } catch (err) {
     console.error('[BACKEND_REFRESH_TRACE_ERROR] ' + JSON.stringify({
@@ -152,7 +162,12 @@ export const logoutAll = asyncHandler(async (req, res) => {
  */
 export const me = asyncHandler(async (req, res) => {
   const user = await authService.getUserById(req.user.id);
-  res.status(200).json({ success: true, data: user });
+  const permissionsAndRole = await authService.getUserPermissionsAndRole(user);
+  const userObj = user.toObject ? user.toObject() : JSON.parse(JSON.stringify(user));
+  userObj.permissions = permissionsAndRole.permissions;
+  userObj.roleDetails = permissionsAndRole.roleDetails;
+
+  res.status(200).json({ success: true, data: userObj });
 });
 
 /**

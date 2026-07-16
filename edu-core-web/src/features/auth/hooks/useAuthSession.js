@@ -1,7 +1,7 @@
 import { useAuth } from '../AuthContext';
 
 export const useAuthSession = () => {
-  const { user, accessToken, isAuthenticated, isLoading, login, logout } =
+  const { user, accessToken, isAuthenticated, isLoading, login, logout, hasPermission } =
     useAuth();
 
   return {
@@ -11,9 +11,9 @@ export const useAuthSession = () => {
     isLoading,
     login,
     logout,
-    isAdmin: user?.role === 'ADMIN',
-    isReceptionist: user?.role === 'RECEPTIONIST',
-    isTeacher: user?.role === 'TEACHER',
-    isAccountant: user?.role === 'ACCOUNTANT',
+    isAdmin: hasPermission('rbac.manage'),
+    isReceptionist: hasPermission('crm.manage') && !hasPermission('rbac.manage'),
+    isTeacher: hasPermission('lesson.attendance'),
+    isAccountant: hasPermission('payroll.view') && !hasPermission('rbac.manage'),
   };
 };

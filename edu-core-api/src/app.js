@@ -264,6 +264,21 @@ app.use((err, req, res, _next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
+  let responseErrors = {
+    code: err.code || 'INTERNAL_ERROR',
+    details: err.details || null,
+  };
+
+  if (err.code === 'VALIDATION_ERROR' && Array.isArray(err.details)) {
+    const fieldErrors = {};
+    err.details.forEach((detail) => {
+      if (detail.field) {
+        fieldErrors[detail.field] = detail.message;
+      }
+    });
+    responseErrors = fieldErrors;
+  }
+
   const response = {
     success: false,
     message: err.message || 'حدث خطأ داخلي في الخادم',
@@ -271,10 +286,7 @@ app.use((err, req, res, _next) => {
     meta: {
       correlationId: req.correlationId,
     },
-    errors: {
-      code: err.code || 'INTERNAL_ERROR',
-      details: err.details || null,
-    },
+    errors: responseErrors,
   };
 
   // Log error

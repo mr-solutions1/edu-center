@@ -26,7 +26,7 @@ const LoginPage = () => {
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [error, setError] = React.useState(null);
+  const [generalError, setGeneralError] = React.useState(null);
 
   // Declarative navigation: wait until the virtual DOM and Context have fully committed
   // the authenticated user and token state, ensuring zero race conditions on the dashboard first render.
@@ -42,7 +42,7 @@ const LoginPage = () => {
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('expired') === 'true') {
-      setError({
+      setGeneralError({
         title: 'انتهت الجلسة',
         message: 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.',
         details: [],
@@ -53,6 +53,7 @@ const LoginPage = () => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
@@ -60,16 +61,62 @@ const LoginPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      setError(null);
+      setGeneralError(null);
       await login(data);
     } catch (err) {
-      setError(
-        err.parsed || {
-          title: 'فشل تسجيل الدخول',
-          message: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
-          details: [],
+      const responseData = err.response?.data;
+      const serverErrors = responseData?.errors;
+
+      if (serverErrors && typeof serverErrors === 'object') {
+        Object.keys(serverErrors).forEach((key) => {
+          setError(key, {
+            type: 'server',
+            message: serverErrors[key],
+          });
+        });
+        const firstErrorField = Object.keys(serverErrors)[0];
+        if (firstErrorField) {
+          setTimeout(() => {
+            document.getElementById(firstErrorField)?.focus();
+          }, 50);
         }
-      );
+      } else {
+        const errorMessage = responseData?.message || err.message || err.parsed?.message;
+
+        if (
+          errorMessage?.includes('البريد الإلكتروني') ||
+          errorMessage?.includes('المستخدم') ||
+          errorMessage?.includes('الحساب') ||
+          errorMessage?.includes('البريد')
+        ) {
+          setError('email', {
+            type: 'server',
+            message: errorMessage,
+          });
+          setTimeout(() => {
+            document.getElementById('email')?.focus();
+          }, 50);
+        } else if (
+          errorMessage?.includes('كلمة المرور') ||
+          errorMessage?.includes('المرور')
+        ) {
+          setError('password', {
+            type: 'server',
+            message: errorMessage,
+          });
+          setTimeout(() => {
+            document.getElementById('password')?.focus();
+          }, 50);
+        } else {
+          setGeneralError(
+            err.parsed || {
+              title: 'فشل تسجيل الدخول',
+              message: errorMessage || 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
+              details: [],
+            }
+          );
+        }
+      }
     }
   };
 
@@ -97,12 +144,12 @@ const LoginPage = () => {
           </CardHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-4 sm:space-y-5 px-6 sm:px-8">
-              {error && (
+              {generalError && (
                 <ErrorAlert
-                  title={error.title}
-                  message={error.message}
-                  details={error.details}
-                  onDismiss={() => setError(null)}
+                  title={generalError.title}
+                  message={generalError.message}
+                  details={generalError.details}
+                  onDismiss={() => setGeneralError(null)}
                 />
               )}
               <div className="space-y-2">
@@ -159,11 +206,14 @@ const LoginPage = () => {
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
-                  'جاري الدخول...'
+                  <>
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent shrink-0" />
+                    <span>جاري تسجيل الدخول والتهيئة...</span>
+                  </>
                 ) : (
                   <>
                     <span>تسجيل الدخول</span>
-                    <LogIn className="h-5 w-5" />
+                    <LogIn className="h-5 w-5 shrink-0" />
                   </>
                 )}
               </Button>

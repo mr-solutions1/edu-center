@@ -86,6 +86,27 @@ export const AuthProvider = ({ children }) => {
 
   const getAccessToken = useCallback(() => accessTokenRef.current, []);
 
+  // Permission authorization helpers
+  const hasPermission = useCallback((key) => {
+    if (!user) return false;
+    if (user.role === 'ADMIN') return true;
+    return user.permissions?.includes(key) || false;
+  }, [user]);
+
+  const hasAnyPermission = useCallback((keys) => {
+    if (!user) return false;
+    if (user.role === 'ADMIN') return true;
+    if (!Array.isArray(keys)) return false;
+    return keys.some((key) => user.permissions?.includes(key));
+  }, [user]);
+
+  const hasAllPermissions = useCallback((keys) => {
+    if (!user) return false;
+    if (user.role === 'ADMIN') return true;
+    if (!Array.isArray(keys)) return false;
+    return keys.every((key) => user.permissions?.includes(key));
+  }, [user]);
+
   const performLogoutCleanup = useCallback(async (isSessionExpired = false) => {
     if (isLoggingOut) {
       console.warn('[EVIDENCE_TRACE] Logout cleanup already in progress. Skipping duplicate execution.');
@@ -144,17 +165,73 @@ export const AuthProvider = ({ children }) => {
     }
   }, [updateAuth]);
 
-  const login = async (credentials) => {
-    const { data } = await authApi.login(credentials);
-    console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] LOGIN_SUCCESS - User: ${data.user.id || data.user._id}`);
-    isLoggingOut = false; // Reset logout lock on successful login
-    isSessionExpiredToastShown = false; // Reset toast flag on successful login
-    updateAuth(data.user, data.accessToken);
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem('flowship_logged_in', 'true');
+  // Unified, single-source of truth bootstrap helper
+  const bootstrapAuth = useCallback(async (initialUser, token) => {
+    setIsLoading(true);
+    try {
+      // 1. Save temp credentials immediately so we can fetch me/permissions
+      updateAuth(initialUser, token);
+
+      // 2. Fetch current user from API
+      const meResponse = await authApi.getMe();
+      const enrichedUser = meResponse.data;
+
+      // 3. Fetch admin dynamic permissions and roles if ADMIN
+      let permissionsData = null;
+      let rolesData = null;
+      if (enrichedUser.role === 'ADMIN') {
+        try {
+          const [permsRes, rolesRes] = await Promise.all([
+            authApi.getPermissions(),
+            authApi.getRoles(),
+          ]);
+          permissionsData = permsRes.data;
+          rolesData = rolesRes.data;
+        } catch (err) {
+          console.error('Failed to load admin RBAC metadata during bootstrap:', err);
+        }
+      }
+
+      // 4. Update React Query caches instantly
+      queryClient.setQueryData(['currentUser'], enrichedUser);
+      if (permissionsData) {
+        queryClient.setQueryData(['permissions'], permissionsData);
+      }
+      if (rolesData) {
+        queryClient.setQueryData(['roles'], rolesData);
+      }
+
+      // 5. Update context with fully-loaded enriched user profile
+      updateAuth(enrichedUser, token);
+      return enrichedUser;
+    } catch (err) {
+      console.error('Unified Auth Bootstrap sequence failed:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
-    broadcastLogin();
-    return data.user;
+  }, [updateAuth]);
+
+  const login = async (credentials) => {
+    setIsLoading(true);
+    try {
+      const { data } = await authApi.login(credentials);
+      console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] LOGIN_SUCCESS - User: ${data.user.id || data.user._id}`);
+      isLoggingOut = false; // Reset logout lock on successful login
+      isSessionExpiredToastShown = false; // Reset toast flag on successful login
+
+      // Perform full bootstrap and block until completed
+      const enrichedUser = await bootstrapAuth(data.user, data.accessToken);
+
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('flowship_logged_in', 'true');
+      }
+      broadcastLogin();
+      return enrichedUser;
+    } catch (err) {
+      setIsLoading(false);
+      throw err;
+    }
   };
 
   const logout = useCallback(async () => {
@@ -240,10 +317,13 @@ export const AuthProvider = ({ children }) => {
         tabId: getTabId(),
       }, null, 2));
 
-      bootstrapPromise = refresh('AuthContextInit');
-
+      setIsLoading(true);
       try {
-        await bootstrapPromise;
+        bootstrapPromise = refresh('AuthContextInit');
+        const token = await bootstrapPromise;
+        if (token) {
+          await bootstrapAuth(null, token);
+        }
       } catch {
         // Silent fail - user just needs to login
       } finally {
@@ -253,7 +333,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     initAuth();
-  }, [refresh]);
+  }, [refresh, bootstrapAuth]);
 
   const value = {
     user,
@@ -263,6 +343,9 @@ export const AuthProvider = ({ children }) => {
     logout,
     refresh,
     isAuthenticated: !!user,
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

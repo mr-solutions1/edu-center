@@ -122,6 +122,7 @@ export function parseApiError(error) {
     // Standardize validation error details / messages array
     if (backendDetails && Array.isArray(backendDetails)) {
       parsedError.details = backendDetails.map(d => {
+        if (!d) return '';
         if (typeof d === 'string') return d;
         if (typeof d === 'object') {
           return d.message || d.msg || d.path || JSON.stringify(d);
@@ -131,6 +132,7 @@ export function parseApiError(error) {
     } else if (backendDetails && typeof backendDetails === 'object') {
       // Handle key-value Mongoose validation errors format
       parsedError.details = Object.values(backendDetails).map(d => {
+        if (!d) return '';
         if (typeof d === 'string') return d;
         return d.message || d.msg || JSON.stringify(d);
       });

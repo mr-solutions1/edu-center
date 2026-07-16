@@ -29,86 +29,96 @@ const menuItems = [
     icon: LayoutDashboard,
     label: 'لوحة التحكم',
     path: '/dashboard',
-    roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'TEACHER', 'STUDENT', 'PARENT'],
+    permission: 'dashboard.view',
   },
   {
     icon: Mail,
     label: 'صندوق الرسائل',
     path: '/inbox',
-    roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'TEACHER', 'STUDENT', 'PARENT'],
+    permission: 'inbox.view',
   },
   {
     icon: Globe,
     label: 'الموقع التعريفي',
     path: '/',
-    roles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'TEACHER', 'STUDENT', 'PARENT'],
   },
   {
     icon: UserSquare2,
     label: 'ملفي الشخصي',
     path: '/teacher/profile',
-    roles: ['TEACHER'],
+    permission: 'lesson.attendance', // Teachers have this, others don't
   },
   {
     icon: Users,
     label: 'طلابي',
     path: '/teacher/students',
-    roles: ['TEACHER'],
+    permission: 'lesson.attendance', // Teachers have this, others don't
   },
   {
     icon: Users,
     label: 'الطلاب',
     path: '/students',
-    roles: ['ADMIN', 'RECEPTIONIST'],
+    permission: 'student.view',
+    excludeRoles: ['TEACHER', 'PARENT', 'STUDENT'],
   },
   {
     icon: TrendingUp,
     label: 'إدارة العملاء CRM',
     path: '/crm',
-    roles: ['ADMIN', 'RECEPTIONIST'],
+    permission: 'crm.view',
   },
   {
     icon: BookOpen,
     label: 'الدورات',
     path: '/courses',
-    roles: ['ADMIN', 'RECEPTIONIST'],
+    permission: 'student.create',
   },
   {
     icon: Users,
     label: 'المجموعات',
     path: '/groups',
-    roles: ['ADMIN', 'RECEPTIONIST'],
+    permission: 'student.create',
   },
-  { icon: UserSquare2, label: 'المعلمون', path: '/teachers', roles: ['ADMIN'] },
+  {
+    icon: UserSquare2,
+    label: 'المعلمون',
+    path: '/teachers',
+    permission: 'teacher.view',
+  },
   {
     icon: Calendar,
     label: 'الجدول الدراسي',
     path: '/scheduling',
-    roles: ['ADMIN', 'RECEPTIONIST', 'TEACHER'],
+    permission: 'lesson.view',
   },
   {
     icon: CreditCard,
     label: 'المدفوعات',
     path: '/payments',
-    roles: ['ADMIN', 'ACCOUNTANT'],
+    permission: 'payment.view',
   },
   {
     icon: Wallet,
     label: 'الرواتب',
     path: '/payroll',
-    roles: ['ADMIN', 'ACCOUNTANT'],
+    permission: 'payroll.view',
   },
   {
     icon: BarChart3,
     label: 'التقارير',
     path: '/reports',
-    roles: ['ADMIN', 'ACCOUNTANT'],
+    permission: 'reports.view',
   },
-  { icon: Settings, label: 'الإعدادات', path: '/settings', roles: ['ADMIN'] },
+  {
+    icon: Settings,
+    label: 'الإعدادات',
+    path: '/settings',
+    permission: 'settings.view',
+  },
 ];
 
 const Sidebar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasPermission } = useAuth();
   console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] SIDEBAR_RENDER - Role: ${user?.role || 'guest'}`);
   const location = useLocation();
   const {
@@ -118,9 +128,14 @@ const Sidebar = () => {
     setIsTabletCollapsed,
   } = useNavigation();
 
-  const filteredItems = menuItems.filter(
-    (item) => !item.roles || item.roles.includes(user?.role)
-  );
+  const filteredItems = menuItems.filter((item) => {
+    if (!item.permission) return true;
+    const allowed = hasPermission(item.permission);
+    if (item.excludeRoles && item.excludeRoles.includes(user?.role)) {
+      return false;
+    }
+    return allowed;
+  });
 
   const handleLinkClick = () => {
     setIsMobileOpen(false);

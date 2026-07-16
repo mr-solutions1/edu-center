@@ -26,16 +26,16 @@ import StudentDashboard from '../components/StudentDashboard';
 import ParentDashboard from '../components/ParentDashboard';
 
 const DashboardPage = () => {
-  const { user, accessToken, isAuthenticated } = useAuth();
+  const { user, accessToken, isAuthenticated, hasPermission } = useAuth();
 
   React.useEffect(() => {
     console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] DASHBOARD_MOUNT - User: ${user?.id || user?._id}`);
   }, [user]);
 
-  const isTeacher = user?.role === 'TEACHER';
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT';
-  const isStudent = user?.role === 'STUDENT';
-  const isParent = user?.role === 'PARENT';
+  const isTeacher = hasPermission('lesson.attendance');
+  const isAdmin = hasPermission('reports.view');
+  const isStudent = hasPermission('exams.view') && !hasPermission('student.view');
+  const isParent = hasPermission('student.view') && !hasPermission('lesson.attendance') && !hasPermission('student.create');
 
   // Customizable Widgets States
   const storageKey = `dashboard_widgets_${user?.id || 'guest'}`;

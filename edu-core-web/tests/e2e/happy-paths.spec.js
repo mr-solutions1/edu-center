@@ -52,6 +52,58 @@ test.describe('Authentication Flow', () => {
       });
     });
 
+    // Intercept auth me
+    await page.route('**/v1/auth/me', async (route) => {
+      console.log('[MOCK_ROUTE] Intercepted getMe request');
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'success',
+          data: {
+            id: 'admin-id',
+            firstName: 'مسؤول',
+            lastName: 'النظام',
+            role: 'ADMIN',
+            email: 'admin@rakanacademy.com',
+            permissions: [
+              "dashboard.view",
+              "student.view",
+              "student.create",
+              "student.update",
+              "student.delete",
+              "rbac.manage",
+              "reports.view"
+            ]
+          }
+        })
+      });
+    });
+
+    // Intercept auth permissions
+    await page.route('**/v1/auth/permissions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'success',
+          data: []
+        })
+      });
+    });
+
+    // Intercept auth roles
+    await page.route('**/v1/auth/roles', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'success',
+          data: []
+        })
+      });
+    });
+
     // Intercept overview
     await page.route('**/v1/reports/overview', async (route) => {
       console.log('[MOCK_ROUTE] Intercepted reports/overview request');
@@ -149,6 +201,57 @@ test.describe('Student Management', () => {
             },
             accessToken: 'mocked-jwt-access-token'
           }
+        })
+      });
+    });
+
+    // Intercept auth me
+    await page.route('**/v1/auth/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'success',
+          data: {
+            id: 'admin-id',
+            firstName: 'مسؤول',
+            lastName: 'النظام',
+            role: 'ADMIN',
+            email: 'admin@rakanacademy.com',
+            permissions: [
+              "dashboard.view",
+              "student.view",
+              "student.create",
+              "student.update",
+              "student.delete",
+              "rbac.manage",
+              "reports.view"
+            ]
+          }
+        })
+      });
+    });
+
+    // Intercept auth permissions
+    await page.route('**/v1/auth/permissions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'success',
+          data: []
+        })
+      });
+    });
+
+    // Intercept auth roles
+    await page.route('**/v1/auth/roles', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'success',
+          data: []
         })
       });
     });

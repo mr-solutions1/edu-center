@@ -1,6 +1,8 @@
 import { AuthError } from '../../shared/errors/AuthError.js';
 import * as tokenService from '../../shared/services/tokenService.js';
 import User from '../users/user.model.js';
+import Role from './role.model.js';
+import { DEFAULT_ROLES } from './rbacBootstrap.js';
 
 /**
  * Login user
@@ -104,4 +106,32 @@ export const getUserById = async (userId) => {
     throw new AuthError('المستخدم غير موجود أو غير نشط', 401);
   }
   return user;
+};
+
+/**
+ * Retrieve permissions and role details for a user
+ * @param {object} user
+ * @returns {Promise<object>} { permissions: string[], roleDetails: object|null }
+ */
+export const getUserPermissionsAndRole = async (user) => {
+  if (!user) {
+    return { permissions: [], roleDetails: null };
+  }
+
+  let roleDetails = null;
+  if (user.roleId) {
+    roleDetails = await Role.findById(user.roleId);
+  } else if (user.role) {
+    roleDetails = await Role.findOne({ tenantId: user.tenantId, key: user.role });
+  }
+
+  let permissions = [];
+  if (user.role === 'ADMIN') {
+    const adminRole = DEFAULT_ROLES.find((r) => r.key === 'ADMIN');
+    permissions = adminRole ? adminRole.permissions : [];
+  } else {
+    permissions = roleDetails ? (roleDetails.permissions || []) : [];
+  }
+
+  return { permissions, roleDetails };
 };
