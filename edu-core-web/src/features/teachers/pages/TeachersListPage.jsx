@@ -140,6 +140,7 @@ const TeachersListPage = () => {
         onSubmit={handleSubmit}
         initialData={editingTeacher}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+        error={createMutation.error || updateMutation.error}
       />
 
       <ConfirmDialog
