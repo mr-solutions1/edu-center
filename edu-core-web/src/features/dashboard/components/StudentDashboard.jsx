@@ -3,6 +3,7 @@ import { Calendar, CreditCard, Award, BookOpen, Clock, AlertCircle } from 'lucid
 import React from 'react';
 
 import { studentApi } from '@/features/students/services/studentApi';
+import { useAuth } from '@/features/auth/AuthContext';
 import StatCard from '@/shared/components/StatCard/StatCard';
 import StatusBadge from '@/shared/components/StatusBadge/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
@@ -10,9 +11,12 @@ import { Skeleton } from '@/shared/components/ui/skeleton';
 import { formatDate } from '@/shared/utils/date';
 
 const StudentDashboard = () => {
+  const { accessToken, isAuthenticated } = useAuth();
+
   const { data: portalData, isLoading, isError } = useQuery({
     queryKey: ['student-portal-dashboard'],
     queryFn: () => studentApi.getStudentDashboard(),
+    enabled: isAuthenticated && !!accessToken,
   });
 
   if (isLoading) {

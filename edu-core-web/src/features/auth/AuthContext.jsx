@@ -25,6 +25,9 @@ let hasBootstrapped = false;
 // Module-scoped flag to prevent duplicate toasts
 let isSessionExpiredToastShown = false;
 
+// Module-scoped lock to ensure atomic, single-execution of logout/cleanup routine
+let isLoggingOut = false;
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
@@ -65,13 +68,23 @@ export const AuthProvider = ({ children }) => {
 
   // Store accessToken in a ref to avoid re-injecting auth functions on token changes
   const accessTokenRef = useRef(accessToken);
-  useEffect(() => {
-    accessTokenRef.current = accessToken;
-  }, [accessToken]);
+
+  // Synchronous authorization state updates to guarantee that any immediate requests
+  // triggered in the same macro/micro-task turn have the absolute latest access token
+  const updateAuth = useCallback((newUser, newToken) => {
+    accessTokenRef.current = newToken;
+    setUser(newUser);
+    setAccessToken(newToken);
+  }, []);
 
   const getAccessToken = useCallback(() => accessTokenRef.current, []);
 
   const performLogoutCleanup = useCallback(async (isSessionExpired = false) => {
+    if (isLoggingOut) {
+      console.warn('[EVIDENCE_TRACE] Logout cleanup already in progress. Skipping duplicate execution.');
+      return;
+    }
+    isLoggingOut = true;
     console.info('[EVIDENCE_TRACE] Starting full application logout cleanup...');
 
     // 1. Abort any pending authenticated requests
@@ -97,8 +110,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     // 4. Clear local React authentication state
-    setUser(null);
-    setAccessToken(null);
+    updateAuth(null, null);
 
     // 5. Clear application stores/localStorage flags
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -123,13 +135,13 @@ export const AuthProvider = ({ children }) => {
       // If manual/normal logout, redirect to login page
       globalNavigate('/login');
     }
-  }, []);
+  }, [updateAuth]);
 
   const login = async (credentials) => {
     const { data } = await authApi.login(credentials);
-    setUser(data.user);
-    setAccessToken(data.accessToken);
+    isLoggingOut = false; // Reset logout lock on successful login
     isSessionExpiredToastShown = false; // Reset toast flag on successful login
+    updateAuth(data.user, data.accessToken);
     if (typeof window !== 'undefined' && window.localStorage) {
       window.localStorage.setItem('flowship_logged_in', 'true');
     }
@@ -150,8 +162,8 @@ export const AuthProvider = ({ children }) => {
   const refresh = useCallback(async (source = 'Other') => {
     return refreshOnce(async (src, instanceId) => {
       const { data } = await authApi.refresh(src, instanceId);
-      setUser(data.user);
-      setAccessToken(data.accessToken);
+      isLoggingOut = false; // Reset logout lock on successful token rotation
+      updateAuth(data.user, data.accessToken);
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.setItem('flowship_logged_in', 'true');
       }
@@ -161,15 +173,14 @@ export const AuthProvider = ({ children }) => {
       if (pathname !== '/login' && pathname !== '/') {
         performLogoutCleanup(true);
       } else {
-        setUser(null);
-        setAccessToken(null);
+        updateAuth(null, null);
         if (typeof window !== 'undefined' && window.localStorage) {
           window.localStorage.removeItem('flowship_logged_in');
         }
       }
       throw error;
     });
-  }, [performLogoutCleanup]);
+  }, [performLogoutCleanup, updateAuth]);
 
   useEffect(() => {
     injectAuthFunctions(refresh, getAccessToken);
@@ -210,6 +221,7 @@ export const AuthProvider = ({ children }) => {
         }, null, 2));
         hasBootstrapped = true;
         setIsLoading(false);
+        isLoggingOut = false; // Reset lock if we are starting clean as anonymous
         return;
       }
 

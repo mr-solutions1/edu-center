@@ -62,10 +62,33 @@ let apiRequestCounter = 0;
 
 // Request interceptor to attach Access Token
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
     // Proactively enforce withCredentials on every single outgoing request
     config.withCredentials = true;
     const currentApiReqCount = ++apiRequestCounter;
+
+    // Suspend and wait if a token refresh is currently in progress
+    if (
+      !config.url?.includes('/auth/refresh') &&
+      !config.url?.includes('/auth/login') &&
+      !config.url?.includes('/auth/logout')
+    ) {
+      const activeRefreshPromise = getRefreshPromise();
+      if (activeRefreshPromise) {
+        console.info(
+          `[EVIDENCE_TRACE] Suspending request and waiting for active refresh: ${config.url}`
+        );
+        try {
+          const freshToken = await activeRefreshPromise;
+          config.headers.Authorization = `Bearer ${freshToken}`;
+        } catch (refreshError) {
+          console.error(
+            `[EVIDENCE_TRACE] Active refresh failed; rejecting suspended request ${config.url}`
+          );
+          return Promise.reject(refreshError);
+        }
+      }
+    }
 
     // Support both original signal (e.g. from React Query) and global logout aborting
     const controller = new AbortController();

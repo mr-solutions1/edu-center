@@ -26,7 +26,7 @@ import StudentDashboard from '../components/StudentDashboard';
 import ParentDashboard from '../components/ParentDashboard';
 
 const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user, accessToken, isAuthenticated } = useAuth();
 
   const isTeacher = user?.role === 'TEACHER';
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT';
@@ -76,20 +76,20 @@ const DashboardPage = () => {
     );
   }
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: dashboardApi.getOverview,
-    enabled: !isStudent && !isParent,
+    enabled: isAuthenticated && !!accessToken && !isStudent && !isParent,
   });
 
   const { data: logsData, isLoading: logsLoading } = useQuery({
     queryKey: ['recent-activity'],
     queryFn: () => activityLogApi.getLogs({ limit: 5 }),
-    enabled: !!isAdmin && !isStudent && !isParent,
+    enabled: isAuthenticated && !!accessToken && !!isAdmin && !isStudent && !isParent,
   });
 
   if (isError) {
-    return <ErrorState onRetry={refetch} />;
+    return <ErrorState error={error} onRetry={refetch} />;
   }
 
   const stats = data?.data || {};

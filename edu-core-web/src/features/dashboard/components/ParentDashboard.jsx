@@ -3,6 +3,7 @@ import { Users, Calendar, CreditCard, Award, Activity, Heart, Clock, AlertCircle
 import React from 'react';
 
 import { studentApi } from '@/features/students/services/studentApi';
+import { useAuth } from '@/features/auth/AuthContext';
 import StatCard from '@/shared/components/StatCard/StatCard';
 import StatusBadge from '@/shared/components/StatusBadge/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
@@ -10,9 +11,12 @@ import { Skeleton } from '@/shared/components/ui/skeleton';
 import { formatDate } from '@/shared/utils/date';
 
 const ParentDashboard = () => {
+  const { accessToken, isAuthenticated } = useAuth();
+
   const { data: portalData, isLoading, isError } = useQuery({
     queryKey: ['parent-portal-dashboard'],
     queryFn: () => studentApi.getParentDashboard(),
+    enabled: isAuthenticated && !!accessToken,
   });
 
   if (isLoading) {
