@@ -26,8 +26,11 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     throw new AuthError('هذا الحساب غير نشط', 401);
   }
 
-  // 4. Check tokenVersion
-  if (user.tokenVersion !== decoded.tokenVersion) {
+  // 4. Check tokenVersion (safely default to 0 to prevent mismatch due to undefined/missing fields in DB or populated objects)
+  const dbTokenVersion = typeof user.tokenVersion === 'number' ? user.tokenVersion : 0;
+  const jwtTokenVersion = typeof decoded.tokenVersion === 'number' ? decoded.tokenVersion : 0;
+
+  if (dbTokenVersion !== jwtTokenVersion) {
     throw new AuthError(
       'انتهت صلاحية الرمز بسبب تغيير كلمة المرور أو تسجيل الخروج من كل الأجهزة',
       401,

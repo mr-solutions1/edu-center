@@ -27,11 +27,12 @@ const hashToken = (token) => {
  * @returns {string}
  */
 export const signAccessToken = (user) => {
+  const tokenVersion = typeof user?.tokenVersion === 'number' ? user.tokenVersion : 0;
   return jwt.sign(
     {
       id: user._id,
       role: user.role,
-      tokenVersion: user.tokenVersion,
+      tokenVersion,
     },
     env.JWT_ACCESS_SECRET,
     { expiresIn: env.JWT_ACCESS_EXPIRES_IN }
