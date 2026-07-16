@@ -28,25 +28,35 @@ const FormDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent
-        className="sm:max-w-[425px] rounded-3xl border-none shadow-2xl p-0 overflow-hidden"
+        className="w-full h-full max-h-screen sm:h-auto sm:max-h-[90vh] sm:max-w-[480px] rounded-none sm:rounded-3xl border-none shadow-2xl p-0 flex flex-col overflow-hidden"
         dir="rtl"
       >
-        <div className="h-2 bg-secondary w-full" />
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-right text-2xl font-black text-primary tracking-tight">
+        {/* Dynamic top bar decoration */}
+        <div className="h-2 bg-secondary w-full shrink-0" />
+
+        {/* Sticky dialog header */}
+        <DialogHeader className="p-6 pb-2 border-b border-slate-100 sm:border-none shrink-0">
+          <DialogTitle className="text-right text-xl sm:text-2xl font-black text-primary tracking-tight">
             {title}
           </DialogTitle>
           {description && (
-            <DialogDescription className="text-right font-medium text-muted-foreground">
+            <DialogDescription className="text-right font-medium text-muted-foreground text-xs sm:text-sm mt-1">
               {description}
             </DialogDescription>
           )}
         </DialogHeader>
-        <div className="p-6 py-4">{children}</div>
-        <DialogFooter className="p-6 pt-2 bg-gray-50 flex flex-row-reverse gap-3 sm:gap-3">
+
+        {/* Scrollable body content to prevent viewport cutoffs on small mobiles */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {children}
+        </div>
+
+        {/* Sticky footer with premium tap targets */}
+        <DialogFooter className="p-4 sm:p-6 border-t border-slate-100 bg-gray-50 flex flex-row-reverse items-center justify-end gap-3 shrink-0">
           <Button
             type="button"
             variant="outline"
+            className="flex-1 sm:flex-initial h-11 sm:h-10 rounded-xl font-bold text-xs"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
@@ -56,6 +66,7 @@ const FormDialog = ({
             type={formId ? 'submit' : 'button'}
             form={formId}
             onClick={onSave}
+            className="flex-1 sm:flex-initial h-11 sm:h-10 rounded-xl font-bold text-xs bg-secondary hover:bg-secondary/90 text-secondary-foreground"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'جاري الحفظ...' : saveText}
