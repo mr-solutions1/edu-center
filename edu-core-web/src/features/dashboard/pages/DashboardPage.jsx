@@ -28,6 +28,10 @@ import ParentDashboard from '../components/ParentDashboard';
 const DashboardPage = () => {
   const { user, accessToken, isAuthenticated } = useAuth();
 
+  React.useEffect(() => {
+    console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] DASHBOARD_MOUNT - User: ${user?.id || user?._id}`);
+  }, [user]);
+
   const isTeacher = user?.role === 'TEACHER';
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'ACCOUNTANT';
   const isStudent = user?.role === 'STUDENT';
@@ -76,16 +80,22 @@ const DashboardPage = () => {
     );
   }
 
+  const isOverviewQueryEnabled = isAuthenticated && !!accessToken && !isStudent && !isParent;
+  console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] QUERY_ENABLED - dashboard-overview: ${isOverviewQueryEnabled}`);
+
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: dashboardApi.getOverview,
-    enabled: isAuthenticated && !!accessToken && !isStudent && !isParent,
+    enabled: isOverviewQueryEnabled,
   });
+
+  const isLogsQueryEnabled = isAuthenticated && !!accessToken && !!isAdmin && !isStudent && !isParent;
+  console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] QUERY_ENABLED - recent-activity: ${isLogsQueryEnabled}`);
 
   const { data: logsData, isLoading: logsLoading } = useQuery({
     queryKey: ['recent-activity'],
     queryFn: () => activityLogApi.getLogs({ limit: 5 }),
-    enabled: isAuthenticated && !!accessToken && !!isAdmin && !isStudent && !isParent,
+    enabled: isLogsQueryEnabled,
   });
 
   if (isError) {

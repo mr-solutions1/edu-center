@@ -23,6 +23,7 @@ const ProtectedRoute = ({ children, roles = [] }) => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] AUTH_READY - User is authorized.`);
   return children;
 };
 

@@ -109,6 +109,7 @@ const menuItems = [
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
+  console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] SIDEBAR_RENDER - Role: ${user?.role || 'guest'}`);
   const location = useLocation();
   const {
     isMobileOpen,

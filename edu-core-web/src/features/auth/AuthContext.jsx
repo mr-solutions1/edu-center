@@ -72,9 +72,16 @@ export const AuthProvider = ({ children }) => {
   // Synchronous authorization state updates to guarantee that any immediate requests
   // triggered in the same macro/micro-task turn have the absolute latest access token
   const updateAuth = useCallback((newUser, newToken) => {
+    const timestamp = new Date().toISOString();
     accessTokenRef.current = newToken;
+    console.info(`[EVIDENCE_TRACE] [${timestamp}] TOKEN_REF_UPDATED - Length: ${newToken ? newToken.length : 0}`);
+
     setUser(newUser);
+    console.info(`[EVIDENCE_TRACE] [${timestamp}] USER_UPDATED - Role: ${newUser?.role || 'null'}`);
+
     setAccessToken(newToken);
+    console.info(`[EVIDENCE_TRACE] [${timestamp}] TOKEN_UPDATED`);
+    console.info(`[EVIDENCE_TRACE] [${timestamp}] AUTH_CONTEXT_UPDATED`);
   }, []);
 
   const getAccessToken = useCallback(() => accessTokenRef.current, []);
@@ -139,6 +146,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     const { data } = await authApi.login(credentials);
+    console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] LOGIN_SUCCESS - User: ${data.user.id || data.user._id}`);
     isLoggingOut = false; // Reset logout lock on successful login
     isSessionExpiredToastShown = false; // Reset toast flag on successful login
     updateAuth(data.user, data.accessToken);

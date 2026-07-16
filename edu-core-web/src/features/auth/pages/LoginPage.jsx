@@ -23,10 +23,21 @@ import { Input } from '@/shared/components/ui/input';
 import { cn } from '@/shared/utils';
 
 const LoginPage = () => {
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = React.useState(null);
+
+  // Declarative navigation: wait until the virtual DOM and Context have fully committed
+  // the authenticated user and token state, ensuring zero race conditions on the dashboard first render.
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      const timestamp = new Date().toISOString();
+      console.info(`[EVIDENCE_TRACE] [${timestamp}] NAVIGATE_TO_DASHBOARD - User: ${user.id || user._id}`);
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate, location]);
 
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -51,8 +62,6 @@ const LoginPage = () => {
     try {
       setError(null);
       await login(data);
-      const from = location.state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
     } catch (err) {
       setError(
         err.parsed || {
