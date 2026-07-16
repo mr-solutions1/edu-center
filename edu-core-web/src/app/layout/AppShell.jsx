@@ -7,11 +7,11 @@ import CommandPalette from '../../shared/components/CommandPalette/CommandPalett
 
 const AppShell = ({ children }) => {
   return (
-    <div className="flex h-screen bg-[#F8FAFC]" dir="rtl">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAFC]" dir="rtl">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-gradient-to-br from-transparent to-primary/5">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-gradient-to-br from-transparent to-primary/5">
           {children}
         </main>
       </div>

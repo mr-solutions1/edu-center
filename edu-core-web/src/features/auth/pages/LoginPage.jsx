@@ -65,29 +65,29 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-slate-50 overflow-x-hidden" dir="rtl">
       <BrandedHeader />
 
-      <main className="flex-1 flex items-center justify-center py-12 px-4 relative overflow-hidden font-sans">
+      <main className="flex-1 flex items-center justify-center py-6 sm:py-12 px-4 relative overflow-hidden font-sans">
         {/* Background Decorative Elements */}
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
 
-        <Card className="w-full max-w-md border-none shadow-2xl bg-white relative z-10 rounded-[2rem] overflow-hidden border border-slate-100">
+        <Card className="w-full max-w-md border-none shadow-2xl bg-white relative z-10 rounded-3xl sm:rounded-[2rem] overflow-hidden border border-slate-100">
           <div className="h-2.5 bg-secondary w-full shadow-sm" />
-          <CardHeader className="space-y-4 pt-10 pb-6">
+          <CardHeader className="space-y-4 pt-8 sm:pt-10 pb-4 sm:pb-6">
             <div className="flex flex-col items-center space-y-3">
               <div className="p-1 rounded-2xl mb-1">
-                <img src={logoAlpha} alt="Alpha Logo" className="h-28 w-auto object-contain rounded-xl shadow-sm" />
+                <img src={logoAlpha} alt="Alpha Logo" className="h-20 sm:h-28 w-auto object-contain rounded-xl shadow-sm" />
               </div>
               <div className="h-1.5 w-16 bg-secondary rounded-full" />
             </div>
-            <CardTitle className="text-xl text-center font-bold text-gray-700 pt-2">
+            <CardTitle className="text-lg sm:text-xl text-center font-bold text-gray-700 pt-2">
               بوابة دخول النظام
             </CardTitle>
           </CardHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-5 px-8">
+            <CardContent className="space-y-4 sm:space-y-5 px-6 sm:px-8">
               {error && (
                 <ErrorAlert
                   title={error.title}
@@ -98,7 +98,7 @@ const LoginPage = () => {
               )}
               <div className="space-y-2">
                 <label
-                  className="text-sm font-bold text-gray-700 mr-1"
+                  className="text-xs sm:text-sm font-bold text-gray-700 mr-1"
                   htmlFor="email"
                 >
                   البريد الإلكتروني
@@ -109,19 +109,19 @@ const LoginPage = () => {
                   placeholder="name@example.com"
                   {...register('email')}
                   className={cn(
-                    'bg-gray-50 border-none shadow-inner rounded-xl h-12 focus-visible:ring-secondary',
+                    'bg-gray-50 border-none shadow-inner rounded-xl h-11 sm:h-12 focus-visible:ring-secondary text-sm',
                     errors.email && 'ring-2 ring-red-500'
                   )}
                 />
                 {errors.email && (
-                  <p className="text-xs text-red-500 font-medium mr-1">
+                  <p className="text-xs text-red-500 font-medium mr-1 mt-1">
                     {errors.email.message}
                   </p>
                 )}
               </div>
               <div className="space-y-2">
                 <label
-                  className="text-sm font-bold text-gray-700 mr-1"
+                  className="text-xs sm:text-sm font-bold text-gray-700 mr-1"
                   htmlFor="password"
                 >
                   كلمة المرور
@@ -132,21 +132,21 @@ const LoginPage = () => {
                   placeholder="••••••••"
                   {...register('password')}
                   className={cn(
-                    'bg-gray-50 border-none shadow-inner rounded-xl h-12 focus-visible:ring-secondary',
+                    'bg-gray-50 border-none shadow-inner rounded-xl h-11 sm:h-12 focus-visible:ring-secondary text-sm',
                     errors.password && 'ring-2 ring-red-500'
                   )}
                 />
                 {errors.password && (
-                  <p className="text-xs text-red-500 font-medium mr-1">
+                  <p className="text-xs text-red-500 font-medium mr-1 mt-1">
                     {errors.password.message}
                   </p>
                 )}
               </div>
             </CardContent>
-            <CardFooter className="px-8 pb-12">
+            <CardFooter className="px-6 sm:px-8 pb-8 sm:pb-12 pt-4">
               <Button
                 type="submit"
-                className="w-full h-14 rounded-2xl text-xl font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 gap-3"
+                className="w-full h-12 sm:h-14 rounded-2xl text-base sm:text-xl font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 gap-3"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
