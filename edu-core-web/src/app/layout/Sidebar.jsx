@@ -17,12 +17,13 @@ import {
   X,
 } from 'lucide-react';
 import React from 'react';
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 
-import logoAlpha from '@/assets/logo_alpha.jpeg';
+import { useNavigation } from './NavigationContext';
 import { useAuth } from '../../features/auth/AuthContext';
 import { cn } from '../../shared/utils';
-import { useNavigation } from './NavigationContext';
+
+import logoAlpha from '@/assets/logo_alpha.jpeg';
 
 const menuItems = [
   {
@@ -119,8 +120,9 @@ const menuItems = [
 
 const Sidebar = () => {
   const { user, logout, hasPermission } = useAuth();
-  console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] SIDEBAR_RENDER - Role: ${user?.role || 'guest'}`);
-  const location = useLocation();
+  console.info(
+    `[EVIDENCE_TRACE] [${new Date().toISOString()}] SIDEBAR_RENDER - Role: ${user?.role || 'guest'}`
+  );
   const {
     isMobileOpen,
     setIsMobileOpen,
@@ -129,7 +131,9 @@ const Sidebar = () => {
   } = useNavigation();
 
   const filteredItems = menuItems.filter((item) => {
-    if (!item.permission) return true;
+    if (!item.permission) {
+      return true;
+    }
     const allowed = hasPermission(item.permission);
     if (item.excludeRoles && item.excludeRoles.includes(user?.role)) {
       return false;
@@ -181,7 +185,6 @@ const Sidebar = () => {
       {/* Navigation menu */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-2 select-none">
         {filteredItems.map((item) => {
-          const isActive = location.pathname === item.path;
           return (
             <NavLink
               key={item.path}
@@ -209,11 +212,15 @@ const Sidebar = () => {
                   <item.icon
                     className={cn(
                       'h-4.5 w-4.5 transition-transform duration-150 shrink-0',
-                      isActive ? 'text-secondary scale-105' : 'text-primary-foreground/60 group-hover:text-white group-hover:scale-105'
+                      isActive
+                        ? 'text-secondary scale-105'
+                        : 'text-primary-foreground/60 group-hover:text-white group-hover:scale-105'
                     )}
                   />
                   {(!isTabletCollapsed || isMobileOpen) && (
-                    <span className="truncate animate-fadeIn">{item.label}</span>
+                    <span className="truncate animate-fadeIn">
+                      {item.label}
+                    </span>
                   )}
                 </>
               )}
@@ -227,7 +234,9 @@ const Sidebar = () => {
         <div
           className={cn(
             'flex items-center gap-3',
-            isTabletCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-4 py-2'
+            isTabletCollapsed && !isMobileOpen
+              ? 'justify-center px-0'
+              : 'px-4 py-2'
           )}
         >
           <div className="h-10 w-10 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-sm shadow-md shrink-0">

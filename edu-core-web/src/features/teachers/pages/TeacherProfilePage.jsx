@@ -9,13 +9,13 @@ import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 
 const TeacherProfilePage = () => {
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['teacher-profile'],
     queryFn: teacherApi.getTeacherProfile,
   });
 
   if (isError) {
-    return <ErrorState onRetry={refetch} />;
+    return <ErrorState error={error} onRetry={refetch} />;
   }
 
   const profile = data?.data || {};
@@ -154,7 +154,9 @@ const TeacherProfilePage = () => {
                     تاريخ الانضمام
                   </span>
                   <span className="font-bold">
-                    {new Date(profile.hireDate).toLocaleDateString('ar-KW')}
+                    {profile.hireDate
+                      ? new Date(profile.hireDate).toLocaleDateString('ar-KW')
+                      : '—'}
                   </span>
                 </div>
               </div>
