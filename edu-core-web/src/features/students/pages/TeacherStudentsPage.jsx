@@ -4,13 +4,18 @@ import React from 'react';
 import { studentApi } from '../services/studentApi';
 
 import DataTable from '@/shared/components/DataTable/DataTable';
+import ErrorState from '@/shared/components/ErrorState/ErrorState';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
 
 const TeacherStudentsPage = () => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['teacher-students'],
     queryFn: studentApi.getTeacherStudents,
   });
+
+  if (isError) {
+    return <ErrorState error={error} onRetry={refetch} />;
+  }
 
   const columns = [
     { header: 'اسم الطالب', accessor: 'parentName' },
