@@ -1,7 +1,12 @@
 import dotenv from 'dotenv';
+import path from 'node:path';
 import { z } from 'zod';
 
-dotenv.config();
+if (process.env.NODE_ENV === 'test') {
+  dotenv.config({ path: path.join(import.meta.dirname, '../../.env.test') });
+} else {
+  dotenv.config({ path: path.join(import.meta.dirname, '../../.env') });
+}
 
 const envSchema = z.object({
   // Server Configuration

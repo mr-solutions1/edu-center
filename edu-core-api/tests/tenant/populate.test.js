@@ -1,11 +1,10 @@
 process.env.NODE_ENV = 'test';
 
+import { connectDB, closeDB, clearDB } from '../integration/setup.js';
 import mongoose from 'mongoose';
-
 import Student from '../../src/modules/students/student.model.js';
 import User from '../../src/modules/users/user.model.js';
 import { runWithTenant } from '../../src/shared/utils/tenantContext.js';
-import { connectDB, closeDB, clearDB } from '../integration/setup.js';
 
 beforeAll(async () => await connectDB());
 afterEach(async () => await clearDB());

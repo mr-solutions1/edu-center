@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { userApi } from '../services/userApi';
+import { settingsApi } from '../services/settingsApi';
 
 import { useAuth } from '@/features/auth/AuthContext';
 import { authApi } from '@/features/auth/services/authApi';
@@ -44,6 +45,72 @@ const SettingsPage = () => {
     queryFn: () => userApi.getUsers(),
     enabled: isAdmin,
   });
+
+  const { data: tenantSettings, isLoading: loadingSettings } = useQuery({
+    queryKey: ['tenantSettings'],
+    queryFn: () => settingsApi.getSettings(),
+    enabled: isAdmin,
+  });
+
+  // Settings form state
+  const [instituteName, setInstituteName] = useState('');
+  const [siblingDiscountPct, setSiblingDiscountPct] = useState(10);
+  const [defaultTeacherPct, setDefaultTeacherPct] = useState(75);
+  const [carDeduction, setCarDeduction] = useState(0.5);
+  const [stageRates, setStageRates] = useState({
+    'تأسيس': 10,
+    'ابتدائي': 12,
+    'متوسط': 15,
+    'ثانوي': 18,
+    'جامعي': 20,
+    'قدرات': 25,
+    'تحصيلي': 25,
+  });
+
+  useEffect(() => {
+    if (tenantSettings?.data) {
+      const data = tenantSettings.data;
+      setInstituteName(data.instituteName || 'أكاديمية ركان');
+      setSiblingDiscountPct(data.financialRules?.siblingDiscountPercentage ?? 10);
+      setDefaultTeacherPct(data.financialRules?.teacherPercentageDefault ?? 75);
+      setCarDeduction(data.financialRules?.transportationDeductionRate ?? 0.5);
+      if (data.financialRules?.stageHourlyRates) {
+        setStageRates(data.financialRules.stageHourlyRates);
+      }
+    }
+  }, [tenantSettings]);
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: (data) => settingsApi.updateSettings(data),
+    onSuccess: () => {
+      toast.success('تم تحديث إعدادات المعهد بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['tenantSettings'] });
+    },
+    onError: () => {
+      toast.error('فشل في تحديث الإعدادات');
+    },
+  });
+
+  const handleSettingsSubmit = (e) => {
+    e.preventDefault();
+    updateSettingsMutation.mutate({
+      instituteName,
+      financialRules: {
+        siblingDiscountPercentage: Number(siblingDiscountPct),
+        teacherPercentageDefault: Number(defaultTeacherPct),
+        transportationDeductionRate: Number(carDeduction),
+        stageHourlyRates: {
+          'تأسيس': Number(stageRates['تأسيس']),
+          'ابتدائي': Number(stageRates['ابتدائي']),
+          'متوسط': Number(stageRates['متوسط']),
+          'ثانوي': Number(stageRates['ثانوي']),
+          'جامعي': Number(stageRates['جامعي']),
+          'قدرات': Number(stageRates['قدرات']),
+          'تحصيلي': Number(stageRates['تحصيلي']),
+        }
+      }
+    });
+  };
 
   const changePasswordMutation = useMutation({
     mutationFn: (data) => userApi.changePassword(user.id, data),
@@ -168,11 +235,12 @@ const SettingsPage = () => {
       <PageHeader title="الإعدادات" description="إدارة حسابك وتفضيلات النظام" />
 
       <Tabs defaultValue="account" className="w-full">
-        <TabsList className={`grid w-full mb-8 ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'}`}>
+        <TabsList className={`grid w-full mb-8 ${isAdmin ? 'grid-cols-5' : 'grid-cols-2'}`}>
           <TabsTrigger value="account">حسابي</TabsTrigger>
           <TabsTrigger value="sessions">الجلسات النشطة</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">المستخدمين</TabsTrigger>}
           {isAdmin && <TabsTrigger value="rbac">الأدوار والصلاحيات</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="institute">إعدادات المعهد</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="account">
@@ -280,6 +348,94 @@ const SettingsPage = () => {
         {isAdmin && (
           <TabsContent value="rbac" className="space-y-6">
             <RbacSettings />
+          </TabsContent>
+        )}
+
+        {isAdmin && (
+          <TabsContent value="institute">
+            <Card>
+              <CardHeader>
+                <CardTitle>إعدادات المعهد المتقدمة</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSettingsSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>اسم المعهد</Label>
+                      <Input
+                        value={instituteName}
+                        onChange={(e) => setInstituteName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>نسبة خصم الأشقاء (%)</Label>
+                      <Input
+                        type="number"
+                        value={siblingDiscountPct}
+                        onChange={(e) => setSiblingDiscountPct(e.target.value)}
+                        min="0"
+                        max="100"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>النسبة الافتراضية للمعلم (%)</Label>
+                      <Input
+                        type="number"
+                        value={defaultTeacherPct}
+                        onChange={(e) => setDefaultTeacherPct(e.target.value)}
+                        min="0"
+                        max="100"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>قيمة خصم السيارة (KWD لكل حصة)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={carDeduction}
+                        onChange={(e) => setCarDeduction(e.target.value)}
+                        min="0"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium mb-4">سعر ساعة المعلم للمراحل الدراسية (دينار كويتي)</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {Object.keys(stageRates).map((stage) => (
+                        <div key={stage} className="space-y-2">
+                          <Label>{stage}</Label>
+                          <Input
+                            type="number"
+                            value={stageRates[stage]}
+                            onChange={(e) =>
+                              setStageRates({
+                                ...stageRates,
+                                [stage]: e.target.value,
+                              })
+                            }
+                            min="0"
+                            required
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full md:w-auto"
+                    disabled={updateSettingsMutation.isPending}
+                  >
+                    {updateSettingsMutation.isPending ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
           </TabsContent>
         )}
       </Tabs>

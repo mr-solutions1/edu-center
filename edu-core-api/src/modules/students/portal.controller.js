@@ -1,5 +1,6 @@
 import ParentStudent from './parentStudent.model.js';
 import Student from './student.model.js';
+import { recalculateStudentBalances } from './studentBalance.service.js';
 import { AppError } from '../../shared/errors/AppError.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import Group from '../groups/group.model.js';
@@ -18,6 +19,9 @@ export const getStudentDashboard = asyncHandler(async (req, res) => {
       404
     );
   }
+
+  // Recalculate student hours and outstanding financial balances
+  const balances = await recalculateStudentBalances(student._id);
 
   // 1. Fetch upcoming lessons
   const upcomingLessons = await Lesson.find({
@@ -43,9 +47,11 @@ export const getStudentDashboard = asyncHandler(async (req, res) => {
   const payments = await Payment.find({ studentId: student._id })
     .sort({ dueDate: -1 })
     .limit(10);
-  const outstandingBalance = payments
-    .filter((p) => p.status === 'PENDING' || p.status === 'PARTIALLY_PAID')
-    .reduce((sum, curr) => sum + curr.amount, 0);
+
+  const outstandingBalance = balances?.outstandingBalance ?? 0;
+  const remainingHours = balances?.remainingHours ?? 0;
+  const totalPurchasedHours = balances?.totalPurchasedHours ?? 0;
+  const totalConsumedHours = balances?.totalConsumedHours ?? 0;
 
   // 4. Fetch associated groups
   const groups = await Group.find({ students: student._id }).populate(
@@ -61,6 +67,9 @@ export const getStudentDashboard = asyncHandler(async (req, res) => {
       recentAttendance,
       payments,
       outstandingBalance,
+      remainingHours,
+      totalPurchasedHours,
+      totalConsumedHours,
       groups,
     },
   });
@@ -89,11 +98,20 @@ export const getParentDashboard = asyncHandler(async (req, res) => {
   const studentIds = parentStudentLinks
     .map((link) => link.studentId?._id)
     .filter(Boolean);
-  const children = parentStudentLinks.map((link) => ({
-    student: link.studentId,
-    relationship: link.relationshipType,
-    isPrimary: link.isPrimary,
-  }));
+
+  // Recalculate balances for all children and attach them
+  const children = await Promise.all(
+    parentStudentLinks.map(async (link) => {
+      const studentId = link.studentId?._id;
+      const balances = studentId ? await recalculateStudentBalances(studentId) : null;
+      return {
+        student: link.studentId,
+        relationship: link.relationshipType,
+        isPrimary: link.isPrimary,
+        balances,
+      };
+    })
+  );
 
   // 1. Fetch combined upcoming lessons for all children
   const upcomingLessons = await Lesson.find({

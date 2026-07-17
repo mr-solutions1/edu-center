@@ -2,7 +2,7 @@ import express from 'express';
 
 import * as portalController from './portal.controller.js';
 import * as studentController from './student.controller.js';
-import { studentSchema, updateStudentSchema } from './student.validation.js';
+import { studentSchema, updateStudentSchema, registrationSchema } from './student.validation.js';
 import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';
@@ -36,6 +36,23 @@ router.post(
 router.get('/', studentController.getAllStudents);
 
 router.get('/my-students', studentController.getTeacherStudents);
+
+router.get('/:id/balance', studentController.getStudentBalance);
+
+router.get('/:id/registrations', studentController.getRegistrations);
+
+router.post(
+  '/:id/registrations',
+  authorize(UserRole.ADMIN, UserRole.RECEPTIONIST),
+  validate(registrationSchema),
+  studentController.createRegistration
+);
+
+router.delete(
+  '/:id/registrations/:regId',
+  authorize(UserRole.ADMIN),
+  studentController.deleteRegistration
+);
 
 router.get('/:id', studentController.getStudent);
 

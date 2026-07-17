@@ -2,7 +2,7 @@ import * as lessonRepository from './lesson.repository.js';
 import { ConflictError } from '../../shared/errors/ConflictError.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import * as auditLogger from '../../shared/services/auditLogger.service.js';
-import { calculateCommission } from '../../shared/services/commissionCalculator.js';
+import { calculateLessonEarnings, recalculateStudentBalances } from '../students/studentBalance.service.js';
 import { notificationService } from '../../shared/services/notification.service.js';
 import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
@@ -85,9 +85,10 @@ export const createLesson = async (lessonData, userId) => {
       throw new NotFoundError('المعلم غير موجود');
     }
 
-    const { teacherEarnings, instituteRevenue } = calculateCommission({
+    const earningsResult = await calculateLessonEarnings({
+      teacherId,
       lessonPrice,
-      teacherPercentage: teacher.teacherPercentage,
+      educationalLevel: lessonData.educationalLevel,
     });
 
     // 4. Create lesson
@@ -97,8 +98,8 @@ export const createLesson = async (lessonData, userId) => {
         lessonPrice,
         teacherPercentage: teacher.teacherPercentage,
         institutePercentage: teacher.institutePercentage,
-        teacherEarnings,
-        instituteRevenue,
+        teacherEarnings: earningsResult.teacherEarnings,
+        instituteRevenue: earningsResult.instituteRevenue,
       },
       session
     );
@@ -191,7 +192,16 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
     if (notes) {
       lesson.notes = notes;
     }
+
+    // Recalculate lesson earnings dynamically when status is updated (specifically for completion)
+    const earningsResult = await calculateLessonEarnings(lesson);
+    lesson.teacherEarnings = earningsResult.teacherEarnings;
+    lesson.instituteRevenue = earningsResult.instituteRevenue;
+
     await lesson.save({ session });
+
+    // Recalculate student balances when lesson status changes (e.g. COMPLETED affects consumed hours)
+    await recalculateStudentBalances(lesson.studentId);
 
     await PayrollTransaction.create(
       [

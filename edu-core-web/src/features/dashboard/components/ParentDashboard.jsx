@@ -44,7 +44,7 @@ const ParentDashboard = () => {
   const { children, upcomingLessons, outstandingPayments, recentActivities } = portalData?.data || {};
 
   // Compute metrics
-  const totalDueAmount = outstandingPayments.reduce((sum, curr) => sum + curr.amount, 0);
+  const totalDueAmount = children?.reduce((sum, child) => sum + (child.balances?.outstandingBalance || 0), 0) || 0;
 
   return (
     <div className="space-y-8 text-right" dir="rtl">
@@ -99,10 +99,24 @@ const ParentDashboard = () => {
                     <span className="text-slate-400">المنطقة السكنية:</span>
                     <span className="text-primary font-black">{student?.area || 'غير مسجل'}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between border-b pb-2">
                     <span className="text-slate-400">تاريخ الالتحاق:</span>
                     <span className="text-primary font-black">{formatDate(student?.enrollmentDate, 'yyyy/MM/dd')}</span>
                   </div>
+                  {balances && (
+                    <>
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-slate-400">الساعات المتبقية:</span>
+                        <span className="text-secondary font-black">{balances.remainingHours} ساعة</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">مستحقات الابن:</span>
+                        <span className={balances.outstandingBalance > 0 ? 'text-red-500 font-black' : 'text-emerald-500 font-black'}>
+                          KD {(balances.outstandingBalance / 1000).toFixed(3)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             ))

@@ -43,3 +43,14 @@ export const studentSchema = z.object({
 });
 
 export const updateStudentSchema = studentSchema.partial();
+
+export const registrationSchema = z.object({
+  subject: z.string({ required_error: 'المادة الدراسية مطلوبة' }),
+  purchasedHours: z
+    .number({ required_error: 'عدد الساعات مطلوب' })
+    .min(1, 'يجب شراء ساعة واحدة على الأقل'),
+  pricePerHour: z
+    .number({ required_error: 'سعر الساعة مطلوب' })
+    .min(0, 'سعر الساعة لا يمكن أن يكون سالباً'),
+  notes: z.string().optional(),
+});

@@ -44,28 +44,47 @@ const StudentDashboard = () => {
     );
   }
 
-  const { profile, upcomingLessons, recentAttendance, payments, outstandingBalance, groups } =
-    portalData?.data || {};
+  const {
+    profile,
+    upcomingLessons,
+    recentAttendance,
+    payments,
+    outstandingBalance,
+    remainingHours,
+    totalPurchasedHours,
+    totalConsumedHours,
+    groups,
+  } = portalData?.data || {};
 
   return (
     <div className="space-y-8 text-right" dir="rtl">
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
         <StatCard
           label="المبلغ المستحق"
           value={`KD ${(outstandingBalance / 1000).toFixed(3)}`}
           icon={CreditCard}
+          className="xl:col-span-2 border-red-100"
         />
         <StatCard
-          label="المجموعات الدراسية"
-          value={groups?.length || 0}
+          label="الساعات المتبقية"
+          value={`${remainingHours} ساعة`}
+          icon={Clock}
+          isFeatured={true}
+          className="xl:col-span-2 border-secondary/20"
+        />
+        <StatCard
+          label="الساعات المستهلكة"
+          value={`${totalConsumedHours} ساعة`}
+          icon={Award}
+          className="xl:col-span-1 border-emerald-100"
+        />
+        <StatCard
+          label="إجمالي المشتراة"
+          value={`${totalPurchasedHours} ساعة`}
           icon={BookOpen}
-        />
-        <StatCard
-          label="الحصص القادمة"
-          value={upcomingLessons?.length || 0}
-          icon={Calendar}
+          className="xl:col-span-1"
         />
       </div>
 
