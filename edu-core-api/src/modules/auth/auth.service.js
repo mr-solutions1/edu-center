@@ -1,5 +1,7 @@
+import bcrypt from 'bcryptjs';
 import { AuthError } from '../../shared/errors/AuthError.js';
 import * as tokenService from '../../shared/services/tokenService.js';
+import logger from '../../shared/services/logger.js';
 import User from '../users/user.model.js';
 import Role from './role.model.js';
 import { DEFAULT_ROLES } from './rbacBootstrap.js';
@@ -17,15 +19,20 @@ export const login = async (email, password, ipAddress, userAgent) => {
     '+passwordHash loginAttempts lockUntil isActive deletedAt'
   );
 
+  const genericErrorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+
   if (!user) {
-    throw new AuthError('البريد الإلكتروني أو كلمة المرور غير صحيحة', 401);
+    // Perform dummy bcrypt comparison to neutralize timing attacks
+    const dummyHash = '$2a$12$L7R58tV380uGjR0FzO/G9uyXgS6l1BWeW0LzBbe8Z.L78g3f8yv1i';
+    await bcrypt.compare(password, dummyHash);
+
+    logger.warn(`🛡️ [Auth] Login failed: User not found for email ${email}`);
+    throw new AuthError(genericErrorMsg, 401);
   }
 
   if (user.isLocked) {
-    throw new AuthError(
-      'تم قفل الحساب مؤقتاً بسبب محاولات دخول خاطئة، يرجى المحاولة لاحقاً',
-      401
-    );
+    logger.warn(`🛡️ [Auth] Login failed: Account is locked for email ${email}`);
+    throw new AuthError(genericErrorMsg, 401);
   }
 
   if (!(await user.comparePassword(password))) {
@@ -39,11 +46,14 @@ export const login = async (email, password, ipAddress, userAgent) => {
     }
 
     await user.save();
-    throw new AuthError('البريد الإلكتروني أو كلمة المرور غير صحيحة', 401);
+
+    logger.warn(`🛡️ [Auth] Login failed: Invalid password for email ${email} (Attempts: ${user.loginAttempts})`);
+    throw new AuthError(genericErrorMsg, 401);
   }
 
   if (user.isActive === false || user.deletedAt) {
-    throw new AuthError('هذا الحساب غير نشط', 401);
+    logger.warn(`🛡️ [Auth] Login failed: Account is inactive/deleted for email ${email}`);
+    throw new AuthError(genericErrorMsg, 401);
   }
 
   // Reset attempts on success

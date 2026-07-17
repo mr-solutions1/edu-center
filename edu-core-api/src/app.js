@@ -13,6 +13,9 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import mongoSanitize from 'express-mongo-sanitize';
+import hpp from 'hpp';
+import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -20,6 +23,9 @@ import morgan from 'morgan';
 import { env } from './config/env.js';
 import activityLogRoutes from './modules/activity-log/activityLog.routes.js';
 import { correlationIdMiddleware } from './shared/middlewares/correlation.js';
+import { authenticate } from './shared/middlewares/authenticate.js';
+import { authorize } from './shared/middlewares/authorize.js';
+import { UserRole } from './shared/constants/enums.js';
 import aiRoutes from './modules/auth/ai.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import crmRoutes from './modules/crm/lead.routes.js';
@@ -93,6 +99,10 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
+// NoSQL Injection & HTTP Parameter Pollution Defense-in-Depth
+app.use(mongoSanitize());
+app.use(hpp());
+
 // 5. Compression
 app.use(compression());
 
@@ -102,8 +112,22 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Static Files for Uploads
-app.use('/uploads', express.static(uploadDir));
+// Static Files for Uploads with Advanced Enterprise Security Headers
+app.use('/uploads', express.static(uploadDir, {
+  setHeaders: (res, filepath) => {
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Content-Security-Policy', "default-src 'none'; sandbox");
+
+    // Whitelist inline execution for safe mime-types only, force attachment for others
+    const ext = path.extname(filepath).toLowerCase();
+    const safeInlines = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf'];
+    if (safeInlines.includes(ext)) {
+      res.set('Content-Disposition', 'inline');
+    } else {
+      res.set('Content-Disposition', 'attachment');
+    }
+  }
+}));
 
 // 6. Rate Limiting
 const limiter = rateLimit({
@@ -118,6 +142,23 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        // Cryptographically verify access token synchronously to prevent key forge attacks
+        const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET);
+        if (decoded && decoded.id) {
+          const tenantId = decoded.tenantId || 'global';
+          return `tenant:${tenantId}:user:${decoded.id}`;
+        }
+      } catch (err) {
+        // Fall back to IP rate limiting if token verification fails
+      }
+    }
+    return req.ip;
+  },
 });
 
 // Strict rate limiting for login
@@ -180,13 +221,21 @@ app.get('/health', (req, res) => {
 });
 
 // Advanced Performance and SaaS Health Monitoring Dashboard Endpoint
-app.get('/health/advanced', async (req, res) => {
+app.get('/health/advanced', authenticate, authorize(UserRole.SUPER_ADMIN), async (req, res) => {
   const dbStates = {
     0: 'disconnected',
     1: 'connected',
     2: 'connecting',
     3: 'disconnecting',
   };
+
+  const healthKey = req.headers['x-health-key'];
+  if (!healthKey || healthKey !== env.HEALTH_KEY) {
+    return res.status(403).json({
+      success: false,
+      message: 'غير مصرح بالوصول: مفتاح التحقق مفقود أو غير صالح.',
+    });
+  }
 
   try {
     const Tenant = mongoose.model('Tenant');
@@ -279,9 +328,19 @@ app.use((err, req, res, _next) => {
     responseErrors = fieldErrors;
   }
 
+  const statusCode = err.statusCode || 500;
+  let responseMessage = err.message || 'حدث خطأ داخلي في الخادم';
+  if (env.NODE_ENV === 'production' && statusCode === 500) {
+    responseMessage = 'حدث خطأ داخلي في الخادم، يرجى المحاولة لاحقاً';
+    responseErrors = {
+      code: 'INTERNAL_ERROR',
+      details: null,
+    };
+  }
+
   const response = {
     success: false,
-    message: err.message || 'حدث خطأ داخلي في الخادم',
+    message: responseMessage,
     data: null,
     meta: {
       correlationId: req.correlationId,

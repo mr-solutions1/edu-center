@@ -4,46 +4,48 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222.2 84% 4.9%;
+    /* Highly sophisticated, clean neutral canvas background */
+    --background: 210 20% 99%;
+    --foreground: 224 71.4% 4.1%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 224 71.4% 4.1%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 224 71.4% 4.1%;
 
-    /* Rakan Academy Colors: Deep Blue and Gold */
-    --primary: 215 100% 17%; /* Deep Blue #002855 */
+    /* Rakan Academy Premium Identity Colors */
+    --primary: 215 100% 15%; /* Premium Deep Navy #002144 */
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 45 100% 50%; /* Golden/Yellow #FFB800 */
+    --secondary: 42 100% 48%; /* Sophisticated Premium Amber/Gold #F59E0B */
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 40% 94.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 44%;
 
-    --accent: 45 100% 50%;
+    --accent: 42 100% 48%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 215 100% 17%;
+    --border: 214.3 32% 91%;
+    --input: 214.3 32% 91%;
+    --ring: 215 100% 15%;
 
-    --radius: 0.75rem;
+    /* Mature, high-precision border radius (8px) instead of bubbly 12px+ */
+    --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 224 71.4% 4.1%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 224 71.4% 4.1%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 224 71.4% 4.1%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 217.2 91.2% 59.8%;
@@ -72,7 +74,29 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Custom premium design utilities to break template feel */
+@layer utilities {
+  /* Minimal high-fidelity borders matching Stripe/Linear style */
+  .border-premium {
+    border: 1px solid rgba(226, 232, 240, 0.8);
+  }
+
+  /* Ultra-subtle, elegant enterprise soft shadow */
+  .shadow-premium {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.03), 0 4px 6px -1px rgba(0, 0, 0, 0.01);
+  }
+
+  .shadow-premium-hover {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .shadow-premium-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.03), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
   }
 }
 

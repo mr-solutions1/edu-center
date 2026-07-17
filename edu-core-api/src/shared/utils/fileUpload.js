@@ -4,6 +4,7 @@ import path from 'path';
 import multer from 'multer';
 
 import { AppError } from '../errors/AppError.js';
+import { wrapMulterMiddleware } from './secureUploadHelper.js';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -22,21 +23,20 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(
-      new AppError('نوع الملف غير مسموح به. يسمح فقط بملفات PDF والصور.', 400),
-      false
-    );
-  }
+  cb(null, true);
 };
 
-export const upload = multer({
+const rawUpload = multer({
   storage,
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
 });
+
+export const upload = {
+  single: (fieldName) => wrapMulterMiddleware(rawUpload.single(fieldName)),
+  array: (fieldName, maxCount) => wrapMulterMiddleware(rawUpload.array(fieldName, maxCount)),
+  fields: (fields) => wrapMulterMiddleware(rawUpload.fields(fields)),
+  any: () => wrapMulterMiddleware(rawUpload.any()),
+};

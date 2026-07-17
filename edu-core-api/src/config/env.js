@@ -43,6 +43,12 @@ const envSchema = z.object({
   // File Upload Configuration
   MAX_FILE_SIZE: z.string().transform(Number).default('5242880'), // 5MB
   UPLOAD_PATH: z.string().default('uploads'),
+
+  // Health Check Key
+  HEALTH_KEY: z.string().default('super_secret_health_key_123'),
+
+  // OpenAI API Key
+  OPENAI_API_KEY: z.string().optional(),
 });
 
 const _env = envSchema.safeParse(process.env);

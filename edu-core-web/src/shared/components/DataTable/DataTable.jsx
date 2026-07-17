@@ -87,17 +87,17 @@ const DataTable = ({ columns, data = [], isLoading, className }) => {
         )}
       </div>
 
-      {/* DESKTOP/TABLET TABLE GRID (>= md, >= 768px) */}
-      <div className="hidden md:block overflow-x-auto border-none shadow-sm rounded-2xl bg-white">
+      {/* DESKTOP/TABLET TABLE GRID (>= md, >= 768px) with premium Stripe/Linear design style */}
+      <div className="hidden md:block overflow-x-auto border border-slate-100/80 shadow-premium rounded-lg bg-white">
         <table className="w-full text-sm text-right text-foreground">
-          <thead className="text-xs uppercase bg-primary text-primary-foreground border-b">
+          <thead className="text-xs uppercase bg-slate-50/60 text-slate-500 border-b border-slate-100">
             <tr>
               {columns.map((col, idx) => (
                 <th
                   key={idx}
                   scope="col"
                   className={cn(
-                    'px-6 py-4 font-bold tracking-wider first:rounded-tr-2xl last:rounded-tl-2xl',
+                    'px-6 py-3 font-semibold tracking-wider text-slate-500',
                     idx === 0 && 'pr-8'
                   )}
                 >
@@ -106,13 +106,13 @@ const DataTable = ({ columns, data = [], isLoading, className }) => {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, ridx) => (
                 <tr key={ridx} className="animate-pulse">
                   {columns.map((_, cidx) => (
-                    <td key={cidx} className="px-6 py-4">
-                      <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <td key={cidx} className="px-6 py-3">
+                      <div className="h-3.5 bg-slate-100 rounded w-3/4"></div>
                     </td>
                   ))}
                 </tr>
@@ -121,13 +121,13 @@ const DataTable = ({ columns, data = [], isLoading, className }) => {
               data.map((row, ridx) => (
                 <tr
                   key={ridx}
-                  className="bg-white hover:bg-secondary/5 transition-all duration-200 group"
+                  className="bg-white hover:bg-slate-50/50 transition-all duration-150 group"
                 >
                   {columns.map((col, cidx) => (
                     <td
                       key={cidx}
                       className={cn(
-                        'px-6 py-4 whitespace-nowrap font-medium text-gray-600 group-hover:text-primary transition-colors',
+                        'px-6 py-3 whitespace-nowrap text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors',
                         cidx === 0 && 'pr-8'
                       )}
                     >

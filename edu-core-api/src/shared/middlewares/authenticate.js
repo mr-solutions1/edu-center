@@ -2,6 +2,7 @@ import User from '../../modules/users/user.model.js';
 import { AuthError } from '../errors/AuthError.js';
 import { verifyAccessToken } from '../services/tokenService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { runWithTenant } from '../utils/tenantContext.js';
 
 export const authenticate = asyncHandler(async (req, res, next) => {
   // 1. Get token from header
@@ -40,5 +41,10 @@ export const authenticate = asyncHandler(async (req, res, next) => {
 
   // 5. Grant access
   req.user = user;
-  next();
+
+  if (user.tenantId) {
+    runWithTenant(user.tenantId, user.branchId || null, next);
+  } else {
+    next();
+  }
 });

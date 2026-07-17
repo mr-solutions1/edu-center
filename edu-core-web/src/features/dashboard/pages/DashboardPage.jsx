@@ -171,14 +171,25 @@ const DashboardPage = () => {
         </Card>
       )}
 
-      {/* Render StatCards based on layout builder settings */}
+      {/* Render StatCards based on layout builder settings with intentional enterprise visual rhythm */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 sm:h-32 w-full rounded-2xl" />
+            <Skeleton key={i} className="h-28 sm:h-32 w-full rounded-lg" />
           ))
         ) : (
           <>
+            {isAdmin && activeWidgets.revenue && stats.monthlyRevenue !== undefined && (
+              <StatCard
+                label="الإيرادات الشهرية"
+                value={`KD ${stats.monthlyRevenue}`}
+                icon={DollarSign}
+                trend={stats.revenueTrend}
+                trendValue={stats.revenueTrendValue}
+                className="col-span-1 sm:col-span-2 lg:col-span-2 border-primary/20"
+                isFeatured={true}
+              />
+            )}
             {isAdmin && activeWidgets.students && stats.totalStudents !== undefined && (
               <StatCard
                 label="إجمالي الطلاب"
@@ -198,15 +209,7 @@ const DashboardPage = () => {
                 label="الحصص النشطة"
                 value={stats.activeLessons}
                 icon={Calendar}
-              />
-            )}
-            {isAdmin && activeWidgets.revenue && stats.monthlyRevenue !== undefined && (
-              <StatCard
-                label="الإيرادات الشهرية"
-                value={`KD ${stats.monthlyRevenue}`}
-                icon={DollarSign}
-                trend={stats.revenueTrend}
-                trendValue={stats.revenueTrendValue}
+                className="col-span-1 sm:col-span-2 lg:col-span-4"
               />
             )}
 
@@ -216,11 +219,14 @@ const DashboardPage = () => {
                   label="حصصي القادمة (هذا الشهر)"
                   value={stats.upcomingLessonsCount}
                   icon={Calendar}
+                  isFeatured={true}
+                  className="col-span-1 sm:col-span-2"
                 />
                 <StatCard
                   label="حصصي المكتملة (هذا الشهر)"
                   value={stats.completedLessonsCount}
                   icon={CheckCircle}
+                  className="col-span-1 sm:col-span-2"
                 />
               </>
             )}
@@ -230,102 +236,102 @@ const DashboardPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {isTeacher ? (
-          <div className="bg-card border rounded-2xl p-5 md:p-6 space-y-4 shadow-sm bg-white">
-            <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
+          <div className="bg-white border border-slate-100/80 rounded-lg p-5 md:p-6 space-y-4 shadow-premium hover:border-slate-200/60 transition-all duration-150">
+            <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 text-slate-800">
+              <Calendar className="h-4.5 w-4.5 text-primary" />
               حصصي القادمة
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {stats.upcomingLessons?.length > 0 ? (
                 stats.upcomingLessons.map((lesson) => (
                   <div
                     key={lesson._id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-xl"
+                    className="flex items-center justify-between p-3 bg-slate-50/50 hover:bg-slate-50 border border-slate-100/40 rounded-lg transition-colors"
                   >
                     <div>
-                      <div className="font-bold text-sm text-slate-800">{lesson.title}</div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                      <div className="font-bold text-xs text-slate-800">{lesson.title}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">
                         الطالب: {lesson.studentId?.parentName}
                       </div>
                     </div>
                     <div className="text-left">
-                      <div className="text-xs font-black text-slate-800">
+                      <div className="text-xs font-bold text-slate-700">
                         {new Date(lesson.lessonDate).toLocaleDateString(
                           'ar-KW'
                         )}
                       </div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                      <div className="text-[10px] text-slate-400 mt-0.5">
                         {lesson.startTime}
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground italic text-center py-8">
+                <p className="text-xs text-slate-400 italic text-center py-8">
                   لا توجد حصص قادمة مجدولة حالياً
                 </p>
               )}
-              <Button asChild variant="outline" className="w-full rounded-xl h-11 text-xs font-bold">
+              <Button asChild variant="outline" className="w-full rounded-md h-9 text-xs font-bold border-slate-200 text-slate-700">
                 <Link to="/scheduling">عرض الجدول الكامل</Link>
               </Button>
             </div>
           </div>
         ) : (
-          <div className="p-8 sm:p-10 bg-white border border-slate-100 rounded-2xl flex flex-col items-center justify-center text-center space-y-3 shadow-sm">
-            <Calendar className="h-8 w-8 text-muted-foreground/50" />
-            <h3 className="font-bold text-sm sm:text-base text-slate-800">
+          <div className="p-8 sm:p-10 bg-white border border-slate-100/80 rounded-lg flex flex-col items-center justify-center text-center space-y-3 shadow-premium hover:border-slate-200/60 transition-all duration-150">
+            <Calendar className="h-6 w-6 text-slate-300" />
+            <h3 className="font-bold text-xs sm:text-sm text-slate-700">
               الجدول الزمني العام
             </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground/60 italic max-w-xs leading-relaxed">
+            <p className="text-[11px] sm:text-xs text-slate-400 italic max-w-xs leading-relaxed">
               يمكنك متابعة كافة الحصص من خلال صفحة الجدولة
             </p>
-            <Button asChild variant="link" className="text-xs font-bold">
+            <Button asChild variant="link" className="text-xs font-bold text-primary">
               <Link to="/scheduling">انتقل إلى الجدول</Link>
             </Button>
           </div>
         )}
 
-        <div className="bg-card border rounded-2xl p-5 md:p-6 space-y-4 shadow-sm bg-white">
-          <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary" />
+        <div className="bg-white border border-slate-100/80 rounded-lg p-5 md:p-6 space-y-4 shadow-premium hover:border-slate-200/60 transition-all duration-150">
+          <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 text-slate-800">
+            <Activity className="h-4.5 w-4.5 text-primary" />
             أحدث النشاطات
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {logsLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full rounded-xl" />
+                <Skeleton key={i} className="h-10 w-full rounded-lg" />
               ))
             ) : logsData?.data?.length > 0 ? (
               logsData.data.map((log) => (
                 <div
                   key={log._id}
-                  className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-muted/50 hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between p-3 bg-slate-50/50 hover:bg-slate-50 border border-slate-100/40 rounded-lg transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <Activity className="h-4 w-4 text-primary" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-7 w-7 rounded-md bg-primary/5 flex items-center justify-center shrink-0">
+                      <Activity className="h-3.5 w-3.5 text-primary" />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-xs sm:text-sm font-bold truncate">
+                      <div className="text-xs font-bold text-slate-800 truncate">
                         {log.userId?.firstName} {log.userId?.lastName}
                       </div>
-                      <div className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">
+                      <div className="text-[10px] text-slate-400 truncate mt-0.5">
                         {log.action} - {log.entityType}
                       </div>
                     </div>
                   </div>
-                  <div className="text-left text-[9px] sm:text-[10px] text-muted-foreground font-medium shrink-0 ml-1">
+                  <div className="text-left text-[9px] text-slate-400 font-medium shrink-0 ml-1">
                     {new Date(log.createdAt).toLocaleTimeString('ar-KW')}
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground italic text-center py-8">
+              <p className="text-xs text-slate-400 italic text-center py-8">
                 لا توجد نشاطات مسجلة حالياً
               </p>
             )}
             {isAdmin && (
-              <Button asChild variant="link" className="w-full text-xs font-bold pt-2">
+              <Button asChild variant="link" className="w-full text-xs font-bold pt-2 text-primary">
                 <Link to="/settings/activity-log">عرض السجل الكامل</Link>
               </Button>
             )}

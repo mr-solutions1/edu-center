@@ -27,7 +27,12 @@ class LocalDiskStorageProvider extends StorageProvider {
   async deleteFile(filePath) {
     logger.info(`💾 [StorageProvider] LocalDisk deleting file: ${filePath}`);
     try {
+      const uploadsRoot = path.resolve('./uploads');
       const fullPath = path.resolve(`.${filePath}`);
+      if (!fullPath.startsWith(uploadsRoot)) {
+        logger.warn(`🛡️ [StorageProvider] Blocked path traversal attempt in file deletion: ${filePath}`);
+        return false;
+      }
       if (fs.existsSync(fullPath)) {
         fs.unlinkSync(fullPath);
         return true;

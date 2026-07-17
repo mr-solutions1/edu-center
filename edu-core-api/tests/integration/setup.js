@@ -1,5 +1,9 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
+import { multiTenantPlugin } from '../../src/shared/mongoose/multiTenantPlugin.js';
+
+// Ensure the multi-tenant plugin is registered globally before compiling models in tests
+mongoose.plugin(multiTenantPlugin);
 
 let mongod;
 

@@ -5,6 +5,7 @@ import multer from 'multer';
 
 import { env } from '../../config/env.js';
 import { AppError } from '../errors/AppError.js';
+import { wrapMulterMiddleware } from '../utils/secureUploadHelper.js';
 
 // Ensure upload directory exists
 const uploadDir = env.UPLOAD_PATH;
@@ -36,32 +37,21 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedMimeTypes = [
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  ];
-
-  if (allowedMimeTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(
-      new AppError(
-        'نوع الملف غير مدعوم. يرجى رفع صور (JPG, PNG, WebP) أو مستندات (PDF, DOC).',
-        400
-      ),
-      false
-    );
-  }
+  // Broad filter, fine-grained validation occurs post-upload via wrapMulterMiddleware
+  cb(null, true);
 };
 
-export const upload = multer({
+const rawUpload = multer({
   storage,
   fileFilter,
   limits: {
     fileSize: env.MAX_FILE_SIZE,
   },
 });
+
+export const upload = {
+  single: (fieldName) => wrapMulterMiddleware(rawUpload.single(fieldName)),
+  array: (fieldName, maxCount) => wrapMulterMiddleware(rawUpload.array(fieldName, maxCount)),
+  fields: (fields) => wrapMulterMiddleware(rawUpload.fields(fields)),
+  any: () => wrapMulterMiddleware(rawUpload.any()),
+};

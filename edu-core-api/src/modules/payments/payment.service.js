@@ -79,7 +79,25 @@ export const getPaymentById = async (id) => {
 };
 
 export const updatePayment = async (id, updateData) => {
-  const payment = await Payment.findByIdAndUpdate(id, updateData, {
+  const whitelistedFields = [
+    'studentId',
+    'lessonId',
+    'amount',
+    'dueDate',
+    'paidDate',
+    'status',
+    'paymentMethod',
+    'transactionRef',
+    'notes',
+  ];
+  const cleanedData = {};
+  whitelistedFields.forEach((field) => {
+    if (updateData[field] !== undefined) {
+      cleanedData[field] = updateData[field];
+    }
+  });
+
+  const payment = await Payment.findByIdAndUpdate(id, cleanedData, {
     new: true,
     runValidators: true,
   });

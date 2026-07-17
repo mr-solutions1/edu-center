@@ -1,7 +1,9 @@
+import crypto from 'crypto';
 import * as authService from './auth.service.js';
 import RefreshToken from './refreshToken.model.js';
 import { env } from '../../config/env.js';
-import * as auditLogger from '../../shared/services/auditLogger.service.js';
+import { logAuditTrail } from '../../shared/services/auditLogger.js';
+import logger from '../../shared/services/logger.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
 /**
@@ -50,15 +52,13 @@ export const login = asyncHandler(async (req, res) => {
 
   setRefreshCookie(res, refreshToken);
 
-  // Audit Log
-  await auditLogger.logActivity({
-    userId: user._id,
+  // Audit Log with Standardized Enterprise Security Framework
+  req.user = user;
+  await logAuditTrail(req, {
     action: 'LOGIN',
     entityType: 'User',
     entityId: user._id,
-    details: { ipAddress, userAgent },
-    ipAddress,
-    userAgent,
+    afterState: { email: user.email, role: user.role },
   });
 
   const permissionsAndRole = await authService.getUserPermissionsAndRole(user);
@@ -85,16 +85,7 @@ export const refresh = asyncHandler(async (req, res) => {
   const tabId = req.headers['x-refresh-tab-id'] || 'unknown';
   const source = req.headers['x-refresh-source'] || 'unknown';
 
-  console.info('[BACKEND_REFRESH_TRACE_RECEIVED] ' + JSON.stringify({
-    timestamp: new Date().toISOString(),
-    reqId,
-    tabId,
-    source,
-    cookiePresent: !!refreshToken,
-    origin: req.get('origin'),
-    referer: req.get('referer'),
-    userAgent,
-  }, null, 2));
+  logger.debug(`[Auth] Refresh requested. reqId: ${reqId}, tabId: ${tabId}, cookiePresent: ${!!refreshToken}`);
 
   try {
     const {
@@ -105,12 +96,7 @@ export const refresh = asyncHandler(async (req, res) => {
 
     setRefreshCookie(res, newRefreshToken);
 
-    console.info('[BACKEND_REFRESH_TRACE_SUCCESS] ' + JSON.stringify({
-      timestamp: new Date().toISOString(),
-      reqId,
-      tabId,
-      status: 200,
-    }, null, 2));
+    logger.debug(`[Auth] Refresh success. reqId: ${reqId}, tabId: ${tabId}`);
 
     const permissionsAndRole = await authService.getUserPermissionsAndRole(user);
     const userObj = user.toObject ? user.toObject() : JSON.parse(JSON.stringify(user));
@@ -122,13 +108,7 @@ export const refresh = asyncHandler(async (req, res) => {
       data: { user: userObj, accessToken },
     });
   } catch (err) {
-    console.error('[BACKEND_REFRESH_TRACE_ERROR] ' + JSON.stringify({
-      timestamp: new Date().toISOString(),
-      reqId,
-      tabId,
-      status: err.statusCode || 401,
-      errorMsg: err.message,
-    }, null, 2));
+    logger.error(`[Auth] Refresh failed. reqId: ${reqId}, tabId: ${tabId}, status: ${err.statusCode || 401}, msg: ${err.message}`);
     throw err;
   }
 });
@@ -139,6 +119,24 @@ export const refresh = asyncHandler(async (req, res) => {
  */
 export const logout = asyncHandler(async (req, res) => {
   const { refreshToken } = req.cookies;
+
+  if (refreshToken) {
+    try {
+      const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+      const tokenDoc = await RefreshToken.findOne({ tokenHash }).populate('userId');
+      if (tokenDoc && tokenDoc.userId) {
+        req.user = tokenDoc.userId;
+        await logAuditTrail(req, {
+          action: 'LOGOUT',
+          entityType: 'User',
+          entityId: tokenDoc.userId._id,
+        });
+      }
+    } catch (err) {
+      // Ignore to ensure logout is completely self-healing and never blocks
+    }
+  }
+
   await authService.logout(refreshToken);
   clearRefreshCookie(res);
   res.status(200).json({ success: true, message: 'Logged out' });
@@ -149,6 +147,12 @@ export const logout = asyncHandler(async (req, res) => {
  * @route   POST /api/v1/auth/logout-all
  */
 export const logoutAll = asyncHandler(async (req, res) => {
+  await logAuditTrail(req, {
+    action: 'LOGOUT_ALL',
+    entityType: 'User',
+    entityId: req.user._id,
+  });
+
   await authService.logoutAll(req.user.id);
   clearRefreshCookie(res);
   res

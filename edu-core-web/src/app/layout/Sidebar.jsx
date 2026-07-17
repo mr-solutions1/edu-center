@@ -188,26 +188,34 @@ const Sidebar = () => {
               to={item.path}
               onClick={handleLinkClick}
               title={isTabletCollapsed ? item.label : undefined}
-              className={() =>
+              className={({ isActive }) =>
                 cn(
-                  'flex items-center rounded-xl text-sm font-medium transition-all duration-200 group relative',
+                  'flex items-center rounded-lg text-sm font-medium transition-all duration-150 group relative',
                   isTabletCollapsed && !isMobileOpen
-                    ? 'justify-center p-3 h-12 w-12 mx-auto'
-                    : 'gap-3 px-4 py-3',
+                    ? 'justify-center p-3 h-10 w-10 mx-auto'
+                    : 'gap-3 px-4 py-2.5',
                   isActive
-                    ? 'bg-secondary text-secondary-foreground shadow-lg shadow-secondary/20'
-                    : 'text-primary-foreground/70 hover:bg-white/10 hover:text-white'
+                    ? 'bg-white/8 text-white font-bold'
+                    : 'text-primary-foreground/70 hover:bg-white/4 hover:text-white'
                 )
               }
             >
-              <item.icon
-                className={cn(
-                  'h-5 w-5 transition-transform duration-200 shrink-0',
-                  'group-hover:scale-110'
-                )}
-              />
-              {(!isTabletCollapsed || isMobileOpen) && (
-                <span className="truncate animate-fadeIn">{item.label}</span>
+              {({ isActive }) => (
+                <>
+                  {/* Premium indicator line on active route */}
+                  {isActive && (
+                    <span className="absolute right-0 top-2 bottom-2 w-1 bg-secondary rounded-l-md" />
+                  )}
+                  <item.icon
+                    className={cn(
+                      'h-4.5 w-4.5 transition-transform duration-150 shrink-0',
+                      isActive ? 'text-secondary scale-105' : 'text-primary-foreground/60 group-hover:text-white group-hover:scale-105'
+                    )}
+                  />
+                  {(!isTabletCollapsed || isMobileOpen) && (
+                    <span className="truncate animate-fadeIn">{item.label}</span>
+                  )}
+                </>
               )}
             </NavLink>
           );
