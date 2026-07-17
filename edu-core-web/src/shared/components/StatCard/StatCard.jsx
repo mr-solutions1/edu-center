@@ -10,41 +10,51 @@ const StatCard = ({
   trend,
   trendValue,
   className,
+  isFeatured = false,
 }) => {
   return (
     <Card
       className={cn(
-        'overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300 group',
+        'overflow-hidden transition-all duration-200 shadow-premium border border-slate-100 hover:border-slate-200/80',
+        isFeatured
+          ? 'bg-gradient-to-br from-primary/[0.02] to-primary/[0.04] border-primary/20'
+          : 'bg-white',
         className
       )}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2.5">
+        <CardTitle className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           {label}
         </CardTitle>
-        <div className="p-2 bg-primary/5 rounded-xl group-hover:bg-primary group-hover:text-white transition-all duration-300">
-          {Icon && <Icon className="h-5 w-5" />}
+        <div className={cn(
+          'p-1.5 rounded-md transition-all duration-150',
+          isFeatured ? 'bg-primary/10 text-primary' : 'bg-slate-50 text-slate-400 group-hover:text-primary'
+        )}>
+          {Icon && <Icon className="h-4.5 w-4.5" />}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-black tracking-tight text-primary">
+      <CardContent className="pt-1">
+        <div className={cn(
+          'text-2xl font-bold tracking-tight',
+          isFeatured ? 'text-primary' : 'text-slate-800'
+        )}>
           {value}
         </div>
         {(trend || trendValue) && (
-          <div className="flex items-center gap-1 mt-2">
-            <p
+          <div className="flex items-center gap-1.5 mt-2">
+            <span
               className={cn(
-                'text-xs font-bold px-2 py-0.5 rounded-full',
+                'text-[10px] font-bold px-1.5 py-0.5 rounded-md',
                 trend === 'up'
-                  ? 'bg-green-100 text-green-700'
+                  ? 'bg-emerald-50 text-green-700 border border-green-200/30'
                   : trend === 'down'
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-gray-100 text-gray-600'
+                    ? 'bg-rose-50 text-red-700 border border-red-200/30'
+                    : 'bg-slate-50 text-slate-600 border border-slate-200/30'
               )}
             >
               {trendValue}
-            </p>
-            <span className="text-[10px] text-muted-foreground font-medium">
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">
               مقارنة بالشهر الماضي
             </span>
           </div>
