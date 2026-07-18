@@ -10,9 +10,12 @@ import {
   toFils,
 } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
+import {
+  recordLedgerEntry,
+  removeLedgerEntriesByReference,
+} from '../ledger/ledger.service.js';
 import Lesson from '../lessons/lesson.model.js';
 import Teacher from '../teachers/teacher.model.js';
-import { recordLedgerEntry, removeLedgerEntriesByReference } from '../ledger/ledger.service.js';
 
 /**
  * Recalculate payroll for a teacher for a specific month/year
@@ -227,49 +230,67 @@ export const payPayroll = async (id, userId) => {
     await record.save({ session });
 
     // Clean any old ledger entries to prevent duplication
-    await removeLedgerEntriesByReference(record._id, 'TEACHER_PAYMENT', session);
+    await removeLedgerEntriesByReference(
+      record._id,
+      'TEACHER_PAYMENT',
+      session
+    );
 
     // Record in unified Financial Ledger
-    await recordLedgerEntry({
-      teacherId: record.teacherId,
-      amount: record.finalAmount,
-      type: 'TEACHER_PAYMENT',
-      direction: 'OUT',
-      referenceId: record._id,
-      referenceModel: 'PayrollRecord',
-      description: `تسوية راتب المعلم - شهر ${record.month}/${record.year}`,
-      transactionDate: record.paidDate,
-      performedBy: userId,
-    }, session);
+    await recordLedgerEntry(
+      {
+        teacherId: record.teacherId,
+        amount: record.finalAmount,
+        type: 'TEACHER_PAYMENT',
+        direction: 'OUT',
+        referenceId: record._id,
+        referenceModel: 'PayrollRecord',
+        description: `تسوية راتب المعلم - شهر ${record.month}/${record.year}`,
+        transactionDate: record.paidDate,
+        performedBy: userId,
+      },
+      session
+    );
 
     // Also record as a complete Transaction to update the chronological running balance of the institute (if amount > 0)!
     if (record.finalAmount > 0) {
-      const Transaction = await import('../ledger/transaction.model.js').then(m => m.default);
-      const { recalculateRunningBalances } = await import('../ledger/ledger.service.js');
-      const { generateCode } = await import('../../shared/utils/atomicCounter.js');
+      const Transaction = await import('../ledger/transaction.model.js').then(
+        (m) => m.default
+      );
+      const { recalculateRunningBalances } =
+        await import('../ledger/ledger.service.js');
+      const { generateCode } =
+        await import('../../shared/utils/atomicCounter.js');
 
       const transactionId = await generateCode('transactionId', 'TXN', session);
       const actualTeacherId = record.teacherId?._id || record.teacherId;
       const teacher = await Teacher.findById(actualTeacherId).session(session);
       let teacherName = 'معلم';
       if (teacher) {
-        const u = await import('../users/user.model.js').then(m => m.default.findById(teacher.userId).session(session));
-        if (u) teacherName = `${u.firstName} ${u.lastName}`;
+        const u = await import('../users/user.model.js').then((m) =>
+          m.default.findById(teacher.userId).session(session)
+        );
+        if (u) {
+          teacherName = `${u.firstName} ${u.lastName}`;
+        }
       }
 
-      await Transaction.create([
-        {
-          transactionId,
-          date: record.paidDate,
-          type: 'TEACHER_PAYMENT',
-          name: teacherName,
-          teacherId: actualTeacherId,
-          amount: record.finalAmount,
-          paymentMethod: 'TRANSFER',
-          reference: `PAYROLL-${record.month}-${record.year}`,
-          notes: `تسوية راتب المعلم - شهر ${record.month}/${record.year}`,
-        }
-      ], { session });
+      await Transaction.create(
+        [
+          {
+            transactionId,
+            date: record.paidDate,
+            type: 'TEACHER_PAYMENT',
+            name: teacherName,
+            teacherId: actualTeacherId,
+            amount: record.finalAmount,
+            paymentMethod: 'TRANSFER',
+            reference: `PAYROLL-${record.month}-${record.year}`,
+            notes: `تسوية راتب المعلم - شهر ${record.month}/${record.year}`,
+          },
+        ],
+        { session }
+      );
 
       // Recalculate rolling chronological balance
       await recalculateRunningBalances(session);

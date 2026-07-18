@@ -11,7 +11,14 @@ class ExcelService {
    * @param {Array<Array<any>>} rows - Values matrix
    * @param {Array<number>} [columnWidths] - Optional column widths
    */
-  async exportToExcel(res, fileName, sheetName, headers, rows, columnWidths = []) {
+  async exportToExcel(
+    res,
+    fileName,
+    sheetName,
+    headers,
+    rows,
+    columnWidths = []
+  ) {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(sheetName, {
       views: [{ rtlMode: true }], // Enable Right-to-Left for Arabic layouts!
@@ -21,7 +28,12 @@ class ExcelService {
     worksheet.mergeCells('A1:E1');
     const titleCell = worksheet.getCell('A1');
     titleCell.value = `أكاديمية ركان - ${sheetName}`;
-    titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+    titleCell.font = {
+      name: 'Arial',
+      size: 16,
+      bold: true,
+      color: { argb: 'FFFFFFFF' },
+    };
     titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
     titleCell.fill = {
       type: 'pattern',
@@ -33,7 +45,9 @@ class ExcelService {
     // 2. Add Generation Date Row
     worksheet.mergeCells('A2:E2');
     const dateCell = worksheet.getCell('A2');
-    const dateStr = new Date().toLocaleString('ar-KW', { timeZone: 'Asia/Kuwait' });
+    const dateStr = new Date().toLocaleString('ar-KW', {
+      timeZone: 'Asia/Kuwait',
+    });
     dateCell.value = `تاريخ الإنشاء: ${dateStr}`;
     dateCell.font = { name: 'Arial', size: 10, italic: true };
     dateCell.alignment = { horizontal: 'right' };
@@ -45,7 +59,12 @@ class ExcelService {
     const headerRow = worksheet.addRow(headers);
     headerRow.height = 25;
     headerRow.eachCell((cell) => {
-      cell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.font = {
+        name: 'Arial',
+        size: 11,
+        bold: true,
+        color: { argb: 'FFFFFFFF' },
+      };
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
@@ -97,7 +116,9 @@ class ExcelService {
         let maxLen = 10;
         column.eachCell({ includeEmpty: true }, (cell) => {
           const val = cell.value ? cell.value.toString() : '';
-          if (val.length > maxLen) maxLen = val.length;
+          if (val.length > maxLen) {
+            maxLen = val.length;
+          }
         });
         column.width = maxLen + 2;
       });
@@ -109,7 +130,10 @@ class ExcelService {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
     // Use RFC 5987 to safely encode Arabic filenames in HTTP headers!
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}.xlsx`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}.xlsx`
+    );
 
     await workbook.xlsx.write(res);
     res.end();

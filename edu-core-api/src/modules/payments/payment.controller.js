@@ -29,7 +29,11 @@ export const getPayment = asyncHandler(async (req, res) => {
 });
 
 export const updatePayment = asyncHandler(async (req, res) => {
-  const payment = await paymentService.updatePayment(req.params.id, req.body, req.user.id);
+  const payment = await paymentService.updatePayment(
+    req.params.id,
+    req.body,
+    req.user.id
+  );
   res.status(200).json({
     success: true,
     data: payment,

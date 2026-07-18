@@ -1,6 +1,6 @@
 import TenantSettings from './tenantSettings.model.js';
-import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
+import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import { getTenantContext } from '../../shared/utils/tenantContext.js';
 
 /**

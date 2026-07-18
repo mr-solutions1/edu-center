@@ -1,9 +1,13 @@
-import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import FinancialLedger from './ledger.model.js';
+import {
+  recordLedgerEntry,
+  getLedgerStats,
+  createTransaction,
+} from './ledger.service.js';
 import Transaction from './transaction.model.js';
-import { recordLedgerEntry, getLedgerStats, createTransaction } from './ledger.service.js';
-import { logAuditTrail } from '../../shared/services/auditLogger.js';
 import { AppError } from '../../shared/errors/AppError.js';
+import { logAuditTrail } from '../../shared/services/auditLogger.js';
+import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
 /**
  * @desc    Record manual financial entry (Adjustments or Expenses)
@@ -53,15 +57,27 @@ export const getLedgerEntries = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
   const filter = {};
 
-  if (type) filter.type = type;
-  if (direction) filter.direction = direction;
-  if (studentId) filter.studentId = studentId;
-  if (teacherId) filter.teacherId = teacherId;
+  if (type) {
+    filter.type = type;
+  }
+  if (direction) {
+    filter.direction = direction;
+  }
+  if (studentId) {
+    filter.studentId = studentId;
+  }
+  if (teacherId) {
+    filter.teacherId = teacherId;
+  }
 
   if (startDate || endDate) {
     filter.transactionDate = {};
-    if (startDate) filter.transactionDate.$gte = new Date(startDate);
-    if (endDate) filter.transactionDate.$lte = new Date(endDate);
+    if (startDate) {
+      filter.transactionDate.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filter.transactionDate.$lte = new Date(endDate);
+    }
   }
 
   const [entries, total] = await Promise.all([
@@ -141,12 +157,18 @@ export const getTransactions = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const filter = {};
-  if (type) filter.type = type;
+  if (type) {
+    filter.type = type;
+  }
 
   if (startDate || endDate) {
     filter.date = {};
-    if (startDate) filter.date.$gte = new Date(startDate);
-    if (endDate) filter.date.$lte = new Date(endDate);
+    if (startDate) {
+      filter.date.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filter.date.$lte = new Date(endDate);
+    }
   }
 
   const [transactions, total] = await Promise.all([

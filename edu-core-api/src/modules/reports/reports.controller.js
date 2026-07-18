@@ -1,14 +1,14 @@
 import { UserRole } from '../../shared/constants/enums.js';
-import { pdfService } from '../../shared/services/pdf.service.js';
 import { excelService } from '../../shared/services/excel.service.js';
+import { pdfService } from '../../shared/services/pdf.service.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
+import FinancialLedger from '../ledger/ledger.model.js';
 import Lesson from '../lessons/lesson.model.js';
-import Student from '../students/student.model.js';
-import Teacher from '../teachers/teacher.model.js';
-import StudentRegistration from '../students/registration.model.js';
 import Payment from '../payments/payment.model.js';
 import PayrollRecord from '../payroll/payrollRecord.model.js';
-import FinancialLedger from '../ledger/ledger.model.js';
+import StudentRegistration from '../students/registration.model.js';
+import Student from '../students/student.model.js';
+import Teacher from '../teachers/teacher.model.js';
 
 /**
  * @desc    Get dashboard overview stats (dynamic & real-time)
@@ -18,18 +18,37 @@ import FinancialLedger from '../ledger/ledger.model.js';
 export const getOverview = asyncHandler(async (req, res) => {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const endOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999
+  );
 
   const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  const endOfPrevMonth = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    0,
+    23,
+    59,
+    59,
+    999
+  );
 
   // 1. Core Counts
-  const [activeStudents, activeTeachers, parentsCount, activePackagesCount] = await Promise.all([
-    Student.countDocuments({ status: 'ACTIVE' }),
-    Teacher.countDocuments({ isActive: true }),
-    Student.distinct('parentPhone', { deletedAt: null }).then((arr) => arr.length),
-    StudentRegistration.countDocuments({ status: 'ACTIVE' }),
-  ]);
+  const [activeStudents, activeTeachers, parentsCount, activePackagesCount] =
+    await Promise.all([
+      Student.countDocuments({ status: 'ACTIVE' }),
+      Teacher.countDocuments({ isActive: true }),
+      Student.distinct('parentPhone', { deletedAt: null }).then(
+        (arr) => arr.length
+      ),
+      StudentRegistration.countDocuments({ status: 'ACTIVE' }),
+    ]);
 
   // 2. Remaining / Consumed Hours
   const hoursSum = await StudentRegistration.aggregate([
@@ -43,7 +62,10 @@ export const getOverview = asyncHandler(async (req, res) => {
     },
   ]);
   const consumedHours = hoursSum[0]?.totalConsumed || 0;
-  const remainingHours = Math.max(0, (hoursSum[0]?.totalPurchased || 0) - consumedHours);
+  const remainingHours = Math.max(
+    0,
+    (hoursSum[0]?.totalPurchased || 0) - consumedHours
+  );
 
   // 3. Financial Metrics from Ledger (Current Month)
   const currentMonthLedger = await FinancialLedger.aggregate([
@@ -55,9 +77,17 @@ export const getOverview = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: null,
-        totalIncome: { $sum: { $cond: [{ $eq: ['$direction', 'IN'] }, '$amount', 0] } },
-        totalExpense: { $sum: { $cond: [{ $eq: ['$direction', 'OUT'] }, '$amount', 0] } },
-        teacherPayments: { $sum: { $cond: [{ $eq: ['$type', 'TEACHER_PAYMENT'] }, '$amount', 0] } },
+        totalIncome: {
+          $sum: { $cond: [{ $eq: ['$direction', 'IN'] }, '$amount', 0] },
+        },
+        totalExpense: {
+          $sum: { $cond: [{ $eq: ['$direction', 'OUT'] }, '$amount', 0] },
+        },
+        teacherPayments: {
+          $sum: {
+            $cond: [{ $eq: ['$type', 'TEACHER_PAYMENT'] }, '$amount', 0],
+          },
+        },
       },
     },
   ]);
@@ -77,8 +107,12 @@ export const getOverview = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: null,
-        totalIncome: { $sum: { $cond: [{ $eq: ['$direction', 'IN'] }, '$amount', 0] } },
-        totalExpense: { $sum: { $cond: [{ $eq: ['$direction', 'OUT'] }, '$amount', 0] } },
+        totalIncome: {
+          $sum: { $cond: [{ $eq: ['$direction', 'IN'] }, '$amount', 0] },
+        },
+        totalExpense: {
+          $sum: { $cond: [{ $eq: ['$direction', 'OUT'] }, '$amount', 0] },
+        },
       },
     },
   ]);
@@ -87,7 +121,9 @@ export const getOverview = asyncHandler(async (req, res) => {
   const prevProfit = prevRevenue - prevExpenses;
 
   const calculateTrend = (curr, prev) => {
-    if (prev === 0) return curr > 0 ? '+100%' : '0%';
+    if (prev === 0) {
+      return curr > 0 ? '+100%' : '0%';
+    }
     const pct = Math.round(((curr - prev) / prev) * 100);
     return pct >= 0 ? `+${pct}%` : `${pct}%`;
   };
@@ -104,7 +140,10 @@ export const getOverview = asyncHandler(async (req, res) => {
     { $match: { status: 'PAID' } },
     { $group: { _id: null, total: { $sum: '$amount' } } },
   ]);
-  const outstandingStudentBalances = Math.max(0, (totalRegAmount[0]?.total || 0) - (totalPaidAmt[0]?.total || 0));
+  const outstandingStudentBalances = Math.max(
+    0,
+    (totalRegAmount[0]?.total || 0) - (totalPaidAmt[0]?.total || 0)
+  );
 
   // 5. Outstanding Teacher Dues
   const unpaidPayroll = await PayrollRecord.aggregate([
@@ -127,8 +166,20 @@ export const getOverview = asyncHandler(async (req, res) => {
   const renewalsRequired = lowHoursAgg.length;
 
   // 7. Today & Upcoming Lessons
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+  const endOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    59,
+    999
+  );
 
   const [todayLessons, upcomingLessonsCount] = await Promise.all([
     Lesson.countDocuments({
@@ -141,13 +192,17 @@ export const getOverview = asyncHandler(async (req, res) => {
   ]);
 
   // 8. Attendance Rate & Sessions stats
-  const [completedSessions, cancelledSessions, noShowSessions] = await Promise.all([
-    Lesson.countDocuments({ status: 'COMPLETED' }),
-    Lesson.countDocuments({ status: 'CANCELLED' }),
-    Lesson.countDocuments({ status: 'NO_SHOW' }),
-  ]);
+  const [completedSessions, cancelledSessions, noShowSessions] =
+    await Promise.all([
+      Lesson.countDocuments({ status: 'COMPLETED' }),
+      Lesson.countDocuments({ status: 'CANCELLED' }),
+      Lesson.countDocuments({ status: 'NO_SHOW' }),
+    ]);
   const totalLessonsForRate = completedSessions + noShowSessions;
-  const attendanceRate = totalLessonsForRate > 0 ? Math.round((completedSessions / totalLessonsForRate) * 100) : 100;
+  const attendanceRate =
+    totalLessonsForRate > 0
+      ? Math.round((completedSessions / totalLessonsForRate) * 100)
+      : 100;
 
   const stats = {
     activeStudents,
@@ -178,7 +233,9 @@ export const getOverview = asyncHandler(async (req, res) => {
 
   // Filter stats or add custom portal data based on role
   if (req.user.role === UserRole.TEACHER) {
-    const teacher = await Teacher.findOne({ userId: req.user._id || req.user.id });
+    const teacher = await Teacher.findOne({
+      userId: req.user._id || req.user.id,
+    });
     if (teacher) {
       const upcoming = await Lesson.find({
         teacherId: teacher._id,
@@ -513,7 +570,13 @@ export const exportExcel = asyncHandler(async (req, res) => {
     { $unwind: '$user' },
   ]);
 
-  const headers = ['المعلم', 'عدد الحصص المكتملة', 'الإجمالي المالي (دينار)', 'نصيب المعلم (دينار)', 'نصيب الأكاديمية (دينار)'];
+  const headers = [
+    'المعلم',
+    'عدد الحصص المكتملة',
+    'الإجمالي المالي (دينار)',
+    'نصيب المعلم (دينار)',
+    'نصيب الأكاديمية (دينار)',
+  ];
   const rows = report.map((row) => [
     `${row.user.firstName} ${row.user.lastName}`,
     row.totalLessons,
@@ -539,15 +602,18 @@ export const exportExcel = asyncHandler(async (req, res) => {
 export const exportStudentsReport = asyncHandler(async (req, res) => {
   const { format = 'excel' } = req.query;
 
-  const students = await Student.find()
-    .populate('userId', 'firstName lastName email');
+  const students = await Student.find().populate(
+    'userId',
+    'firstName lastName email'
+  );
 
   // Gather registrations & calculate balances for each student
   const studentRows = await Promise.all(
     students.map(async (student) => {
-      const balances = await import('../students/studentBalance.service.js').then((m) =>
-        m.recalculateStudentBalances(student._id)
-      );
+      const balances =
+        await import('../students/studentBalance.service.js').then((m) =>
+          m.recalculateStudentBalances(student._id)
+        );
 
       return {
         code: student.studentCode,
@@ -563,29 +629,70 @@ export const exportStudentsReport = asyncHandler(async (req, res) => {
     })
   );
 
-  const headers = ['كود الطالب', 'ولي الأمر', 'رقم الاتصال', 'المرحلة الدراسية', 'الساعات المشتراة', 'الساعات المستهلكة', 'الساعات المتبقية', 'المستحق المالي المتبقي (د.ك)', 'الحالة'];
+  const headers = [
+    'كود الطالب',
+    'ولي الأمر',
+    'رقم الاتصال',
+    'المرحلة الدراسية',
+    'الساعات المشتراة',
+    'الساعات المستهلكة',
+    'الساعات المتبقية',
+    'المستحق المالي المتبقي (د.ك)',
+    'الحالة',
+  ];
 
   if (format === 'excel') {
     const rows = studentRows.map((r) => [
-      r.code, r.name, r.phone, r.grade, r.purchased, r.consumed, r.remaining, r.outstanding, r.status
+      r.code,
+      r.name,
+      r.phone,
+      r.grade,
+      r.purchased,
+      r.consumed,
+      r.remaining,
+      r.outstanding,
+      r.status,
     ]);
-    await excelService.exportToExcel(res, 'تقرير_الطلاب', 'تقرير الطلاب', headers, rows, [15, 25, 15, 18, 15, 15, 15, 22, 12]);
+    await excelService.exportToExcel(
+      res,
+      'تقرير_الطلاب',
+      'تقرير الطلاب',
+      headers,
+      rows,
+      [15, 25, 15, 18, 15, 15, 15, 22, 12]
+    );
   } else if (format === 'csv') {
     let csv = headers.join(',') + '\n';
     studentRows.forEach((r) => {
       csv += `${r.code},${r.name},${r.phone},${r.grade},${r.purchased},${r.consumed},${r.remaining},${r.outstanding},${r.status}\n`;
     });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename=students-report.csv');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=students-report.csv'
+    );
     res.status(200).send(Buffer.from('\uFEFF' + csv, 'utf-8')); // Add UTF-8 BOM for Excel Arabic compatibility!
   } else if (format === 'pdf') {
-    const doc = pdfService.initDocument(res, 'تقرير مستويات الطلاب الساعية والمالية');
+    const doc = pdfService.initDocument(
+      res,
+      'تقرير مستويات الطلاب الساعية والمالية'
+    );
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=students-report.pdf');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=students-report.pdf'
+    );
 
     pdfService.addHeader(doc, 'تقرير مستويات الطلاب الساعية والمالية');
 
-    const pdfHeaders = ['كود الطالب', 'ولي الأمر', 'المرحلة', 'الساعات', 'رصيد المتبقي', 'المستحق (د.ك)'];
+    const pdfHeaders = [
+      'كود الطالب',
+      'ولي الأمر',
+      'المرحلة',
+      'الساعات',
+      'رصيد المتبقي',
+      'المستحق (د.ك)',
+    ];
     const colWidths = [80, 140, 80, 60, 60, 90];
     const pdfRows = studentRows.map((r) => [
       r.code,
@@ -612,8 +719,12 @@ export const exportAttendanceReport = asyncHandler(async (req, res) => {
   const filter = {};
   if (startDate || endDate) {
     filter.lessonDate = {};
-    if (startDate) filter.lessonDate.$gte = new Date(startDate);
-    if (endDate) filter.lessonDate.$lte = new Date(endDate);
+    if (startDate) {
+      filter.lessonDate.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filter.lessonDate.$lte = new Date(endDate);
+    }
   }
 
   const lessons = await Lesson.find(filter)
@@ -625,9 +736,13 @@ export const exportAttendanceReport = asyncHandler(async (req, res) => {
   const attendanceRows = await Promise.all(
     lessons.map(async (l) => {
       const teacherUser = l.teacherId
-        ? await import('../users/user.model.js').then((m) => m.default.findById(l.teacherId.userId))
+        ? await import('../users/user.model.js').then((m) =>
+            m.default.findById(l.teacherId.userId)
+          )
         : null;
-      const teacherName = teacherUser ? `${teacherUser.firstName} ${teacherUser.lastName}` : 'غير محدد';
+      const teacherName = teacherUser
+        ? `${teacherUser.firstName} ${teacherUser.lastName}`
+        : 'غير محدد';
 
       const statusMap = {
         SCHEDULED: 'مجدول',
@@ -647,25 +762,50 @@ export const exportAttendanceReport = asyncHandler(async (req, res) => {
     })
   );
 
-  const headers = ['تاريخ الحصة', 'التوقيت', 'الطالب', 'المعلم', 'المادة الدراسية', 'الحالة'];
+  const headers = [
+    'تاريخ الحصة',
+    'التوقيت',
+    'الطالب',
+    'المعلم',
+    'المادة الدراسية',
+    'الحالة',
+  ];
 
   if (format === 'excel') {
     const rows = attendanceRows.map((r) => [
-      r.date, r.time, r.student, r.teacher, r.subject, r.status
+      r.date,
+      r.time,
+      r.student,
+      r.teacher,
+      r.subject,
+      r.status,
     ]);
-    await excelService.exportToExcel(res, 'تقرير_حضور_الحصص', 'حضور الحصص', headers, rows, [15, 12, 22, 22, 18, 15]);
+    await excelService.exportToExcel(
+      res,
+      'تقرير_حضور_الحصص',
+      'حضور الحصص',
+      headers,
+      rows,
+      [15, 12, 22, 22, 18, 15]
+    );
   } else if (format === 'csv') {
     let csv = headers.join(',') + '\n';
     attendanceRows.forEach((r) => {
       csv += `${r.date},${r.time},${r.student},${r.teacher},${r.subject},${r.status}\n`;
     });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename=attendance-report.csv');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=attendance-report.csv'
+    );
     res.status(200).send(Buffer.from('\uFEFF' + csv, 'utf-8'));
   } else if (format === 'pdf') {
     const doc = pdfService.initDocument(res, 'سجل حضور الحصص التفصيلي');
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=attendance-report.pdf');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=attendance-report.pdf'
+    );
 
     pdfService.addHeader(doc, 'سجل حضور حصص الطلاب التفصيلي');
 
@@ -695,8 +835,12 @@ export const exportLedgerReport = asyncHandler(async (req, res) => {
   const filter = {};
   if (startDate || endDate) {
     filter.transactionDate = {};
-    if (startDate) filter.transactionDate.$gte = new Date(startDate);
-    if (endDate) filter.transactionDate.$lte = new Date(endDate);
+    if (startDate) {
+      filter.transactionDate.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filter.transactionDate.$lte = new Date(endDate);
+    }
   }
 
   const entries = await FinancialLedger.find(filter)
@@ -713,7 +857,9 @@ export const exportLedgerReport = asyncHandler(async (req, res) => {
         const teacherUser = await import('../users/user.model.js').then((m) =>
           m.default.findById(entry.teacherId.userId)
         );
-        if (teacherUser) linkedName = `${teacherUser.firstName} ${teacherUser.lastName}`;
+        if (teacherUser) {
+          linkedName = `${teacherUser.firstName} ${teacherUser.lastName}`;
+        }
       }
 
       const typeMap = {
@@ -737,29 +883,60 @@ export const exportLedgerReport = asyncHandler(async (req, res) => {
     })
   );
 
-  const headers = ['التاريخ', 'نوع الحركة', 'الطرف المعني', 'المبلغ (د.ك)', 'الاتجاه', 'تفاصيل البيان'];
+  const headers = [
+    'التاريخ',
+    'نوع الحركة',
+    'الطرف المعني',
+    'المبلغ (د.ك)',
+    'الاتجاه',
+    'تفاصيل البيان',
+  ];
 
   if (format === 'excel') {
     const rows = ledgerRows.map((r) => [
-      r.date, r.type, r.linked, parseFloat(r.amount), r.direction, r.description
+      r.date,
+      r.type,
+      r.linked,
+      parseFloat(r.amount),
+      r.direction,
+      r.description,
     ]);
-    await excelService.exportToExcel(res, 'دفتر_الأستاذ_المالي', 'دفتر الأستاذ', headers, rows, [12, 15, 20, 15, 12, 35]);
+    await excelService.exportToExcel(
+      res,
+      'دفتر_الأستاذ_المالي',
+      'دفتر الأستاذ',
+      headers,
+      rows,
+      [12, 15, 20, 15, 12, 35]
+    );
   } else if (format === 'csv') {
     let csv = headers.join(',') + '\n';
     ledgerRows.forEach((r) => {
       csv += `${r.date},${r.type},${r.linked},${r.amount},${r.direction},${r.description}\n`;
     });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename=financial-ledger.csv');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=financial-ledger.csv'
+    );
     res.status(200).send(Buffer.from('\uFEFF' + csv, 'utf-8'));
   } else if (format === 'pdf') {
     const doc = pdfService.initDocument(res, 'دفتر الأستاذ المالي الموحد');
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=financial-ledger.pdf');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=financial-ledger.pdf'
+    );
 
     pdfService.addHeader(doc, 'سجل المعاملات ودفتر الأستاذ المالي الموحد');
 
-    const pdfHeaders = ['التاريخ', 'نوع الحركة', 'الطرف المعني', 'المبلغ (د.ك)', 'الاتجاه'];
+    const pdfHeaders = [
+      'التاريخ',
+      'نوع الحركة',
+      'الطرف المعني',
+      'المبلغ (د.ك)',
+      'الاتجاه',
+    ];
     const colWidths = [80, 100, 120, 80, 80];
     const pdfRows = ledgerRows.map((r) => [
       r.date,

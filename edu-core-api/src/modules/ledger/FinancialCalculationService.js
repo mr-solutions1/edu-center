@@ -1,7 +1,7 @@
-import Teacher from '../teachers/teacher.model.js';
 import Transaction from './transaction.model.js';
-import { SettingsService } from '../tenants/SettingsService.js';
 import { multiplyFils, subtractFils } from '../../shared/utils/money.js';
+import Teacher from '../teachers/teacher.model.js';
+import { SettingsService } from '../tenants/SettingsService.js';
 
 export const FinancialCalculationService = {
   /**
@@ -9,7 +9,9 @@ export const FinancialCalculationService = {
    */
   recalculateRunningBalances: async (session = null) => {
     const options = session ? { session } : {};
-    const transactions = await Transaction.find().sort({ date: 1, createdAt: 1 }).session(session);
+    const transactions = await Transaction.find()
+      .sort({ date: 1, createdAt: 1 })
+      .session(session);
 
     let running = 0;
     for (const t of transactions) {
@@ -41,7 +43,10 @@ export const FinancialCalculationService = {
     // 1. Determine Stage Hourly Rate
     let stageHourlyRate = teacher.hourlyRate || 0; // Default fallback
     if (lesson.educationalLevel) {
-      stageHourlyRate = await SettingsService.getStageHourlyRate(tenantId, lesson.educationalLevel);
+      stageHourlyRate = await SettingsService.getStageHourlyRate(
+        tenantId,
+        lesson.educationalLevel
+      );
     }
 
     // 2. Determine Teacher Percentage (Default 75%)
@@ -63,12 +68,19 @@ export const FinancialCalculationService = {
     // 4. Transport Deduction
     let transportDeduction = 0;
     if (teacher.usesInstituteCar) {
-      transportDeduction = await SettingsService.getTransportationDeductionRate(tenantId);
+      transportDeduction =
+        await SettingsService.getTransportationDeductionRate(tenantId);
     }
 
     // Net Teacher Earnings & Institute Revenue (Total cost must equal sum)
-    const netTeacherEarnings = Math.max(0, subtractFils(baseEarnings, transportDeduction));
-    const instituteRevenue = subtractFils(lesson.lessonPrice, netTeacherEarnings);
+    const netTeacherEarnings = Math.max(
+      0,
+      subtractFils(baseEarnings, transportDeduction)
+    );
+    const instituteRevenue = subtractFils(
+      lesson.lessonPrice,
+      netTeacherEarnings
+    );
 
     return {
       teacherEarnings: netTeacherEarnings,

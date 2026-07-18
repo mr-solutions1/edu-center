@@ -31,7 +31,9 @@ export const SettingsService = {
    */
   getSiblingDiscountPct: async (tenantId) => {
     const rules = await SettingsService.getFinancialRules(tenantId);
-    return rules.siblingDiscountPercentage !== undefined ? rules.siblingDiscountPercentage : 10;
+    return rules.siblingDiscountPercentage !== undefined
+      ? rules.siblingDiscountPercentage
+      : 10;
   },
 
   /**
@@ -39,7 +41,10 @@ export const SettingsService = {
    */
   getTransportationDeductionRate: async (tenantId) => {
     const rules = await SettingsService.getFinancialRules(tenantId);
-    const rate = rules.transportationDeductionRate !== undefined ? rules.transportationDeductionRate : 0.5;
+    const rate =
+      rules.transportationDeductionRate !== undefined
+        ? rules.transportationDeductionRate
+        : 0.5;
     return toFils(rate);
   },
 
@@ -58,13 +63,13 @@ export const SettingsService = {
     };
 
     const gradeMapping = {
-      'تأسيس': 'PRIMARY',
-      'ابتدائي': 'PRIMARY',
-      'متوسط': 'INTERMEDIATE',
-      'ثانوي': 'SECONDARY',
-      'جامعي': 'UNIVERSITY',
-      'قدرات': 'FOREIGN',
-      'تحصيلي': 'SPECIAL_NEEDS',
+      تأسيس: 'PRIMARY',
+      ابتدائي: 'PRIMARY',
+      متوسط: 'INTERMEDIATE',
+      ثانوي: 'SECONDARY',
+      جامعي: 'UNIVERSITY',
+      قدرات: 'FOREIGN',
+      تحصيلي: 'SPECIAL_NEEDS',
     };
 
     const stageKey = gradeMapping[studentGrade] || 'PRIMARY';

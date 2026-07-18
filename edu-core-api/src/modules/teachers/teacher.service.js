@@ -3,12 +3,12 @@ import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import { generateCode } from '../../shared/utils/atomicCounter.js';
 import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
+import FinancialLedger from '../ledger/ledger.model.js';
+import Lesson from '../lessons/lesson.model.js';
 import StudentRegistration from '../students/registration.model.js';
 import Student from '../students/student.model.js';
-import Lesson from '../lessons/lesson.model.js';
-import TenantSettings from '../tenants/tenantSettings.model.js';
-import FinancialLedger from '../ledger/ledger.model.js';
 import { calculateRegistrationTeacherDue } from '../students/studentBalance.service.js';
+import TenantSettings from '../tenants/tenantSettings.model.js';
 
 /**
  * Calculates real-time financial and educational metrics for a teacher
@@ -17,17 +17,21 @@ import { calculateRegistrationTeacherDue } from '../students/studentBalance.serv
  * @returns {Promise<Object>} Calculated metrics
  */
 export const calculateTeacherMetrics = async (teacher) => {
-  if (!teacher) return null;
+  if (!teacher) {
+    return null;
+  }
 
   const teacherId = teacher._id;
 
   // 1. Registration Count
-  const registrationCount = await StudentRegistration.countDocuments({ teacherId });
+  const registrationCount = await StudentRegistration.countDocuments({
+    teacherId,
+  });
 
   // 2. Student Count
-  const studentCount = await StudentRegistration.distinct('studentId', { teacherId }).then(
-    (arr) => arr.length
-  );
+  const studentCount = await StudentRegistration.distinct('studentId', {
+    teacherId,
+  }).then((arr) => arr.length);
 
   // 3. Executed Hours (sum of consumed hours on completed lessons)
   const completedLessons = await Lesson.find({
@@ -55,9 +59,12 @@ export const calculateTeacherMetrics = async (teacher) => {
   // 5. Transportation Deduction (calculated from completed lessons with car)
   let transportationDeduction = 0;
   if (teacher.usesInstituteCar) {
-    const settings = await TenantSettings.findOne({ tenantId: teacher.tenantId });
+    const settings = await TenantSettings.findOne({
+      tenantId: teacher.tenantId,
+    });
     const deductionRate = settings?.financialRules?.transportationDeductionRate;
-    const rateInFils = typeof deductionRate === 'number' ? toFils(deductionRate) : toFils(0.5); // Default 0.5 KWD
+    const rateInFils =
+      typeof deductionRate === 'number' ? toFils(deductionRate) : toFils(0.5); // Default 0.5 KWD
     transportationDeduction = completedLessons.length * rateInFils;
   }
 

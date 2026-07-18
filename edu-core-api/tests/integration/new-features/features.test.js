@@ -110,7 +110,9 @@ describe('Integration: New Features (Upload & PDF)', () => {
         .set('Authorization', `Bearer ${manualToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.header['content-type']).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      expect(res.header['content-type']).toBe(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
     });
 
     it('should export Student Report as CSV', async () => {
@@ -137,7 +139,9 @@ describe('Integration: New Features (Upload & PDF)', () => {
         .set('Authorization', `Bearer ${manualToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.header['content-type']).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      expect(res.header['content-type']).toBe(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
     });
 
     it('should export Financial Ledger Report as Excel', async () => {
@@ -146,7 +150,9 @@ describe('Integration: New Features (Upload & PDF)', () => {
         .set('Authorization', `Bearer ${manualToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.header['content-type']).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      expect(res.header['content-type']).toBe(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
     });
   });
 });

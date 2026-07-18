@@ -2,7 +2,11 @@ import express from 'express';
 
 import * as portalController from './portal.controller.js';
 import * as studentController from './student.controller.js';
-import { studentSchema, updateStudentSchema, registrationSchema } from './student.validation.js';
+import {
+  studentSchema,
+  updateStudentSchema,
+  registrationSchema,
+} from './student.validation.js';
 import { UserRole } from '../../shared/constants/enums.js';
 import { authenticate } from '../../shared/middlewares/authenticate.js';
 import { authorize } from '../../shared/middlewares/authorize.js';

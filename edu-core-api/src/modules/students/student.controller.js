@@ -1,18 +1,19 @@
-import * as studentService from './student.service.js';
 import StudentRegistration from './registration.model.js';
 import Student from './student.model.js';
+import * as studentService from './student.service.js';
 import {
-  getSiblingDiscountPercentage,
   recalculateStudentBalances,
   calculateRegistrationWeeklyHours,
   calculateRegistrationTeacherDue,
 } from './studentBalance.service.js';
 import { StudentCalculationService } from './StudentCalculationService.js';
-import { toFils } from '../../shared/utils/money.js';
-import { recordLedgerEntry, removeLedgerEntriesByReference } from '../ledger/ledger.service.js';
+import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import { logAuditTrail } from '../../shared/services/auditLogger.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
-import { NotFoundError } from '../../shared/errors/NotFoundError.js';
+import {
+  recordLedgerEntry,
+  removeLedgerEntriesByReference,
+} from '../ledger/ledger.service.js';
 
 export const getStudentBalance = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -37,7 +38,11 @@ export const getRegistrations = asyncHandler(async (req, res) => {
   const enriched = await Promise.all(
     registrations.map(async (reg) => {
       const weeklyHours = calculateRegistrationWeeklyHours(reg);
-      const teacherDue = await calculateRegistrationTeacherDue(reg, student?.grade, student?.tenantId);
+      const teacherDue = await calculateRegistrationTeacherDue(
+        reg,
+        student?.grade,
+        student?.tenantId
+      );
 
       const obj = reg.toObject();
       obj.weeklyHours = weeklyHours;
@@ -69,44 +74,56 @@ export const createRegistration = asyncHandler(async (req, res) => {
   } = req.body;
 
   const { priceInFils, discountPct, discountAmount, totalAmount } =
-    await StudentCalculationService.calculateRegistrationTotals(id, pricePerHour, purchasedHours);
+    await StudentCalculationService.calculateRegistrationTotals(
+      id,
+      pricePerHour,
+      purchasedHours
+    );
 
   // Perform with transaction to ensure ledger and registration are atomic
-  const registration = await StudentRegistration.db.transaction(async (session) => {
-    const [reg] = await StudentRegistration.create([
-      {
-        studentId: id,
-        subject,
-        purchasedHours,
-        pricePerHour: priceInFils,
-        discountPercentage: discountPct,
-        discountAmount,
-        totalAmount,
-        teacherId: teacherId || null,
-        day1: day1 || null,
-        from1: from1 || null,
-        to1: to1 || null,
-        day2: day2 || null,
-        from2: from2 || null,
-        to2: to2 || null,
-        notes,
-      }
-    ], { session });
+  const registration = await StudentRegistration.db.transaction(
+    async (session) => {
+      const [reg] = await StudentRegistration.create(
+        [
+          {
+            studentId: id,
+            subject,
+            purchasedHours,
+            pricePerHour: priceInFils,
+            discountPercentage: discountPct,
+            discountAmount,
+            totalAmount,
+            teacherId: teacherId || null,
+            day1: day1 || null,
+            from1: from1 || null,
+            to1: to1 || null,
+            day2: day2 || null,
+            from2: from2 || null,
+            to2: to2 || null,
+            notes,
+          },
+        ],
+        { session }
+      );
 
-    // Record ledger entry
-    await recordLedgerEntry({
-      studentId: id,
-      amount: totalAmount,
-      type: 'PACKAGE_PURCHASE',
-      direction: 'IN',
-      referenceId: reg._id,
-      referenceModel: 'StudentRegistration',
-      description: `شراء حزمة ساعات جديدة - ${subject} - ${purchasedHours} ساعة`,
-      performedBy: req.user._id,
-    }, session);
+      // Record ledger entry
+      await recordLedgerEntry(
+        {
+          studentId: id,
+          amount: totalAmount,
+          type: 'PACKAGE_PURCHASE',
+          direction: 'IN',
+          referenceId: reg._id,
+          referenceModel: 'StudentRegistration',
+          description: `شراء حزمة ساعات جديدة - ${subject} - ${purchasedHours} ساعة`,
+          performedBy: req.user._id,
+        },
+        session
+      );
 
-    return reg;
-  });
+      return reg;
+    }
+  );
 
   // Trigger recalculation
   await recalculateStudentBalances(id, true);
