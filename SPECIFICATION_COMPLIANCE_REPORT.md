@@ -1,6 +1,6 @@
 # Specification Compliance Report (Alpha Institute ERP)
 
-This report details the findings and results of the **Specification Compliance Audit** conducted on the Alpha Institute ERP system against the authoritative specification `Alpha_Institute_ وصف للم مطلوب انجليزي.pdf` (Version 2.0).
+This report details the findings and results of the **Specification Compliance Audit** conducted on the Alpha Institute ERP system against the authoritative specification `Alpha_Institute_ وصف للمطلوب انجليزي.pdf` (Version 2.0).
 
 ---
 
@@ -39,6 +39,12 @@ As part of the Compliance Audit, the following gaps were identified and successf
    - Displayed the "مجموعة الأشقاء" value dynamically in the student profile sidebar on the `StudentDetailsPage.jsx` screen.
 3. **Automated Integration Testing:**
    - Authored a dedicated integration suite (`tests/integration/siblingGroup.test.js`) verifying the primary sibling discount calculation on the explicit `siblingGroup` and legacy `parentPhone` matchers.
+4. **Harden and Centralize RBAC Permission Sidebar:**
+   - Created the enterprise-grade `usePermissions` custom React hook (`usePermissions.js`) featuring helper utilities like `can()`, `hasRole()`, `canAny()`, and `canAll()`.
+   - Restructured the sidebar menu definitions in `Sidebar.jsx` to support structured objects defining `id`, `label`, `icon`, `path`, `requiredPermissions`, `requiredRoles`, and nested `children` sub-menus.
+   - Re-engineered the sidebar filtering function using recursive tree traversal, hiding parent groups if all of their children are filtered out.
+   - Memoized the filtered sidebar navigation tree with `useMemo` to prevent redundant computations and unnecessary re-renders.
+   - Integrated beautiful collapsible submenu UI groups on the Sidebar for nested items (like Students & CRM, Academic Courses & Groups, and Payments & Payroll) with custom animations and toggle states.
 
 ---
 
