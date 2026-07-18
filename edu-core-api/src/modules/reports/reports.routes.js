@@ -52,4 +52,29 @@ router.get(
   reportsController.exportPDF
 );
 
+router.get(
+  '/export-excel',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  validate(reportQuerySchema, 'query'),
+  reportsController.exportExcel
+);
+
+router.get(
+  '/export-students',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  reportsController.exportStudentsReport
+);
+
+router.get(
+  '/export-attendance',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.RECEPTIONIST),
+  reportsController.exportAttendanceReport
+);
+
+router.get(
+  '/export-ledger',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  reportsController.exportLedgerReport
+);
+
 export default router;

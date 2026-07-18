@@ -23,6 +23,22 @@ export const getAllPayroll = asyncHandler(async (req, res) => {
   });
 });
 
+export const submitForApproval = asyncHandler(async (req, res) => {
+  const record = await payrollService.submitForApproval(req.params.id, req.user.id);
+  res.status(200).json({
+    success: true,
+    data: record,
+  });
+});
+
+export const approvePayroll = asyncHandler(async (req, res) => {
+  const record = await payrollService.approvePayroll(req.params.id, req.user.id);
+  res.status(200).json({
+    success: true,
+    data: record,
+  });
+});
+
 export const markPaid = asyncHandler(async (req, res) => {
   const record = await payrollService.markPaid(req.params.id, req.user.id);
   res.status(200).json({

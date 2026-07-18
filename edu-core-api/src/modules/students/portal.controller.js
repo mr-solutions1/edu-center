@@ -59,6 +59,8 @@ export const getStudentDashboard = asyncHandler(async (req, res) => {
     'name subject'
   );
 
+  const lowHoursAlert = remainingHours <= 2;
+
   res.status(200).json({
     success: true,
     data: {
@@ -71,6 +73,8 @@ export const getStudentDashboard = asyncHandler(async (req, res) => {
       totalPurchasedHours,
       totalConsumedHours,
       groups,
+      lowHoursAlert,
+      alertMessage: lowHoursAlert ? 'رصيد ساعاتك منخفض (ساعتان أو أقل). يرجى تجديد الحزمة فوراً.' : null,
     },
   });
 });
@@ -104,14 +108,19 @@ export const getParentDashboard = asyncHandler(async (req, res) => {
     parentStudentLinks.map(async (link) => {
       const studentId = link.studentId?._id;
       const balances = studentId ? await recalculateStudentBalances(studentId) : null;
+      const hasLowHours = balances ? balances.remainingHours <= 2 : false;
       return {
         student: link.studentId,
         relationship: link.relationshipType,
         isPrimary: link.isPrimary,
         balances,
+        lowHoursAlert: hasLowHours,
+        alertMessage: hasLowHours ? `رصيد ساعات ابنكم ${link.studentId?.parentName || ''} منخفض جداً. يرجى التجديد.` : null,
       };
     })
   );
+
+  const parentAlertsCount = children.filter((child) => child.lowHoursAlert).length;
 
   // 1. Fetch combined upcoming lessons for all children
   const upcomingLessons = await Lesson.find({
@@ -150,6 +159,7 @@ export const getParentDashboard = asyncHandler(async (req, res) => {
       upcomingLessons,
       outstandingPayments,
       recentActivities,
+      lowHoursAlertsCount: parentAlertsCount,
     },
   });
 });

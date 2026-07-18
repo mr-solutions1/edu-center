@@ -7,7 +7,7 @@ const payrollTransactionSchema = new mongoose.Schema(
     lessonId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Lesson',
-      required: true,
+      required: false,
     },
     payrollRecordId: {
       type: mongoose.Schema.Types.ObjectId,

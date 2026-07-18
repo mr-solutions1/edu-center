@@ -23,6 +23,7 @@ import morgan from 'morgan';
 
 import { env } from './config/env.js';
 import activityLogRoutes from './modules/activity-log/activityLog.routes.js';
+import ledgerRoutes from './modules/ledger/ledger.routes.js';
 import settingsRoutes from './modules/tenants/settings.routes.js';
 import aiRoutes from './modules/auth/ai.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
@@ -312,6 +313,7 @@ app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/payroll', payrollRoutes);
 app.use('/api/v1/salaries', salaryRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/ledger', ledgerRoutes);
 app.use('/api/v1/activity-log', activityLogRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 

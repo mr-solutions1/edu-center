@@ -1,0 +1,40 @@
+# 22 — Requirement Traceability Matrix (RTM) & Gap Analysis
+
+This document traces every business and technical requirement from the Alpha Institute Project Specification and the authoritative decisions of July 2026. For each item, we evaluate the implementation status, define its precise location in the codebase, and reference the associated verification tests.
+
+---
+
+## 📊 Summary Status
+- **✅ Fully Implemented:** Core models, standard CRUD, basic Authentication, basic Student/Teacher/Lesson features, Unified Financial Ledger, Complete Teacher Settlement State Workflow (Draft ➔ Paid), Comprehensive Low-Hour alerts for Student/Parent/Dashboard, Multi-Format PDF/Excel/CSV Exports with Arabic RTL.
+- **🟡 Partially Implemented:** None. All specification gaps resolved.
+- **❌ Not Implemented:** None. All goals met with 100% compliance.
+
+---
+
+## 🔍 Requirement Traceability Matrix (RTM)
+
+| Req ID | Requirement Description | Spec Ref / Decision | Module | Status | Code Location | Verification / Tests | Notes |
+|:---|:---|:---|:---|:---|:---|:---|:---|
+| **REQ-AUTH-01** | JWT Authentication with secure `httpOnly` cookie delivery | Spec 4.1 | Auth | **✅ Fully Implemented** | `edu-core-api/src/modules/auth` | `tests/integration/auth.test.js` | Cross-subdomain session cookie setup working on Vercel/VPS |
+| **REQ-AUTH-02** | Role-Based Access Control (RBAC) supporting Admin, Accountant, Receptionist, Teacher, Student, Parent | Spec 3.0, 4.1 | Auth | **✅ Fully Implemented** | `edu-core-api/src/shared/middlewares/authorize.js` | `tests/tenant/isolation.test.js` | Full protection on API endpoints based on explicit role list |
+| **REQ-STU-01** | Student profile management (CRUD with search, filter, and pagination) | Spec 4.2 | Students | **✅ Fully Implemented** | `edu-core-api/src/modules/students` | `tests/integration/new-features/features.test.js` | Auto-generated unique student code (`STU-` prefix) |
+| **REQ-STU-02** | Educational Level Grade validation matching standard Kuwaiti levels | Spec 4.2 | Students | **✅ Fully Implemented** | `edu-core-api/src/shared/constants/enums.js` | Mongoose validation on Student model | Uses Arabic grades list (تأسيس، ابتدائي، إلخ) |
+| **REQ-LEDG-01** | Unified Financial Ledger as the single source of truth for all financial operations | Decision 5.0 | Ledger | **✅ Fully Implemented** | `edu-core-api/src/modules/ledger` | `tests/integration/ledger.test.js` | All financial events (Payments, Packages, Refunds, Deductions) generate immutable Ledger Entries |
+| **REQ-LEDG-02** | Eliminate duplicate/redundant financial fields in databases | Decision 5.0 | Ledger | **✅ Fully Implemented** | `edu-core-api/src/modules/ledger/ledger.service.js` | `tests/integration/ledger.test.js` | Live calculations from the ledger entries instead of scattered counters |
+| **REQ-PAY-01** | Payment recording linked to students and (optionally) specific lessons | Spec 4.3 | Payments | **✅ Fully Implemented** | `edu-core-api/src/modules/payments` | `tests/integration/new-features/features.test.js` | Fully integrated with Mongoose transactions, Ledger, and auto-recalculation |
+| **REQ-PAY-02** | Support `PARTIALLY_PAID` status and handle payments validation rules | Spec 4.3, Decision 8.0 | Payments | **✅ Fully Implemented** | `edu-core-api/src/shared/constants/enums.js` | Model validation in `payment.model.js` | Resolved legacy mismatch where database lacked `PARTIALLY_PAID` |
+| **REQ-ATT-01** | Lesson-by-lesson student attendance tracking (Completed, Absent, Cancelled) | Spec 4.4 | Attendance | **✅ Fully Implemented** | `edu-core-api/src/modules/lessons` | `tests/unit/studentBalance.test.js` | Managed inside Lesson model status attribute |
+| **REQ-ATT-02** | Attendance/Lesson completion automatically deducts balance in FIFO order | Spec 4.4 | Attendance | **✅ Fully Implemented** | `edu-core-api/src/modules/students/studentBalance.service.js` | `tests/unit/studentBalance.test.js` | Sequentially consumes purchased hour packages by date |
+| **REQ-DASH-01** | Management-oriented Admin Dashboard KPIs and Statistics calculated from live data | Spec 4.5, Decision 2.0 | Dashboard | **✅ Fully Implemented** | `edu-core-api/src/modules/reports` | `tests/integration/new-features/features.test.js` | Calculated dynamically on-the-fly with monthly trends |
+| **REQ-DASH-02** | Dynamic role-based Dashboard views (Admin, Teacher, Student, Parent portals) | Spec 3.0 | Dashboard | **✅ Fully Implemented** | `edu-core-web/src/features/dashboard` | Manual review | Portal UI synchronized with backend response payload |
+| **REQ-TEACH-01** | Teacher profile management with structured availability slots | Spec 4.6 | Teachers | **✅ Fully Implemented** | `edu-core-api/src/modules/teachers` | `tests/integration/teacher-endpoints.test.js` | Availability saved as structured sub-document |
+| **REQ-TEACH-02** | Support dual teacher compensation models: Per-Lesson Percentage and Hourly Rate | Spec 4.6, Decision 8.0 | Teachers | **✅ Fully Implemented** | `edu-core-api/src/modules/students/studentBalance.service.js` | `tests/unit/commission.test.js` | Standardized default teacher share at 75% |
+| **REQ-TEACH-03** | Auto car-transportation deductions based on VPS tenant settings | Spec 4.6, Decision 8.0 | Teachers | **✅ Fully Implemented** | `edu-core-api/src/modules/students/studentBalance.service.js` | `tests/unit/commission.test.js` | Flat 0.5 KWD deduction applied if `usesInstituteCar` is true |
+| **REQ-SETTL-01** | Comprehensive Monthly Teacher Settlement Workflow: Draft ➔ Calculated ➔ Pending Approval ➔ Approved ➔ Paid | Decision 6.0 | Payroll | **✅ Fully Implemented** | `edu-core-api/src/modules/payroll` | `tests/integration/payrollWorkflow.test.js` | State transitions with full auditing and unified ledger payouts |
+| **REQ-RENEW-01** | Sibling discount calculation (10% starting from second sibling in oldest order) | Decision 7.0 | Students | **✅ Fully Implemented** | `edu-core-api/src/modules/students/studentBalance.service.js` | `tests/unit/studentBalance.test.js` | Uses `parentPhone` grouping and creation date sorting |
+| **REQ-RENEW-02** | Auto-detect low remaining package hours and display alerts in Admin/Student/Parent dashboards | Decision 7.0 | Renewal | **✅ Fully Implemented** | `edu-core-api/src/modules/students/portal.controller.js` | `tests/integration/new-features/features.test.js` | Low hour threshold warnings of `<= 2` hours are returned in response payloads |
+| **REQ-COMP-01** | Strict server-side enforcement of read-only calculated fields (no client modifications) | Decision 8.0 | Shared | **✅ Fully Implemented** | API controllers | `tests/integration/new-features/features.test.js` | Financial fields and remaining hours calculated dynamically by server |
+| **REQ-RECALC-01** | Idempotent automatic balance/payroll recalculations triggered instantly by any financial CRUD | Decision 9.0 | Shared | **✅ Fully Implemented** | Services | `tests/unit/studentBalance.test.js` | Direct recalculated triggers on student registration and payment updates |
+| **REQ-TRANS-01** | Database transactional integrity wrapping all linked financial writes | Decision 9.0 | Shared | **✅ Fully Implemented** | `edu-core-api/src/shared/utils/withTransaction.js` | `tests/integration/payrollWorkflow.test.js` | Transactions verified; includes robust fallback logic for non-replica set testing |
+| **REQ-AUD-01** | Immutable audit logs mapping prior and post states of all financial operations | Decision 10.0 | Security | **✅ Fully Implemented** | `edu-core-api/src/shared/services/auditLogger.js` | `tests/integration/new-features/features.test.js` | Audit logger records all modifications and logins |
+| **REQ-EXP-01** | Arabic RTL Report Exports in PDF, CSV, and Excel (.xlsx) formats | Decision 11.0 | Reports | **✅ Fully Implemented** | `edu-core-api/src/shared/services/excel.service.js` | `tests/integration/new-features/features.test.js` | Seamless multi-format exports with proper Right-to-Left formatting for Arabic layouts |

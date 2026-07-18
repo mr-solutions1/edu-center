@@ -2,6 +2,7 @@ import * as studentService from './student.service.js';
 import StudentRegistration from './registration.model.js';
 import { getSiblingDiscountPercentage, recalculateStudentBalances } from './studentBalance.service.js';
 import { toFils } from '../../shared/utils/money.js';
+import { recordLedgerEntry, removeLedgerEntriesByReference } from '../ledger/ledger.service.js';
 import { logAuditTrail } from '../../shared/services/auditLogger.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
@@ -37,15 +38,34 @@ export const createRegistration = asyncHandler(async (req, res) => {
   const discountAmount = Math.round(baseTotal * (discountPct / 100));
   const totalAmount = baseTotal - discountAmount;
 
-  const registration = await StudentRegistration.create({
-    studentId: id,
-    subject,
-    purchasedHours,
-    pricePerHour: priceInFils,
-    discountPercentage: discountPct,
-    discountAmount,
-    totalAmount,
-    notes,
+  // Perform with transaction to ensure ledger and registration are atomic
+  const registration = await StudentRegistration.db.transaction(async (session) => {
+    const [reg] = await StudentRegistration.create([
+      {
+        studentId: id,
+        subject,
+        purchasedHours,
+        pricePerHour: priceInFils,
+        discountPercentage: discountPct,
+        discountAmount,
+        totalAmount,
+        notes,
+      }
+    ], { session });
+
+    // Record ledger entry
+    await recordLedgerEntry({
+      studentId: id,
+      amount: totalAmount,
+      type: 'PACKAGE_PURCHASE',
+      direction: 'IN',
+      referenceId: reg._id,
+      referenceModel: 'StudentRegistration',
+      description: `شراء حزمة ساعات جديدة - ${subject} - ${purchasedHours} ساعة`,
+      performedBy: req.user._id,
+    }, session);
+
+    return reg;
   });
 
   // Trigger recalculation
@@ -66,20 +86,29 @@ export const createRegistration = asyncHandler(async (req, res) => {
 
 export const deleteRegistration = asyncHandler(async (req, res) => {
   const { id, regId } = req.params;
-  const registration = await StudentRegistration.findOneAndDelete({ _id: regId, studentId: id });
-  if (!registration) {
-    throw new NotFoundError('التسجيل غير موجود');
-  }
+
+  await StudentRegistration.db.transaction(async (session) => {
+    const registration = await StudentRegistration.findOneAndDelete(
+      { _id: regId, studentId: id },
+      { session }
+    );
+    if (!registration) {
+      throw new NotFoundError('التسجيل غير موجود');
+    }
+
+    // Remove ledger entry
+    await removeLedgerEntriesByReference(regId, 'PACKAGE_PURCHASE', session);
+
+    await logAuditTrail(req, {
+      action: 'STUDENT_REGISTRATION_DELETED',
+      entityType: 'StudentRegistration',
+      entityId: regId,
+      beforeState: registration.toObject(),
+    });
+  });
 
   // Trigger recalculation
   await recalculateStudentBalances(id);
-
-  await logAuditTrail(req, {
-    action: 'STUDENT_REGISTRATION_DELETED',
-    entityType: 'StudentRegistration',
-    entityId: regId,
-    beforeState: registration.toObject(),
-  });
 
   res.status(204).send();
 });

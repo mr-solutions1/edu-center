@@ -4,6 +4,8 @@ import * as auditLogger from '../../shared/services/auditLogger.service.js';
 import { notificationService } from '../../shared/services/notification.service.js';
 import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
+import { recordLedgerEntry, removeLedgerEntriesByReference } from '../ledger/ledger.service.js';
+import { recalculateStudentBalances } from '../students/studentBalance.service.js';
 
 export const createPayment = async (paymentData, userId) => {
   return withTransaction(async (session) => {
@@ -11,6 +13,26 @@ export const createPayment = async (paymentData, userId) => {
     const [payment] = await Payment.create([{ ...paymentData, amount }], {
       session,
     });
+
+    // 1. Record Ledger Entry if status is PAID or PARTIALLY_PAID
+    if (payment.status === 'PAID' || payment.status === 'PARTIALLY_PAID') {
+      await recordLedgerEntry({
+        studentId: payment.studentId,
+        amount: payment.amount,
+        type: 'STUDENT_PAYMENT',
+        direction: 'IN',
+        referenceId: payment._id,
+        referenceModel: 'Payment',
+        description: `دفعة مالية من الطالب - ${payment.notes || ''}`,
+        transactionDate: payment.paidDate || payment.createdAt || new Date(),
+        performedBy: userId,
+      }, session);
+    }
+
+    // 2. Trigger automatic student balance recalculation
+    if (payment.studentId) {
+      await recalculateStudentBalances(payment.studentId);
+    }
 
     // Hook point: Send notification to student's user if exists
     if (payment.studentId) {
@@ -78,39 +100,88 @@ export const getPaymentById = async (id) => {
   return payment;
 };
 
-export const updatePayment = async (id, updateData) => {
-  const whitelistedFields = [
-    'studentId',
-    'lessonId',
-    'amount',
-    'dueDate',
-    'paidDate',
-    'status',
-    'paymentMethod',
-    'transactionRef',
-    'notes',
-  ];
-  const cleanedData = {};
-  whitelistedFields.forEach((field) => {
-    if (updateData[field] !== undefined) {
-      cleanedData[field] = updateData[field];
-    }
-  });
+export const updatePayment = async (id, updateData, userId = null) => {
+  return withTransaction(async (session) => {
+    const whitelistedFields = [
+      'studentId',
+      'lessonId',
+      'amount',
+      'dueDate',
+      'paidDate',
+      'status',
+      'paymentMethod',
+      'transactionRef',
+      'notes',
+    ];
+    const cleanedData = {};
+    whitelistedFields.forEach((field) => {
+      if (updateData[field] !== undefined) {
+        cleanedData[field] = updateData[field];
+      }
+    });
 
-  const payment = await Payment.findByIdAndUpdate(id, cleanedData, {
-    new: true,
-    runValidators: true,
+    if (cleanedData.amount !== undefined) {
+      cleanedData.amount = toFils(cleanedData.amount);
+    }
+
+    const beforePayment = await Payment.findById(id).session(session);
+    if (!beforePayment) {
+      throw new NotFoundError('السجل المالي غير موجود');
+    }
+
+    const payment = await Payment.findByIdAndUpdate(id, cleanedData, {
+      new: true,
+      runValidators: true,
+      session,
+    });
+
+    // Remove any previous ledger entries for this payment
+    await removeLedgerEntriesByReference(id, 'STUDENT_PAYMENT', session);
+
+    // Record new ledger entry if status is PAID or PARTIALLY_PAID
+    if (payment.status === 'PAID' || payment.status === 'PARTIALLY_PAID') {
+      await recordLedgerEntry({
+        studentId: payment.studentId,
+        amount: payment.amount,
+        type: 'STUDENT_PAYMENT',
+        direction: 'IN',
+        referenceId: payment._id,
+        referenceModel: 'Payment',
+        description: `تحديث دفعة مالية من الطالب - ${payment.notes || ''}`,
+        transactionDate: payment.paidDate || payment.createdAt || new Date(),
+        performedBy: userId || beforePayment.studentId, // Fallback to studentId if userId is unavailable
+      }, session);
+    }
+
+    // Recalculate student balance
+    if (payment.studentId) {
+      await recalculateStudentBalances(payment.studentId);
+    }
+    if (beforePayment.studentId && beforePayment.studentId.toString() !== payment.studentId?.toString()) {
+      await recalculateStudentBalances(beforePayment.studentId);
+    }
+
+    return payment;
   });
-  if (!payment) {
-    throw new NotFoundError('السجل المالي غير موجود');
-  }
-  return payment;
 };
 
 export const deletePayment = async (id) => {
-  const payment = await Payment.findByIdAndDelete(id);
-  if (!payment) {
-    throw new NotFoundError('السجل المالي غير موجود');
-  }
-  return payment;
+  return withTransaction(async (session) => {
+    const payment = await Payment.findById(id).session(session);
+    if (!payment) {
+      throw new NotFoundError('السجل المالي غير موجود');
+    }
+
+    await Payment.findByIdAndDelete(id).session(session);
+
+    // Remove ledger entry
+    await removeLedgerEntriesByReference(id, 'STUDENT_PAYMENT', session);
+
+    // Recalculate student balance
+    if (payment.studentId) {
+      await recalculateStudentBalances(payment.studentId);
+    }
+
+    return payment;
+  });
 };

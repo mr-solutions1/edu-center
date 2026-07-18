@@ -12,6 +12,7 @@ import {
 import { withTransaction } from '../../shared/utils/withTransaction.js';
 import Lesson from '../lessons/lesson.model.js';
 import Teacher from '../teachers/teacher.model.js';
+import { recordLedgerEntry, removeLedgerEntriesByReference } from '../ledger/ledger.service.js';
 
 /**
  * Recalculate payroll for a teacher for a specific month/year
@@ -63,7 +64,7 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
 
     const finalAmount = subtractFils(teacherEarnings, transportDeductions);
 
-    // 5. Upsert PayrollRecord
+    // 5. Upsert PayrollRecord with CALCULATED status
     const payrollRecord = await PayrollRecord.findOneAndUpdate(
       { teacherId, month, year },
       {
@@ -73,6 +74,7 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
         instituteRevenue,
         transportDeductions,
         finalAmount,
+        status: 'CALCULATED',
       },
       { upsert: true, new: true, session }
     );
@@ -126,17 +128,17 @@ export const getAllPayroll = async (query = {}) => {
 };
 
 /**
- * Mark payroll as paid
+ * Submit payroll for approval (CALCULATED ➔ PENDING_APPROVAL)
  */
-export const markPaid = async (id, userId) => {
+export const submitForApproval = async (id, userId) => {
   return withTransaction(async (session) => {
-    const record = await PayrollRecord.findById(id);
+    const record = await PayrollRecord.findById(id).session(session);
     if (!record) {
       throw new NotFoundError('سجل الراتب غير موجود');
     }
 
-    record.paid = true;
-    record.paidDate = new Date();
+    const previousValue = record.toObject();
+    record.status = 'PENDING_APPROVAL';
     await record.save({ session });
 
     await PayrollTransaction.create(
@@ -146,6 +148,108 @@ export const markPaid = async (id, userId) => {
           userId,
           payrollRecordId: record._id,
           action: 'UPDATE',
+          previousValue,
+          newValue: record.toObject(),
+        },
+      ],
+      { session }
+    );
+
+    // Activity Log
+    await auditLogger.logActivity({
+      userId,
+      action: 'SUBMIT_PAYROLL_APPROVAL',
+      entityType: 'PayrollRecord',
+      entityId: record._id,
+      details: { month: record.month, year: record.year },
+    });
+
+    return record;
+  });
+};
+
+/**
+ * Approve payroll (PENDING_APPROVAL ➔ APPROVED)
+ */
+export const approvePayroll = async (id, userId) => {
+  return withTransaction(async (session) => {
+    const record = await PayrollRecord.findById(id).session(session);
+    if (!record) {
+      throw new NotFoundError('سجل الراتب غير موجود');
+    }
+
+    const previousValue = record.toObject();
+    record.status = 'APPROVED';
+    await record.save({ session });
+
+    await PayrollTransaction.create(
+      [
+        {
+          teacherId: record.teacherId,
+          userId,
+          payrollRecordId: record._id,
+          action: 'UPDATE',
+          previousValue,
+          newValue: record.toObject(),
+        },
+      ],
+      { session }
+    );
+
+    // Activity Log
+    await auditLogger.logActivity({
+      userId,
+      action: 'APPROVE_PAYROLL',
+      entityType: 'PayrollRecord',
+      entityId: record._id,
+      details: { month: record.month, year: record.year },
+    });
+
+    return record;
+  });
+};
+
+/**
+ * Pay payroll (APPROVED ➔ PAID)
+ * Automatically records in Financial Ledger
+ */
+export const payPayroll = async (id, userId) => {
+  return withTransaction(async (session) => {
+    const record = await PayrollRecord.findById(id).session(session);
+    if (!record) {
+      throw new NotFoundError('سجل الراتب غير موجود');
+    }
+
+    const previousValue = record.toObject();
+    record.status = 'PAID';
+    record.paid = true;
+    record.paidDate = new Date();
+    await record.save({ session });
+
+    // Clean any old ledger entries to prevent duplication
+    await removeLedgerEntriesByReference(record._id, 'TEACHER_PAYMENT', session);
+
+    // Record in unified Financial Ledger
+    await recordLedgerEntry({
+      teacherId: record.teacherId,
+      amount: record.finalAmount,
+      type: 'TEACHER_PAYMENT',
+      direction: 'OUT',
+      referenceId: record._id,
+      referenceModel: 'PayrollRecord',
+      description: `تسوية راتب المعلم - شهر ${record.month}/${record.year}`,
+      transactionDate: record.paidDate,
+      performedBy: userId,
+    }, session);
+
+    await PayrollTransaction.create(
+      [
+        {
+          teacherId: record.teacherId,
+          userId,
+          payrollRecordId: record._id,
+          action: 'UPDATE',
+          previousValue,
           newValue: record.toObject(),
         },
       ],
@@ -163,4 +267,11 @@ export const markPaid = async (id, userId) => {
 
     return record;
   });
+};
+
+/**
+ * Backward compatibility alias
+ */
+export const markPaid = async (id, userId) => {
+  return payPayroll(id, userId);
 };

@@ -25,6 +25,18 @@ router.post(
 );
 
 router.patch(
+  '/:id/submit-approval',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  payrollController.submitForApproval
+);
+
+router.patch(
+  '/:id/approve',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  payrollController.approvePayroll
+);
+
+router.patch(
   '/:id/paid',
   authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
   payrollController.markPaid

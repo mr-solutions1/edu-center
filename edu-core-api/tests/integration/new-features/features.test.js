@@ -92,4 +92,61 @@ describe('Integration: New Features (Upload & PDF)', () => {
       expect(res.header['content-type']).toBe('application/pdf');
     });
   });
+
+  describe('Multi-Format Report Exports', () => {
+    let manualToken;
+
+    beforeEach(() => {
+      manualToken = jwt.sign(
+        { id: adminId, role: 'ADMIN', tokenVersion: 0 },
+        env.JWT_ACCESS_SECRET,
+        { expiresIn: '15m' }
+      );
+    });
+
+    it('should export Teacher Performance Report as Excel', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/export-excel?month=5&year=2026')
+        .set('Authorization', `Bearer ${manualToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.header['content-type']).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    });
+
+    it('should export Student Report as CSV', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/export-students?format=csv')
+        .set('Authorization', `Bearer ${manualToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.header['content-type']).toContain('text/csv');
+    });
+
+    it('should export Student Report as PDF', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/export-students?format=pdf')
+        .set('Authorization', `Bearer ${manualToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.header['content-type']).toBe('application/pdf');
+    });
+
+    it('should export Attendance Report as Excel', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/export-attendance?format=excel')
+        .set('Authorization', `Bearer ${manualToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.header['content-type']).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    });
+
+    it('should export Financial Ledger Report as Excel', async () => {
+      const res = await request(app)
+        .get('/api/v1/reports/export-ledger?format=excel')
+        .set('Authorization', `Bearer ${manualToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.header['content-type']).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    });
+  });
 });

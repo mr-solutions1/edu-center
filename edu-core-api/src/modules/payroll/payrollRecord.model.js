@@ -48,6 +48,11 @@ const payrollRecordSchema = new mongoose.Schema(
     paidDate: {
       type: Date,
     },
+    status: {
+      type: String,
+      enum: ['DRAFT', 'CALCULATED', 'PENDING_APPROVAL', 'APPROVED', 'PAID'],
+      default: 'DRAFT',
+    },
     notes: {
       type: String,
     },
