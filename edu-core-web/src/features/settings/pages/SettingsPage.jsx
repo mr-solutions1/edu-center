@@ -54,28 +54,31 @@ const SettingsPage = () => {
 
   // Settings form state
   const [instituteName, setInstituteName] = useState('');
+  const [reportYear, setReportYear] = useState(new Date().getFullYear());
+  const [lowHoursThreshold, setLowHoursThreshold] = useState(2);
+  const [teacherPercentage, setTeacherPercentage] = useState(75);
   const [siblingDiscountPct, setSiblingDiscountPct] = useState(10);
-  const [defaultTeacherPct, setDefaultTeacherPct] = useState(75);
   const [carDeduction, setCarDeduction] = useState(0.5);
-  const [stageRates, setStageRates] = useState({
-    'تأسيس': 10,
-    'ابتدائي': 12,
-    'متوسط': 15,
-    'ثانوي': 18,
-    'جامعي': 20,
-    'قدرات': 25,
-    'تحصيلي': 25,
+  const [hourlyRates, setHourlyRates] = useState({
+    PRIMARY: 7,
+    INTERMEDIATE: 8,
+    SECONDARY: 10,
+    UNIVERSITY: 10,
+    FOREIGN: 15,
+    SPECIAL_NEEDS: 10,
   });
 
   useEffect(() => {
     if (tenantSettings?.data) {
       const data = tenantSettings.data;
       setInstituteName(data.instituteName || 'أكاديمية ركان');
+      setReportYear(data.reportYear ?? new Date().getFullYear());
+      setLowHoursThreshold(data.financialRules?.lowHoursThreshold ?? 2);
+      setTeacherPercentage(data.financialRules?.teacherPercentage ?? 75);
       setSiblingDiscountPct(data.financialRules?.siblingDiscountPercentage ?? 10);
-      setDefaultTeacherPct(data.financialRules?.teacherPercentageDefault ?? 75);
       setCarDeduction(data.financialRules?.transportationDeductionRate ?? 0.5);
-      if (data.financialRules?.stageHourlyRates) {
-        setStageRates(data.financialRules.stageHourlyRates);
+      if (data.financialRules?.hourlyRates) {
+        setHourlyRates(data.financialRules.hourlyRates);
       }
     }
   }, [tenantSettings]);
@@ -95,18 +98,19 @@ const SettingsPage = () => {
     e.preventDefault();
     updateSettingsMutation.mutate({
       instituteName,
+      reportYear: Number(reportYear),
       financialRules: {
         siblingDiscountPercentage: Number(siblingDiscountPct),
-        teacherPercentageDefault: Number(defaultTeacherPct),
+        teacherPercentage: Number(teacherPercentage),
+        lowHoursThreshold: Number(lowHoursThreshold),
         transportationDeductionRate: Number(carDeduction),
-        stageHourlyRates: {
-          'تأسيس': Number(stageRates['تأسيس']),
-          'ابتدائي': Number(stageRates['ابتدائي']),
-          'متوسط': Number(stageRates['متوسط']),
-          'ثانوي': Number(stageRates['ثانوي']),
-          'جامعي': Number(stageRates['جامعي']),
-          'قدرات': Number(stageRates['قدرات']),
-          'تحصيلي': Number(stageRates['تحصيلي']),
+        hourlyRates: {
+          PRIMARY: Number(hourlyRates.PRIMARY),
+          INTERMEDIATE: Number(hourlyRates.INTERMEDIATE),
+          SECONDARY: Number(hourlyRates.SECONDARY),
+          UNIVERSITY: Number(hourlyRates.UNIVERSITY),
+          FOREIGN: Number(hourlyRates.FOREIGN),
+          SPECIAL_NEEDS: Number(hourlyRates.SPECIAL_NEEDS),
         }
       }
     });
@@ -355,7 +359,7 @@ const SettingsPage = () => {
           <TabsContent value="institute">
             <Card>
               <CardHeader>
-                <CardTitle>إعدادات المعهد المتقدمة</CardTitle>
+                <CardTitle>إعدادات المعهد والبيانات المالية</CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSettingsSubmit} className="space-y-6">
@@ -369,22 +373,41 @@ const SettingsPage = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>نسبة خصم الأشقاء (%)</Label>
+                      <Label>السنة المالية للتقارير (Report Year)</Label>
                       <Input
                         type="number"
-                        value={siblingDiscountPct}
-                        onChange={(e) => setSiblingDiscountPct(e.target.value)}
+                        value={reportYear}
+                        onChange={(e) => setReportYear(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>تنبيه رصيد الساعات المنخفض (Low Hours Alert)</Label>
+                      <Input
+                        type="number"
+                        value={lowHoursThreshold}
+                        onChange={(e) => setLowHoursThreshold(e.target.value)}
+                        min="1"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>النسبة الافتراضية للمعلم (%) (Teacher Percentage)</Label>
+                      <Input
+                        type="number"
+                        value={teacherPercentage}
+                        onChange={(e) => setTeacherPercentage(e.target.value)}
                         min="0"
                         max="100"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>النسبة الافتراضية للمعلم (%)</Label>
+                      <Label>نسبة خصم الأشقاء (%)</Label>
                       <Input
                         type="number"
-                        value={defaultTeacherPct}
-                        onChange={(e) => setDefaultTeacherPct(e.target.value)}
+                        value={siblingDiscountPct}
+                        onChange={(e) => setSiblingDiscountPct(e.target.value)}
                         min="0"
                         max="100"
                         required
@@ -404,25 +427,98 @@ const SettingsPage = () => {
                   </div>
 
                   <div className="border-t pt-6">
-                    <h3 className="text-lg font-medium mb-4">سعر ساعة المعلم للمراحل الدراسية (دينار كويتي)</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {Object.keys(stageRates).map((stage) => (
-                        <div key={stage} className="space-y-2">
-                          <Label>{stage}</Label>
-                          <Input
-                            type="number"
-                            value={stageRates[stage]}
-                            onChange={(e) =>
-                              setStageRates({
-                                ...stageRates,
-                                [stage]: e.target.value,
-                              })
-                            }
-                            min="0"
-                            required
-                          />
-                        </div>
-                      ))}
+                    <h3 className="text-lg font-medium mb-4">جدول أسعار الساعات حسب المرحلة الدراسية (دينار كويتي)</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>تأسيس / ابتدائي (PRIMARY)</Label>
+                        <Input
+                          type="number"
+                          value={hourlyRates.PRIMARY}
+                          onChange={(e) =>
+                            setHourlyRates({
+                              ...hourlyRates,
+                              PRIMARY: e.target.value,
+                            })
+                          }
+                          min="0"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>متوسط (INTERMEDIATE)</Label>
+                        <Input
+                          type="number"
+                          value={hourlyRates.INTERMEDIATE}
+                          onChange={(e) =>
+                            setHourlyRates({
+                              ...hourlyRates,
+                              INTERMEDIATE: e.target.value,
+                            })
+                          }
+                          min="0"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>ثانوي (SECONDARY)</Label>
+                        <Input
+                          type="number"
+                          value={hourlyRates.SECONDARY}
+                          onChange={(e) =>
+                            setHourlyRates({
+                              ...hourlyRates,
+                              SECONDARY: e.target.value,
+                            })
+                          }
+                          min="0"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>جامعي (UNIVERSITY)</Label>
+                        <Input
+                          type="number"
+                          value={hourlyRates.UNIVERSITY}
+                          onChange={(e) =>
+                            setHourlyRates({
+                              ...hourlyRates,
+                              UNIVERSITY: e.target.value,
+                            })
+                          }
+                          min="0"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>قدرات / مدارس أجنبية (FOREIGN)</Label>
+                        <Input
+                          type="number"
+                          value={hourlyRates.FOREIGN}
+                          onChange={(e) =>
+                            setHourlyRates({
+                              ...hourlyRates,
+                              FOREIGN: e.target.value,
+                            })
+                          }
+                          min="0"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>صعوبات تعلم / تحصيلي (SPECIAL_NEEDS)</Label>
+                        <Input
+                          type="number"
+                          value={hourlyRates.SPECIAL_NEEDS}
+                          onChange={(e) =>
+                            setHourlyRates({
+                              ...hourlyRates,
+                              SPECIAL_NEEDS: e.target.value,
+                            })
+                          }
+                          min="0"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
 

@@ -13,6 +13,10 @@ const tenantSettingsSchema = new mongoose.Schema(
       required: true,
       default: 'Edu Center ERP',
     },
+    reportYear: {
+      type: Number,
+      default: new Date().getFullYear(),
+    },
     logoUrl: {
       type: String,
       default: null,

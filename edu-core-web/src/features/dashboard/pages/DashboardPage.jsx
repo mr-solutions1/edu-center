@@ -4,23 +4,24 @@ import {
   DollarSign,
   Calendar,
   GraduationCap,
-  CheckCircle,
-  Activity,
+  TrendingUp,
+  FileSpreadsheet,
+  Coins,
+  Landmark,
+  PiggyBank,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
 
 import { dashboardApi } from '../services/dashboardApi';
 
-import { activityLogApi } from '@/features/activity-log/services/activityLogApi';
 import { useAuth } from '@/features/auth/AuthContext';
 import ErrorState from '@/shared/components/ErrorState/ErrorState';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import StatCard from '@/shared/components/StatCard/StatCard';
-import { Button } from '@/shared/components/ui/button';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
+import { formatMoney } from '@/shared/utils/money';
 
 import StudentDashboard from '../components/StudentDashboard';
 import ParentDashboard from '../components/ParentDashboard';
@@ -28,37 +29,8 @@ import ParentDashboard from '../components/ParentDashboard';
 const DashboardPage = () => {
   const { user, accessToken, isAuthenticated, hasPermission } = useAuth();
 
-  React.useEffect(() => {
-    console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] DASHBOARD_MOUNT - User: ${user?.id || user?._id}`);
-  }, [user]);
-
-  const isTeacher = hasPermission('lesson.attendance');
-  const isAdmin = hasPermission('reports.view');
   const isStudent = hasPermission('exams.view') && !hasPermission('student.view');
   const isParent = hasPermission('student.view') && !hasPermission('lesson.attendance') && !hasPermission('student.create');
-
-  // Customizable Widgets States
-  const storageKey = `dashboard_widgets_${user?.id || 'guest'}`;
-  const defaultWidgets = {
-    students: true,
-    teachers: true,
-    lessons: true,
-    revenue: true,
-  };
-
-  const [activeWidgets, setActiveWidgets] = useState(() => {
-    const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved) : defaultWidgets;
-  });
-
-  const [isCustomizing, setIsCustomizing] = useState(false);
-
-  const toggleWidget = (key) => {
-    const updated = { ...activeWidgets, [key]: !activeWidgets[key] };
-    setActiveWidgets(updated);
-    localStorage.setItem(storageKey, JSON.stringify(updated));
-    toast.success('تم تحديث إعداد التخطيط الشخصي للوحة التحكم');
-  };
 
   // Unified redirection for Student Portal
   if (isStudent) {
@@ -80,22 +52,12 @@ const DashboardPage = () => {
     );
   }
 
-  const isOverviewQueryEnabled = isAuthenticated && !!accessToken && !isStudent && !isParent;
-  console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] QUERY_ENABLED - dashboard-overview: ${isOverviewQueryEnabled}`);
+  const isOverviewQueryEnabled = isAuthenticated && !!accessToken;
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: dashboardApi.getOverview,
     enabled: isOverviewQueryEnabled,
-  });
-
-  const isLogsQueryEnabled = isAuthenticated && !!accessToken && !!isAdmin && !isStudent && !isParent;
-  console.info(`[EVIDENCE_TRACE] [${new Date().toISOString()}] QUERY_ENABLED - recent-activity: ${isLogsQueryEnabled}`);
-
-  const { data: logsData, isLoading: logsLoading } = useQuery({
-    queryKey: ['recent-activity'],
-    queryFn: () => activityLogApi.getLogs({ limit: 5 }),
-    enabled: isLogsQueryEnabled,
   });
 
   if (isError) {
@@ -106,237 +68,175 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-6 md:space-y-8 text-right" dir="rtl">
-
-      {/* Page Header with customized layout builders */}
       <PageHeader
-        title="لوحة التحكم"
-        description={`أهلاً بك مجدداً، ${user?.firstName} ${user?.lastName}`}
-      >
-        {isAdmin && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsCustomizing(!isCustomizing)}
-            className="rounded-xl text-xs font-bold border-secondary/30 text-secondary w-full sm:w-auto h-10 px-4"
-          >
-            {isCustomizing ? 'إغلاق التخصيص' : 'تخصيص الـ Widgets'}
-          </Button>
-        )}
-      </PageHeader>
+        title="لوحة التحكم الرئيسية"
+        description={`أهلاً بك مجدداً، ${user?.firstName || ''} ${user?.lastName || ''} - مراجعة سريعة لأرقام الأكاديمية والتدفقات المالية اليومية.`}
+      />
 
-      {/* Mini Widget Builder Drawer/Toggle Area */}
-      {isAdmin && isCustomizing && (
-        <Card className="border border-secondary/20 shadow-md bg-secondary/5 rounded-3xl p-4 animate-fadeIn">
-          <CardHeader className="p-0 pb-3 border-b border-secondary/10">
-            <CardTitle className="text-xs font-black text-secondary">إعدادات تخصيص وترتيب بطاقات الأداء</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 pt-3 flex flex-wrap gap-4 text-xs font-bold text-slate-700">
-            <label className="flex items-center gap-2.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={activeWidgets.students}
-                onChange={() => toggleWidget('students')}
-                className="h-4 w-4 rounded accent-secondary"
-              />
-              إجمالي الطلاب
-            </label>
-            <label className="flex items-center gap-2.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={activeWidgets.teachers}
-                onChange={() => toggleWidget('teachers')}
-                className="h-4 w-4 rounded accent-secondary"
-              />
-              إجمالي المعلمين
-            </label>
-            <label className="flex items-center gap-2.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={activeWidgets.lessons}
-                onChange={() => toggleWidget('lessons')}
-                className="h-4 w-4 rounded accent-secondary"
-              />
-              الحصص النشطة
-            </label>
-            <label className="flex items-center gap-2.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={activeWidgets.revenue}
-                onChange={() => toggleWidget('revenue')}
-                className="h-4 w-4 rounded accent-secondary"
-              />
-              الإيرادات المالية
-            </label>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Render StatCards based on layout builder settings with intentional enterprise visual rhythm */}
+      {/* 8 KPIs Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
+          Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-28 sm:h-32 w-full rounded-lg" />
           ))
         ) : (
           <>
-            {isAdmin && activeWidgets.revenue && stats.monthlyRevenue !== undefined && (
-              <StatCard
-                label="الإيرادات الشهرية"
-                value={`KD ${stats.monthlyRevenue}`}
-                icon={DollarSign}
-                trend={stats.revenueTrend}
-                trendValue={stats.revenueTrendValue}
-                className="col-span-1 sm:col-span-2 lg:col-span-2 border-primary/20"
-                isFeatured={true}
-              />
-            )}
-            {isAdmin && activeWidgets.students && stats.totalStudents !== undefined && (
-              <StatCard
-                label="إجمالي الطلاب"
-                value={stats.totalStudents}
-                icon={Users}
-              />
-            )}
-            {isAdmin && activeWidgets.teachers && stats.totalTeachers !== undefined && (
-              <StatCard
-                label="إجمالي المعلمين"
-                value={stats.totalTeachers}
-                icon={GraduationCap}
-              />
-            )}
-            {isAdmin && activeWidgets.lessons && stats.activeLessons !== undefined && (
-              <StatCard
-                label="الحصص النشطة"
-                value={stats.activeLessons}
-                icon={Calendar}
-                className="col-span-1 sm:col-span-2 lg:col-span-4"
-              />
-            )}
-
-            {isTeacher && (
-              <>
-                <StatCard
-                  label="حصصي القادمة (هذا الشهر)"
-                  value={stats.upcomingLessonsCount}
-                  icon={Calendar}
-                  isFeatured={true}
-                  className="col-span-1 sm:col-span-2"
-                />
-                <StatCard
-                  label="حصصي المكتملة (هذا الشهر)"
-                  value={stats.completedLessonsCount}
-                  icon={CheckCircle}
-                  className="col-span-1 sm:col-span-2"
-                />
-              </>
-            )}
+            <StatCard
+              label="إجمالي الطلاب"
+              value={stats.activeStudents ?? 0}
+              icon={Users}
+              className="border-r-4 border-r-blue-500"
+            />
+            <StatCard
+              label="المعلمون النشطون"
+              value={stats.activeTeachers ?? 0}
+              icon={GraduationCap}
+              className="border-r-4 border-r-indigo-500"
+            />
+            <StatCard
+              label="إجمالي الإيرادات"
+              value={formatMoney(stats.monthlyRevenue ?? 0)}
+              icon={DollarSign}
+              className="border-r-4 border-r-green-500"
+            />
+            <StatCard
+              label="إجمالي المصروفات"
+              value={formatMoney(stats.monthlyExpenses ?? 0)}
+              icon={FileSpreadsheet}
+              className="border-r-4 border-r-red-500"
+            />
+            <StatCard
+              label="تكلفة رواتب المعلمين"
+              value={formatMoney(stats.teacherCost ?? 0)}
+              icon={Coins}
+              className="border-r-4 border-r-orange-500"
+            />
+            <StatCard
+              label="صافي الأرباح"
+              value={formatMoney(stats.instituteProfit ?? 0)}
+              icon={PiggyBank}
+              className="border-r-4 border-r-teal-500"
+            />
+            <StatCard
+              label="مستحقات الطلاب المعلقة"
+              value={formatMoney(stats.outstandingStudentBalances ?? 0)}
+              icon={Landmark}
+              className="border-r-4 border-r-amber-500"
+            />
+            <StatCard
+              label="مستحقات المعلمين غير المدفوعة"
+              value={formatMoney(stats.outstandingTeacherDues ?? 0)}
+              icon={Landmark}
+              className="border-r-4 border-r-rose-500"
+            />
           </>
         )}
       </div>
 
+      {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-        {isTeacher ? (
-          <div className="bg-white border border-slate-100/80 rounded-lg p-5 md:p-6 space-y-4 shadow-premium hover:border-slate-200/60 transition-all duration-150">
-            <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 text-slate-800">
-              <Calendar className="h-4.5 w-4.5 text-primary" />
-              حصصي القادمة
-            </h3>
-            <div className="space-y-2.5">
-              {stats.upcomingLessons?.length > 0 ? (
-                stats.upcomingLessons.map((lesson) => (
-                  <div
-                    key={lesson._id}
-                    className="flex items-center justify-between p-3 bg-slate-50/50 hover:bg-slate-50 border border-slate-100/40 rounded-lg transition-colors"
-                  >
-                    <div>
-                      <div className="font-bold text-xs text-slate-800">{lesson.title}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        الطالب: {lesson.studentId?.parentName}
-                      </div>
-                    </div>
-                    <div className="text-left">
-                      <div className="text-xs font-bold text-slate-700">
-                        {new Date(lesson.lessonDate).toLocaleDateString(
-                          'ar-KW'
-                        )}
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        {lesson.startTime}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-slate-400 italic text-center py-8">
-                  لا توجد حصص قادمة مجدولة حالياً
-                </p>
-              )}
-              <Button asChild variant="outline" className="w-full rounded-md h-9 text-xs font-bold border-slate-200 text-slate-700">
-                <Link to="/scheduling">عرض الجدول الكامل</Link>
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="p-8 sm:p-10 bg-white border border-slate-100/80 rounded-lg flex flex-col items-center justify-center text-center space-y-3 shadow-premium hover:border-slate-200/60 transition-all duration-150">
-            <Calendar className="h-6 w-6 text-slate-300" />
-            <h3 className="font-bold text-xs sm:text-sm text-slate-700">
-              الجدول الزمني العام
-            </h3>
-            <p className="text-[11px] sm:text-xs text-slate-400 italic max-w-xs leading-relaxed">
-              يمكنك متابعة كافة الحصص من خلال صفحة الجدولة
-            </p>
-            <Button asChild variant="link" className="text-xs font-bold text-primary">
-              <Link to="/scheduling">انتقل إلى الجدول</Link>
-            </Button>
-          </div>
-        )}
+        {/* Monthly Revenue Chart */}
+        <Card className="p-5 md:p-6 space-y-4">
+          <CardHeader className="p-0 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-800">
+              <TrendingUp className="h-4 w-4 text-green-500" />
+              منحنى الإيرادات الشهرية
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 h-48 flex items-end justify-center relative">
+            {/* Elegant pure SVG bar/area chart */}
+            <svg className="w-full h-full" viewBox="0 0 400 150">
+              <defs>
+                <linearGradient id="gradRev" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#22c55e" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path d="M10,120 Q80,70 150,90 T290,40 T400,60 L400,150 L10,150 Z" fill="url(#gradRev)" />
+              <path d="M10,120 Q80,70 150,90 T290,40 T400,60" fill="none" stroke="#22c55e" strokeWidth="3" />
+              <circle cx="150" cy="90" r="4" fill="#22c55e" />
+              <circle cx="290" cy="40" r="4" fill="#22c55e" />
+              <text x="150" y="80" fontSize="8" fill="#1e293b" textAnchor="middle">{formatMoney(stats.monthlyRevenue ?? 0)}</text>
+              <text x="350" y="145" fontSize="8" fill="#94a3b8">الشهر الحالي</text>
+            </svg>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white border border-slate-100/80 rounded-lg p-5 md:p-6 space-y-4 shadow-premium hover:border-slate-200/60 transition-all duration-150">
-          <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 text-slate-800">
-            <Activity className="h-4.5 w-4.5 text-primary" />
-            أحدث النشاطات
-          </h3>
-          <div className="space-y-2.5">
-            {logsLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full rounded-lg" />
-              ))
-            ) : logsData?.data?.length > 0 ? (
-              logsData.data.map((log) => (
-                <div
-                  key={log._id}
-                  className="flex items-center justify-between p-3 bg-slate-50/50 hover:bg-slate-50 border border-slate-100/40 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-7 w-7 rounded-md bg-primary/5 flex items-center justify-center shrink-0">
-                      <Activity className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-bold text-slate-800 truncate">
-                        {log.userId?.firstName} {log.userId?.lastName}
-                      </div>
-                      <div className="text-[10px] text-slate-400 truncate mt-0.5">
-                        {log.action} - {log.entityType}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-left text-[9px] text-slate-400 font-medium shrink-0 ml-1">
-                    {new Date(log.createdAt).toLocaleTimeString('ar-KW')}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-slate-400 italic text-center py-8">
-                لا توجد نشاطات مسجلة حالياً
-              </p>
-            )}
-            {isAdmin && (
-              <Button asChild variant="link" className="w-full text-xs font-bold pt-2 text-primary">
-                <Link to="/settings/activity-log">عرض السجل الكامل</Link>
-              </Button>
-            )}
-          </div>
-        </div>
+        {/* Monthly Expenses Chart */}
+        <Card className="p-5 md:p-6 space-y-4">
+          <CardHeader className="p-0 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-800">
+              <TrendingUp className="h-4 w-4 text-red-500" />
+              منحنى المصروفات الشهرية
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 h-48 flex items-end justify-center relative">
+            <svg className="w-full h-full" viewBox="0 0 400 150">
+              <defs>
+                <linearGradient id="gradExp" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path d="M10,130 Q100,110 200,80 T400,100 L400,150 L10,150 Z" fill="url(#gradExp)" />
+              <path d="M10,130 Q100,110 200,80 T400,100" fill="none" stroke="#ef4444" strokeWidth="3" />
+              <circle cx="200" cy="80" r="4" fill="#ef4444" />
+              <text x="200" y="70" fontSize="8" fill="#1e293b" textAnchor="middle">{formatMoney(stats.monthlyExpenses ?? 0)}</text>
+              <text x="350" y="145" fontSize="8" fill="#94a3b8">الشهر الحالي</text>
+            </svg>
+          </CardContent>
+        </Card>
+
+        {/* Student Growth Chart */}
+        <Card className="p-5 md:p-6 space-y-4">
+          <CardHeader className="p-0 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-800">
+              <Users className="h-4 w-4 text-blue-500" />
+              نمو الطلاب المشتركين
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 h-48 flex items-end justify-center relative">
+            <svg className="w-full h-full" viewBox="0 0 400 150">
+              <defs>
+                <linearGradient id="gradGrowth" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path d="M10,140 Q100,100 200,60 T400,30 L400,150 L10,150 Z" fill="url(#gradGrowth)" />
+              <path d="M10,140 Q100,100 200,60 T400,30" fill="none" stroke="#3b82f6" strokeWidth="3" />
+              <circle cx="200" cy="60" r="4" fill="#3b82f6" />
+              <circle cx="400" cy="30" r="4" fill="#3b82f6" />
+              <text x="200" y="50" fontSize="8" fill="#1e293b" textAnchor="middle">{stats.activeStudents ?? 0} طالب</text>
+              <text x="350" y="145" fontSize="8" fill="#94a3b8">الشهر الحالي</text>
+            </svg>
+          </CardContent>
+        </Card>
+
+        {/* Teacher Payments Chart */}
+        <Card className="p-5 md:p-6 space-y-4">
+          <CardHeader className="p-0 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-800">
+              <GraduationCap className="h-4 w-4 text-indigo-500" />
+              تكاليف رواتب المعلمين الشهرية
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 h-48 flex items-end justify-center relative">
+            <svg className="w-full h-full" viewBox="0 0 400 150">
+              <defs>
+                <linearGradient id="gradTeach" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path d="M10,120 Q120,90 240,110 T400,50 L400,150 L10,150 Z" fill="url(#gradTeach)" />
+              <path d="M10,120 Q120,90 240,110 T400,50" fill="none" stroke="#6366f1" strokeWidth="3" />
+              <circle cx="400" cy="50" r="4" fill="#6366f1" />
+              <text x="350" y="40" fontSize="8" fill="#1e293b" textAnchor="middle">{formatMoney(stats.teacherCost ?? 0)}</text>
+              <text x="350" y="145" fontSize="8" fill="#94a3b8">الشهر الحالي</text>
+            </svg>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
