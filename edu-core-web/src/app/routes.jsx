@@ -37,6 +37,9 @@ const TeachersListPage = lazy(
 const TeacherProfilePage = lazy(
   () => import('../features/teachers/pages/TeacherProfilePage')
 );
+const TeacherSettlementPage = lazy(
+  () => import('../features/teachers/pages/TeacherSettlementPage')
+);
 const SchedulePage = lazy(
   () => import('../features/scheduling/pages/SchedulePage')
 );
@@ -110,6 +113,22 @@ const router = createBrowserRouter([
                   }
                 >
                   <DashboardPage />
+                </Suspense>
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: '/teachers/settlement',
+            element: (
+              <ProtectedRoute roles={['ADMIN', 'ACCOUNTANT']}>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center h-full">
+                      Loading Settlements...
+                    </div>
+                  }
+                >
+                  <TeacherSettlementPage />
                 </Suspense>
               </ProtectedRoute>
             ),

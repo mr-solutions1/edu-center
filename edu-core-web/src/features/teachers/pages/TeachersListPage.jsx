@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Landmark, Coins } from 'lucide-react';
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import TeacherFormDialog from '../components/TeacherFormDialog';
 import { teacherApi } from '../services/teacherApi';
@@ -10,6 +11,7 @@ import DataTable from '@/shared/components/DataTable/DataTable';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import SearchFilterBar from '@/shared/components/SearchFilterBar/SearchFilterBar';
 import { Button } from '@/shared/components/ui/button';
+import { formatMoney } from '@/shared/utils/money';
 
 const TeachersListPage = () => {
   const queryClient = useQueryClient();
@@ -74,11 +76,27 @@ const TeachersListPage = () => {
         `${row.userId?.firstName || ''} ${row.userId?.lastName || ''}`,
     },
     { header: 'القسم', accessor: 'department' },
-    { header: 'واتساب', accessor: 'whatsapp' },
+    { header: 'الساعات المنفذة', cell: (row) => `${row.metrics?.executedHours || 0} ساعة` },
+    {
+      header: 'الاستحقاق الإجمالي',
+      cell: (row) => formatMoney(row.metrics?.dueBeforeDeduction || 0),
+    },
+    {
+      header: 'صافي المستحق',
+      cell: (row) => formatMoney(row.metrics?.netDue || 0),
+    },
+    {
+      header: 'المتبقي غير المدفوع',
+      cell: (row) => (
+        <span className="font-bold text-red-600">
+          {formatMoney(row.metrics?.remainingDue || 0)}
+        </span>
+      ),
+    },
     {
       header: 'الحالة',
       cell: (row) => (
-        <span className={row.isActive ? 'text-green-600' : 'text-red-500'}>
+        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${row.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
           {row.isActive ? 'نشط' : 'غير نشط'}
         </span>
       ),
@@ -87,13 +105,19 @@ const TeachersListPage = () => {
       header: 'إجراءات',
       cell: (row) => (
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
-            <Edit className="h-4 w-4" />
+          <Button variant="ghost" size="icon" asChild title="تسوية مستحقات">
+            <Link to="/teachers/settlement">
+              <Coins className="h-4 w-4 text-primary" />
+            </Link>
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row)} title="تعديل">
+            <Edit className="h-4 w-4 text-muted-foreground" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setDeleteId(row._id)}
+            title="حذف"
           >
             <Trash2 className="h-4 w-4 text-red-500" />
           </Button>
@@ -108,16 +132,24 @@ const TeachersListPage = () => {
         title="المعلمون"
         description="إدارة سجلات المعلمين والبيانات المالية"
       >
-        <Button
-          onClick={() => {
-            setEditingTeacher(null);
-            setFormOpen(true);
-          }}
-          className="gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          إضافة معلم
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/10">
+            <Link to="/teachers/settlement">
+              <Coins className="h-4 w-4" />
+              تسوية مستحقات المعلمين
+            </Link>
+          </Button>
+          <Button
+            onClick={() => {
+              setEditingTeacher(null);
+              setFormOpen(true);
+            }}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            إضافة معلم
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="space-y-4">
