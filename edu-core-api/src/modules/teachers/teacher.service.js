@@ -9,6 +9,9 @@ import StudentRegistration from '../students/registration.model.js';
 import Student from '../students/student.model.js';
 import { calculateRegistrationTeacherDue } from '../students/studentBalance.service.js';
 import TenantSettings from '../tenants/tenantSettings.model.js';
+import User from '../users/user.model.js';
+import { getTenantContext } from '../../shared/utils/tenantContext.js';
+import { UserRole } from '../../shared/constants/enums.js';
 
 /**
  * Calculates real-time financial and educational metrics for a teacher
@@ -99,12 +102,41 @@ export const calculateTeacherMetrics = async (teacher) => {
  */
 export const createTeacher = async (teacherData) => {
   return withTransaction(async (session) => {
+    let userId = teacherData.userId;
+
+    // Auto-create a User if personal details are provided
+    if (!userId && teacherData.firstName && teacherData.lastName && teacherData.email && teacherData.phone) {
+      const context = getTenantContext();
+      const tenantId = context?.tenantId || null;
+
+      const [user] = await User.create(
+        [
+          {
+            email: teacherData.email,
+            firstName: teacherData.firstName,
+            lastName: teacherData.lastName,
+            phone: teacherData.phone,
+            role: UserRole.TEACHER,
+            passwordHash: teacherData.phone, // Password defaults to their phone number
+            tenantId,
+          },
+        ],
+        { session }
+      );
+      userId = user._id;
+    }
+
+    if (!userId) {
+      throw new Error('رقم المستخدم أو تفاصيل الحساب الجديد مطلوبة لإنشاء معلم');
+    }
+
     const employeeCode = await generateCode('employeeCode', 'TCH', session);
     const hourlyRate = toFils(teacherData.hourlyRate);
 
     const [teacher] = await teacherRepository.create(
       {
         ...teacherData,
+        userId,
         employeeCode,
         hourlyRate,
       },
@@ -207,16 +239,31 @@ export const getTeacherByUserId = async (userId) => {
  * Update teacher
  */
 export const updateTeacher = async (id, updateData) => {
-  const data = { ...updateData };
-  if (data.hourlyRate !== undefined) {
-    data.hourlyRate = toFils(data.hourlyRate);
-  }
+  return withTransaction(async (session) => {
+    const teacher = await teacherRepository.findById(id).session(session);
+    if (!teacher) {
+      throw new NotFoundError('المعلم غير موجود');
+    }
 
-  const teacher = await teacherRepository.findByIdAndUpdate(id, data);
-  if (!teacher) {
-    throw new NotFoundError('المعلم غير موجود');
-  }
-  return teacher;
+    // Sync User details if personal details are provided
+    if (teacher.userId && (updateData.firstName || updateData.lastName || updateData.email || updateData.phone)) {
+      const userUpdate = {};
+      if (updateData.firstName) userUpdate.firstName = updateData.firstName;
+      if (updateData.lastName) userUpdate.lastName = updateData.lastName;
+      if (updateData.email) userUpdate.email = updateData.email;
+      if (updateData.phone) userUpdate.phone = updateData.phone;
+
+      await User.findByIdAndUpdate(teacher.userId, userUpdate, { session });
+    }
+
+    const data = { ...updateData };
+    if (data.hourlyRate !== undefined) {
+      data.hourlyRate = toFils(data.hourlyRate);
+    }
+
+    const updatedTeacher = await teacherRepository.findByIdAndUpdate(id, data, { session });
+    return updatedTeacher;
+  });
 };
 
 /**

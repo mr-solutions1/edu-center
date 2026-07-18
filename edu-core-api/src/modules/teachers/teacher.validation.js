@@ -8,11 +8,17 @@ import {
 
 export const teacherSchema = z.object({
   userId: z
-    .string({ required_error: 'رقم المستخدم مطلوب' })
+    .string()
     .regex(
       /^[0-9a-fA-F]{24}$/,
       'رقم المستخدم غير صالح (يجب أن يكون المعرف 24 حرفاً بالنظام الست عشري)'
-    ),
+    )
+    .optional()
+    .nullable(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().optional(),
   whatsapp: z.string().optional(),
   civilId: z.string().optional(),
   subjects: z.array(z.string()).optional(),

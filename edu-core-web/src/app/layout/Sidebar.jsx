@@ -53,6 +53,7 @@ const menuItems = [
     icon: UserSquare2,
     path: '/teacher/profile',
     permission: 'lesson.attendance',
+    excludeRoles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'PARENT', 'STUDENT'],
   },
   {
     id: 'teacher-students',
@@ -60,6 +61,7 @@ const menuItems = [
     icon: Users,
     path: '/teacher/students',
     permission: 'lesson.attendance',
+    excludeRoles: ['ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'PARENT', 'STUDENT'],
   },
   {
     id: 'students-section',

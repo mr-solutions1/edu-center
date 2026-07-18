@@ -14,8 +14,13 @@ import { toKWD } from '@/shared/utils/money';
 const teacherSchema = z.object({
   userId: z
     .string()
-    .min(1, 'المستخدم مطلوب')
-    .regex(/^[0-9a-fA-F]{24}$/, 'رقم المستخدم غير صالح (يجب أن يكون معرفاً من 24 حرفاً)'),
+    .regex(/^[0-9a-fA-F]{24}$/, 'رقم المستخدم غير صالح')
+    .optional()
+    .or(z.literal('')),
+  firstName: z.string().min(1, 'الاسم الأول مطلوب'),
+  lastName: z.string().min(1, 'الاسم الأخير مطلوب'),
+  email: z.string().email('البريد الإلكتروني غير صالح').min(1, 'البريد الإلكتروني مطلوب'),
+  phone: z.string().regex(/^[0-9+]{8,15}$/, 'رقم الهاتف غير صالح').min(1, 'رقم الهاتف مطلوب'),
   whatsapp: z.string().optional(),
   civilId: z.string().optional(),
   department: z.string().optional(),
@@ -56,6 +61,10 @@ const TeacherFormDialog = ({
     resolver: zodResolver(teacherSchema),
     defaultValues: initialData || {
       userId: '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
       gender: Gender.MALE,
       hourlyRate: 0,
       commissionModel: CommissionModel.SEVENTY_THIRTY,
@@ -72,10 +81,19 @@ const TeacherFormDialog = ({
         if (data.hourlyRate !== undefined) {
           data.hourlyRate = toKWD(data.hourlyRate);
         }
+        // Map user profile fields for editing
+        data.firstName = initialData.userId?.firstName || '';
+        data.lastName = initialData.userId?.lastName || '';
+        data.email = initialData.userId?.email || '';
+        data.phone = initialData.userId?.phone || '';
         reset(data);
       } else {
         reset({
           userId: '',
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
           gender: Gender.MALE,
           hourlyRate: 0,
           commissionModel: CommissionModel.SEVENTY_THIRTY,
@@ -101,16 +119,55 @@ const TeacherFormDialog = ({
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-4 max-h-[60vh] overflow-y-auto px-1 text-right"
       >
-        <div className="space-y-2">
-          <Label htmlFor="userId">رقم المستخدم (ID)</Label>
-          <Input
-            id="userId"
-            {...register('userId')}
-            placeholder="انسخ ID المستخدم من قائمة المستخدمين"
-          />
-          {errors.userId && (
-            <p className="text-xs text-red-500">{errors.userId.message}</p>
-          )}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="firstName">الاسم الأول للمعلم</Label>
+            <Input
+              id="firstName"
+              {...register('firstName')}
+              placeholder="مثال: أحمد"
+            />
+            {errors.firstName && (
+              <p className="text-xs text-red-500">{errors.firstName.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lastName">الاسم الأخير للمعلم</Label>
+            <Input
+              id="lastName"
+              {...register('lastName')}
+              placeholder="مثال: الكندري"
+            />
+            {errors.lastName && (
+              <p className="text-xs text-red-500">{errors.lastName.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">البريد الإلكتروني (لتسجيل الدخول)</Label>
+            <Input
+              id="email"
+              type="email"
+              {...register('email')}
+              placeholder="teacher@rakan.com"
+            />
+            {errors.email && (
+              <p className="text-xs text-red-500">{errors.email.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">رقم الهاتف (كلمة المرور الافتراضية)</Label>
+            <Input
+              id="phone"
+              {...register('phone')}
+              placeholder="99999999"
+            />
+            {errors.phone && (
+              <p className="text-xs text-red-500">{errors.phone.message}</p>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
