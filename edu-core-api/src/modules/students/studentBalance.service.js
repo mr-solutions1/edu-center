@@ -255,6 +255,10 @@ export const recalculateStudentBalances = async (studentId, save = false) => {
  * @returns {Promise<Object>} { teacherEarnings, instituteRevenue, transportDeduction }
  */
 export const calculateLessonEarnings = async (lesson) => {
+  if (!lesson || lesson.status !== 'COMPLETED') {
+    return { teacherEarnings: 0, instituteRevenue: 0, transportDeduction: 0 };
+  }
+
   const teacher = await Teacher.findById(lesson.teacherId);
   if (!teacher) {
     return { teacherEarnings: 0, instituteRevenue: 0, transportDeduction: 0 };

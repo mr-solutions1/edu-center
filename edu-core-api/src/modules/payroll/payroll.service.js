@@ -242,6 +242,39 @@ export const payPayroll = async (id, userId) => {
       performedBy: userId,
     }, session);
 
+    // Also record as a complete Transaction to update the chronological running balance of the institute (if amount > 0)!
+    if (record.finalAmount > 0) {
+      const Transaction = await import('../ledger/transaction.model.js').then(m => m.default);
+      const { recalculateRunningBalances } = await import('../ledger/ledger.service.js');
+      const { generateCode } = await import('../../shared/utils/atomicCounter.js');
+
+      const transactionId = await generateCode('transactionId', 'TXN', session);
+      const actualTeacherId = record.teacherId?._id || record.teacherId;
+      const teacher = await Teacher.findById(actualTeacherId).session(session);
+      let teacherName = 'معلم';
+      if (teacher) {
+        const u = await import('../users/user.model.js').then(m => m.default.findById(teacher.userId).session(session));
+        if (u) teacherName = `${u.firstName} ${u.lastName}`;
+      }
+
+      await Transaction.create([
+        {
+          transactionId,
+          date: record.paidDate,
+          type: 'TEACHER_PAYMENT',
+          name: teacherName,
+          teacherId: actualTeacherId,
+          amount: record.finalAmount,
+          paymentMethod: 'TRANSFER',
+          reference: `PAYROLL-${record.month}-${record.year}`,
+          notes: `تسوية راتب المعلم - شهر ${record.month}/${record.year}`,
+        }
+      ], { session });
+
+      // Recalculate rolling chronological balance
+      await recalculateRunningBalances(session);
+    }
+
     await PayrollTransaction.create(
       [
         {

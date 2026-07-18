@@ -249,6 +249,7 @@ describe('Student Balance & Financial Logic Service & Weekly Hours', () => {
         teacherId,
         durationHours: 2,
         lessonPrice: 30000, // 30 KWD total price paid by student
+        status: 'COMPLETED',
       };
 
       const result = await calculateLessonEarnings(lesson);
@@ -284,6 +285,7 @@ describe('Student Balance & Financial Logic Service & Weekly Hours', () => {
         teacherId,
         durationHours: 2,
         lessonPrice: 30000, // 30 KWD
+        status: 'COMPLETED',
       };
 
       const result = await calculateLessonEarnings(lesson);
