@@ -53,6 +53,11 @@ const studentSchema = new mongoose.Schema(
       enum: EducationalLevels,
       required: [true, 'المرحلة الدراسية مطلوبة'],
     },
+    siblingGroup: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     subjects: {
       type: [String],
       default: [],
@@ -101,6 +106,7 @@ const studentSchema = new mongoose.Schema(
 studentSchema.index({ studentCode: 1 }, { unique: true });
 studentSchema.index({ status: 1 });
 studentSchema.index({ grade: 1 });
+studentSchema.index({ siblingGroup: 1 });
 studentSchema.index({ searchBlob: 'text' });
 
 // Middleware to maintain searchBlob

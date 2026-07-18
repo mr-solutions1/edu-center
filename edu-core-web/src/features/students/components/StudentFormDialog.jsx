@@ -26,6 +26,7 @@ const StudentFormDialog = ({
     defaultValues: initialData || {
       parentName: '',
       parentPhone: '',
+      siblingGroup: '',
       whatsapp: '',
       area: '',
       address: '',
@@ -97,8 +98,19 @@ const StudentFormDialog = ({
             <Input id="whatsapp" {...register('whatsapp')} />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="siblingGroup">كود مجموعة الأشقاء (اختياري)</Label>
+            <Input id="siblingGroup" {...register('siblingGroup')} placeholder="مثال: FAM-01" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
             <Label htmlFor="area">المنطقة</Label>
             <Input id="area" {...register('area')} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="school">المدرسة (اختياري)</Label>
+            <Input id="school" {...register('school')} />
           </div>
         </div>
 

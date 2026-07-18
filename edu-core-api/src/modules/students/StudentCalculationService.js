@@ -53,10 +53,14 @@ export const StudentCalculationService = {
       return 0;
     }
 
-    const siblings = await Student.find({
-      parentPhone: student.parentPhone,
-      tenantId: student.tenantId,
-    }).sort({ createdAt: 1 });
+    let filter = { tenantId: student.tenantId };
+    if (student.siblingGroup && student.siblingGroup.trim() !== '') {
+      filter.siblingGroup = student.siblingGroup.trim();
+    } else {
+      filter.parentPhone = student.parentPhone;
+    }
+
+    const siblings = await Student.find(filter).sort({ createdAt: 1 });
 
     if (
       siblings.length > 1 &&

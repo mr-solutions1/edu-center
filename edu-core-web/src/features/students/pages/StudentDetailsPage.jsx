@@ -175,6 +175,12 @@ const StudentDetailsPage = () => {
               <span className="text-muted-foreground">حالة السداد:</span>
               <span className="font-semibold">{student?.paymentStatus}</span>
             </div>
+            {student?.siblingGroup && (
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">مجموعة الأشقاء:</span>
+                <span className="font-semibold">{student?.siblingGroup}</span>
+              </div>
+            )}
             {student?.address && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">العنوان:</span>

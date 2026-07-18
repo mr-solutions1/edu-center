@@ -40,6 +40,7 @@ export const studentSchema = z.object({
   status: z.nativeEnum(StudentStatus).optional(),
   monthlyFee: z.number().min(0).optional(),
   userId: z.string().optional(),
+  siblingGroup: z.string().optional().nullable(),
 });
 
 export const updateStudentSchema = studentSchema.partial();
