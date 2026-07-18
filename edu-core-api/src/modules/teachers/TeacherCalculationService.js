@@ -1,7 +1,7 @@
+import FinancialLedger from '../ledger/ledger.model.js';
+import Lesson from '../lessons/lesson.model.js';
 import StudentRegistration from '../students/registration.model.js';
 import Student from '../students/student.model.js';
-import Lesson from '../lessons/lesson.model.js';
-import FinancialLedger from '../ledger/ledger.model.js';
 import { SettingsService } from '../tenants/SettingsService.js';
 
 export const TeacherCalculationService = {
@@ -9,10 +9,16 @@ export const TeacherCalculationService = {
    * Calculates teacher due for a single student registration
    */
   calculateRegistrationTeacherDue: async (reg, studentGrade, tenantId) => {
-    if (!reg) return 0;
+    if (!reg) {
+      return 0;
+    }
 
-    const stageRateInFils = await SettingsService.getStageHourlyRate(tenantId, studentGrade);
-    const teacherPercentage = await SettingsService.getTeacherPercentage(tenantId);
+    const stageRateInFils = await SettingsService.getStageHourlyRate(
+      tenantId,
+      studentGrade
+    );
+    const teacherPercentage =
+      await SettingsService.getTeacherPercentage(tenantId);
     const teacherPctDecimal = teacherPercentage / 100;
 
     const baseDue = reg.consumedHours * stageRateInFils * teacherPctDecimal;
@@ -23,17 +29,21 @@ export const TeacherCalculationService = {
    * Calculates full real-time aggregates for a teacher
    */
   calculateTeacherMetrics: async (teacher) => {
-    if (!teacher) return null;
+    if (!teacher) {
+      return null;
+    }
 
     const teacherId = teacher._id;
 
     // 1. Registration Count
-    const registrationCount = await StudentRegistration.countDocuments({ teacherId });
+    const registrationCount = await StudentRegistration.countDocuments({
+      teacherId,
+    });
 
     // 2. Student Count
-    const studentCount = await StudentRegistration.distinct('studentId', { teacherId }).then(
-      (arr) => arr.length
-    );
+    const studentCount = await StudentRegistration.distinct('studentId', {
+      teacherId,
+    }).then((arr) => arr.length);
 
     // 3. Executed Hours (sum of consumed hours on completed lessons)
     const completedLessons = await Lesson.find({
@@ -50,18 +60,21 @@ export const TeacherCalculationService = {
     let dueBeforeDeduction = 0;
     for (const reg of regs) {
       const student = await Student.findById(reg.studentId);
-      const teacherDue = await TeacherCalculationService.calculateRegistrationTeacherDue(
-        reg,
-        student?.grade,
-        student?.tenantId || teacher.tenantId
-      );
+      const teacherDue =
+        await TeacherCalculationService.calculateRegistrationTeacherDue(
+          reg,
+          student?.grade,
+          student?.tenantId || teacher.tenantId
+        );
       dueBeforeDeduction += teacherDue;
     }
 
     // 5. Transportation Deduction (calculated from completed lessons with car)
     let transportationDeduction = 0;
     if (teacher.usesInstituteCar) {
-      const rateInFils = await SettingsService.getTransportationDeductionRate(teacher.tenantId);
+      const rateInFils = await SettingsService.getTransportationDeductionRate(
+        teacher.tenantId
+      );
       transportationDeduction = completedLessons.length * rateInFils;
     }
 

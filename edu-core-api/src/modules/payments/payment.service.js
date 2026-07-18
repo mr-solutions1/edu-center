@@ -4,7 +4,10 @@ import * as auditLogger from '../../shared/services/auditLogger.service.js';
 import { notificationService } from '../../shared/services/notification.service.js';
 import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
-import { recordLedgerEntry, removeLedgerEntriesByReference } from '../ledger/ledger.service.js';
+import {
+  recordLedgerEntry,
+  removeLedgerEntriesByReference,
+} from '../ledger/ledger.service.js';
 import { recalculateStudentBalances } from '../students/studentBalance.service.js';
 
 export const createPayment = async (paymentData, userId) => {
@@ -16,17 +19,20 @@ export const createPayment = async (paymentData, userId) => {
 
     // 1. Record Ledger Entry if status is PAID or PARTIALLY_PAID
     if (payment.status === 'PAID' || payment.status === 'PARTIALLY_PAID') {
-      await recordLedgerEntry({
-        studentId: payment.studentId,
-        amount: payment.amount,
-        type: 'STUDENT_PAYMENT',
-        direction: 'IN',
-        referenceId: payment._id,
-        referenceModel: 'Payment',
-        description: `دفعة مالية من الطالب - ${payment.notes || ''}`,
-        transactionDate: payment.paidDate || payment.createdAt || new Date(),
-        performedBy: userId,
-      }, session);
+      await recordLedgerEntry(
+        {
+          studentId: payment.studentId,
+          amount: payment.amount,
+          type: 'STUDENT_PAYMENT',
+          direction: 'IN',
+          referenceId: payment._id,
+          referenceModel: 'Payment',
+          description: `دفعة مالية من الطالب - ${payment.notes || ''}`,
+          transactionDate: payment.paidDate || payment.createdAt || new Date(),
+          performedBy: userId,
+        },
+        session
+      );
     }
 
     // 2. Trigger automatic student balance recalculation
@@ -140,24 +146,30 @@ export const updatePayment = async (id, updateData, userId = null) => {
 
     // Record new ledger entry if status is PAID or PARTIALLY_PAID
     if (payment.status === 'PAID' || payment.status === 'PARTIALLY_PAID') {
-      await recordLedgerEntry({
-        studentId: payment.studentId,
-        amount: payment.amount,
-        type: 'STUDENT_PAYMENT',
-        direction: 'IN',
-        referenceId: payment._id,
-        referenceModel: 'Payment',
-        description: `تحديث دفعة مالية من الطالب - ${payment.notes || ''}`,
-        transactionDate: payment.paidDate || payment.createdAt || new Date(),
-        performedBy: userId || beforePayment.studentId, // Fallback to studentId if userId is unavailable
-      }, session);
+      await recordLedgerEntry(
+        {
+          studentId: payment.studentId,
+          amount: payment.amount,
+          type: 'STUDENT_PAYMENT',
+          direction: 'IN',
+          referenceId: payment._id,
+          referenceModel: 'Payment',
+          description: `تحديث دفعة مالية من الطالب - ${payment.notes || ''}`,
+          transactionDate: payment.paidDate || payment.createdAt || new Date(),
+          performedBy: userId || beforePayment.studentId, // Fallback to studentId if userId is unavailable
+        },
+        session
+      );
     }
 
     // Recalculate student balance
     if (payment.studentId) {
       await recalculateStudentBalances(payment.studentId);
     }
-    if (beforePayment.studentId && beforePayment.studentId.toString() !== payment.studentId?.toString()) {
+    if (
+      beforePayment.studentId &&
+      beforePayment.studentId.toString() !== payment.studentId?.toString()
+    ) {
       await recalculateStudentBalances(beforePayment.studentId);
     }
 

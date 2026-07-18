@@ -10,7 +10,7 @@ let mongod;
 
 export const connectDB = async () => {
   mongod = await MongoMemoryServer.create({
-    replSet: { count: 1, storageEngine: 'wiredTiger' }
+    replSet: { count: 1, storageEngine: 'wiredTiger' },
   });
   const uri = mongod.getUri();
   await mongoose.connect(uri);

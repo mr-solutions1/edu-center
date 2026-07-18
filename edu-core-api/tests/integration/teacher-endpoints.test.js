@@ -1,14 +1,14 @@
 process.env.NODE_ENV = 'test';
 
-import request from 'supertest';
 import mongoose from 'mongoose';
+import request from 'supertest';
 
 import { connectDB, closeDB, clearDB } from './setup.js';
 import app from '../../src/app.js';
-import User from '../../src/modules/users/user.model.js';
-import Teacher from '../../src/modules/teachers/teacher.model.js';
-import Student from '../../src/modules/students/student.model.js';
 import Lesson from '../../src/modules/lessons/lesson.model.js';
+import Student from '../../src/modules/students/student.model.js';
+import Teacher from '../../src/modules/teachers/teacher.model.js';
+import User from '../../src/modules/users/user.model.js';
 
 beforeAll(async () => await connectDB(), 20000);
 afterEach(async () => await clearDB());

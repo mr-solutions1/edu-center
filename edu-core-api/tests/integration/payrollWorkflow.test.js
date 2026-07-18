@@ -1,14 +1,14 @@
 process.env.NODE_ENV = 'test';
 
-import request from 'supertest';
 import mongoose from 'mongoose';
+import request from 'supertest';
 
 import { connectDB, closeDB, clearDB } from './setup.js';
 import app from '../../src/app.js';
-import User from '../../src/modules/users/user.model.js';
-import Teacher from '../../src/modules/teachers/teacher.model.js';
-import PayrollRecord from '../../src/modules/payroll/payrollRecord.model.js';
 import FinancialLedger from '../../src/modules/ledger/ledger.model.js';
+import PayrollRecord from '../../src/modules/payroll/payrollRecord.model.js';
+import Teacher from '../../src/modules/teachers/teacher.model.js';
+import User from '../../src/modules/users/user.model.js';
 
 beforeAll(async () => await connectDB(), 20000);
 afterEach(async () => await clearDB());
@@ -51,8 +51,8 @@ describe('Teacher Settlement Workflow Integration', () => {
       userId: teacherUser._id,
       employeeCode: 'TEA-101',
       commissionModel: 'SEVENTY_THIRTY',
-      teacherPercentage: 0.70,
-      institutePercentage: 0.30,
+      teacherPercentage: 0.7,
+      institutePercentage: 0.3,
       compensationType: 'PER_LESSON', // Non-hourly so payroll recalculation is allowed
       usesInstituteCar: true,
       isActive: true,

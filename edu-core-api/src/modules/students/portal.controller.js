@@ -74,7 +74,9 @@ export const getStudentDashboard = asyncHandler(async (req, res) => {
       totalConsumedHours,
       groups,
       lowHoursAlert,
-      alertMessage: lowHoursAlert ? 'رصيد ساعاتك منخفض (ساعتان أو أقل). يرجى تجديد الحزمة فوراً.' : null,
+      alertMessage: lowHoursAlert
+        ? 'رصيد ساعاتك منخفض (ساعتان أو أقل). يرجى تجديد الحزمة فوراً.'
+        : null,
     },
   });
 });
@@ -107,7 +109,9 @@ export const getParentDashboard = asyncHandler(async (req, res) => {
   const children = await Promise.all(
     parentStudentLinks.map(async (link) => {
       const studentId = link.studentId?._id;
-      const balances = studentId ? await recalculateStudentBalances(studentId) : null;
+      const balances = studentId
+        ? await recalculateStudentBalances(studentId)
+        : null;
       const hasLowHours = balances ? balances.remainingHours <= 2 : false;
       return {
         student: link.studentId,
@@ -115,12 +119,16 @@ export const getParentDashboard = asyncHandler(async (req, res) => {
         isPrimary: link.isPrimary,
         balances,
         lowHoursAlert: hasLowHours,
-        alertMessage: hasLowHours ? `رصيد ساعات ابنكم ${link.studentId?.parentName || ''} منخفض جداً. يرجى التجديد.` : null,
+        alertMessage: hasLowHours
+          ? `رصيد ساعات ابنكم ${link.studentId?.parentName || ''} منخفض جداً. يرجى التجديد.`
+          : null,
       };
     })
   );
 
-  const parentAlertsCount = children.filter((child) => child.lowHoursAlert).length;
+  const parentAlertsCount = children.filter(
+    (child) => child.lowHoursAlert
+  ).length;
 
   // 1. Fetch combined upcoming lessons for all children
   const upcomingLessons = await Lesson.find({

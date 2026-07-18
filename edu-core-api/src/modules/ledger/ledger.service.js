@@ -13,7 +13,9 @@ import { recalculateStudentBalances } from '../students/studentBalance.service.j
  */
 export const recalculateRunningBalances = async (session = null) => {
   const options = session ? { session } : {};
-  const transactions = await Transaction.find().sort({ date: 1, createdAt: 1 }).session(session);
+  const transactions = await Transaction.find()
+    .sort({ date: 1, createdAt: 1 })
+    .session(session);
 
   let running = 0;
   for (const t of transactions) {
@@ -35,28 +37,34 @@ export const createTransaction = async (txnData, performedBy) => {
     const transactionId = await generateCode('transactionId', 'TXN', session);
     const amountInFils = toFils(txnData.amount);
 
-    const [transaction] = await Transaction.create([
-      {
-        ...txnData,
-        transactionId,
-        amount: amountInFils,
-      }
-    ], { session });
+    const [transaction] = await Transaction.create(
+      [
+        {
+          ...txnData,
+          transactionId,
+          amount: amountInFils,
+        },
+      ],
+      { session }
+    );
 
     // Enforce business rules based on transaction type
     if (txnData.type === 'STUDENT_PAYMENT') {
       // 1. Record in Ledger
-      await recordLedgerEntry({
-        studentId: txnData.studentId,
-        amount: amountInFils,
-        type: 'STUDENT_PAYMENT',
-        direction: 'IN',
-        referenceId: transaction._id,
-        referenceModel: 'Payment', // Maps to standard student payment references
-        description: `دفعة طالب - ${txnData.name} - ${txnData.notes || ''}`,
-        transactionDate: txnData.date,
-        performedBy,
-      }, session);
+      await recordLedgerEntry(
+        {
+          studentId: txnData.studentId,
+          amount: amountInFils,
+          type: 'STUDENT_PAYMENT',
+          direction: 'IN',
+          referenceId: transaction._id,
+          referenceModel: 'Payment', // Maps to standard student payment references
+          description: `دفعة طالب - ${txnData.name} - ${txnData.notes || ''}`,
+          transactionDate: txnData.date,
+          performedBy,
+        },
+        session
+      );
 
       // 2. Recalculate Student Paid, Remaining Amount, and Payment Status
       if (txnData.studentId) {
@@ -64,20 +72,24 @@ export const createTransaction = async (txnData, performedBy) => {
       }
     } else if (txnData.type === 'TEACHER_PAYMENT') {
       // 1. Record in Ledger
-      await recordLedgerEntry({
-        teacherId: txnData.teacherId,
-        amount: amountInFils,
-        type: 'TEACHER_PAYMENT',
-        direction: 'OUT',
-        referenceId: transaction._id,
-        referenceModel: 'PayrollRecord',
-        description: `صرف مستحقات معلم - ${txnData.name} - ${txnData.notes || ''}`,
-        transactionDate: txnData.date,
-        performedBy,
-      }, session);
+      await recordLedgerEntry(
+        {
+          teacherId: txnData.teacherId,
+          amount: amountInFils,
+          type: 'TEACHER_PAYMENT',
+          direction: 'OUT',
+          referenceId: transaction._id,
+          referenceModel: 'PayrollRecord',
+          description: `صرف مستحقات معلم - ${txnData.name} - ${txnData.notes || ''}`,
+          transactionDate: txnData.date,
+          performedBy,
+        },
+        session
+      );
 
       // 2. Recalculate Teacher metrics
-      const { calculateTeacherMetrics } = await import('../teachers/teacher.service.js');
+      const { calculateTeacherMetrics } =
+        await import('../teachers/teacher.service.js');
       if (txnData.teacherId) {
         const teacher = await import('../teachers/teacher.model.js').then((m) =>
           m.default.findById(txnData.teacherId)
@@ -88,16 +100,19 @@ export const createTransaction = async (txnData, performedBy) => {
       }
     } else if (txnData.type === 'EXPENSE') {
       // 1. Record in Ledger as institute expense
-      await recordLedgerEntry({
-        amount: amountInFils,
-        type: 'EXPENSE',
-        direction: 'OUT',
-        referenceId: transaction._id,
-        referenceModel: 'Expense',
-        description: `مصروف الأكاديمية - ${txnData.expenseItem} - ${txnData.notes || ''}`,
-        transactionDate: txnData.date,
-        performedBy,
-      }, session);
+      await recordLedgerEntry(
+        {
+          amount: amountInFils,
+          type: 'EXPENSE',
+          direction: 'OUT',
+          referenceId: transaction._id,
+          referenceModel: 'Expense',
+          description: `مصروف الأكاديمية - ${txnData.expenseItem} - ${txnData.notes || ''}`,
+          transactionDate: txnData.date,
+          performedBy,
+        },
+        session
+      );
     }
 
     // Recalculate and update the running cash balance for all transactions
@@ -157,7 +172,11 @@ export const recordLedgerEntry = async (data, session = null) => {
  * @param {string} [type] - Optional specific transaction type
  * @param {import('mongoose').ClientSession} [session] - Optional transaction session
  */
-export const removeLedgerEntriesByReference = async (referenceId, type = null, session = null) => {
+export const removeLedgerEntriesByReference = async (
+  referenceId,
+  type = null,
+  session = null
+) => {
   const query = { referenceId };
   if (type) {
     query.type = type;
@@ -173,13 +192,21 @@ export const removeLedgerEntriesByReference = async (referenceId, type = null, s
  * @param {Date} [startDate] - Optional filter start date
  * @param {Date} [endDate] - Optional filter end date
  */
-export const getLedgerStats = async (tenantId, startDate = null, endDate = null) => {
+export const getLedgerStats = async (
+  tenantId,
+  startDate = null,
+  endDate = null
+) => {
   const filter = { tenantId };
 
   if (startDate || endDate) {
     filter.transactionDate = {};
-    if (startDate) filter.transactionDate.$gte = new Date(startDate);
-    if (endDate) filter.transactionDate.$lte = new Date(endDate);
+    if (startDate) {
+      filter.transactionDate.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filter.transactionDate.$lte = new Date(endDate);
+    }
   }
 
   const aggregations = await FinancialLedger.aggregate([

@@ -95,6 +95,9 @@ const financialLedgerSchema = new mongoose.Schema(
 // High-performance financial queries index
 financialLedgerSchema.index({ transactionDate: -1, type: 1 });
 
-const FinancialLedger = mongoose.model('FinancialLedger', financialLedgerSchema);
+const FinancialLedger = mongoose.model(
+  'FinancialLedger',
+  financialLedgerSchema
+);
 
 export default FinancialLedger;

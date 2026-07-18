@@ -2,11 +2,14 @@ import * as lessonRepository from './lesson.repository.js';
 import { ConflictError } from '../../shared/errors/ConflictError.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import * as auditLogger from '../../shared/services/auditLogger.service.js';
-import { calculateLessonEarnings, recalculateStudentBalances } from '../students/studentBalance.service.js';
 import { notificationService } from '../../shared/services/notification.service.js';
 import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
 import PayrollTransaction from '../payroll/payrollTransaction.model.js';
+import {
+  calculateLessonEarnings,
+  recalculateStudentBalances,
+} from '../students/studentBalance.service.js';
 import * as teacherRepository from '../teachers/teacher.repository.js';
 
 /**

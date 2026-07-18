@@ -7,8 +7,13 @@ import mongoose from 'mongoose';
 export const withTransaction = async (fn) => {
   // Gracefully fallback to non-transactional execution if MongoDB is not running in a replica set (e.g. in basic test/dev setups)
   const client = mongoose.connection.getClient();
-  const topologyType = client?.topology?.description?.type || client?.topology?.type;
-  const isReplicaSet = topologyType && (topologyType.includes('ReplicaSet') || topologyType === 'replica-set' || topologyType === 'ReplicaSetWithPrimary');
+  const topologyType =
+    client?.topology?.description?.type || client?.topology?.type;
+  const isReplicaSet =
+    topologyType &&
+    (topologyType.includes('ReplicaSet') ||
+      topologyType === 'replica-set' ||
+      topologyType === 'ReplicaSetWithPrimary');
 
   if (!isReplicaSet) {
     return fn(null);

@@ -19,8 +19,10 @@ const transactionSchema = new mongoose.Schema(
     },
     name: {
       type: String,
-      required: function () {
-        return this.type === 'STUDENT_PAYMENT' || this.type === 'TEACHER_PAYMENT';
+      required() {
+        return (
+          this.type === 'STUDENT_PAYMENT' || this.type === 'TEACHER_PAYMENT'
+        );
       },
     },
     studentId: {
@@ -35,7 +37,7 @@ const transactionSchema = new mongoose.Schema(
     },
     expenseItem: {
       type: String,
-      required: function () {
+      required() {
         return this.type === 'EXPENSE';
       },
     },

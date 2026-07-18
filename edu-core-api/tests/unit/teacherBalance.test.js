@@ -2,13 +2,16 @@ import { jest } from '@jest/globals';
 import mongoose from 'mongoose';
 
 // Mock the models
-jest.unstable_mockModule('../../src/modules/students/registration.model.js', () => ({
-  default: {
-    countDocuments: jest.fn(),
-    distinct: jest.fn(),
-    find: jest.fn(),
-  },
-}));
+jest.unstable_mockModule(
+  '../../src/modules/students/registration.model.js',
+  () => ({
+    default: {
+      countDocuments: jest.fn(),
+      distinct: jest.fn(),
+      find: jest.fn(),
+    },
+  })
+);
 
 jest.unstable_mockModule('../../src/modules/students/student.model.js', () => ({
   default: {
@@ -22,11 +25,14 @@ jest.unstable_mockModule('../../src/modules/lessons/lesson.model.js', () => ({
   },
 }));
 
-jest.unstable_mockModule('../../src/modules/tenants/tenantSettings.model.js', () => ({
-  default: {
-    findOne: jest.fn(),
-  },
-}));
+jest.unstable_mockModule(
+  '../../src/modules/tenants/tenantSettings.model.js',
+  () => ({
+    default: {
+      findOne: jest.fn(),
+    },
+  })
+);
 
 jest.unstable_mockModule('../../src/modules/ledger/ledger.model.js', () => ({
   default: {
@@ -35,17 +41,30 @@ jest.unstable_mockModule('../../src/modules/ledger/ledger.model.js', () => ({
 }));
 
 // Mock calculateRegistrationTeacherDue to return simple values for tests
-jest.unstable_mockModule('../../src/modules/students/studentBalance.service.js', () => ({
-  calculateRegistrationTeacherDue: jest.fn(),
-}));
+jest.unstable_mockModule(
+  '../../src/modules/students/studentBalance.service.js',
+  () => ({
+    calculateRegistrationTeacherDue: jest.fn(),
+  })
+);
 
-const { calculateTeacherMetrics } = await import('../../src/modules/teachers/teacher.service.js');
-const StudentRegistration = (await import('../../src/modules/students/registration.model.js')).default;
-const Student = (await import('../../src/modules/students/student.model.js')).default;
-const Lesson = (await import('../../src/modules/lessons/lesson.model.js')).default;
-const TenantSettings = (await import('../../src/modules/tenants/tenantSettings.model.js')).default;
-const FinancialLedger = (await import('../../src/modules/ledger/ledger.model.js')).default;
-const { calculateRegistrationTeacherDue } = await import('../../src/modules/students/studentBalance.service.js');
+const { calculateTeacherMetrics } =
+  await import('../../src/modules/teachers/teacher.service.js');
+const StudentRegistration = (
+  await import('../../src/modules/students/registration.model.js')
+).default;
+const Student = (await import('../../src/modules/students/student.model.js'))
+  .default;
+const Lesson = (await import('../../src/modules/lessons/lesson.model.js'))
+  .default;
+const TenantSettings = (
+  await import('../../src/modules/tenants/tenantSettings.model.js')
+).default;
+const FinancialLedger = (
+  await import('../../src/modules/ledger/ledger.model.js')
+).default;
+const { calculateRegistrationTeacherDue } =
+  await import('../../src/modules/students/studentBalance.service.js');
 
 describe('Teacher Metrics & Balances Calculation Service', () => {
   beforeEach(() => {
@@ -78,14 +97,22 @@ describe('Teacher Metrics & Balances Calculation Service', () => {
     StudentRegistration.find.mockResolvedValue([reg1, reg2]);
 
     Student.findById.mockImplementation((id) => {
-      if (id === 'student1') return Promise.resolve({ grade: 'ابتدائي' });
-      if (id === 'student2') return Promise.resolve({ grade: 'ثانوي' });
+      if (id === 'student1') {
+        return Promise.resolve({ grade: 'ابتدائي' });
+      }
+      if (id === 'student2') {
+        return Promise.resolve({ grade: 'ثانوي' });
+      }
       return Promise.resolve(null);
     });
 
     calculateRegistrationTeacherDue.mockImplementation((reg) => {
-      if (reg.studentId === 'student1') return Promise.resolve(52500); // 52.5 KD
-      if (reg.studentId === 'student2') return Promise.resolve(75000); // 75.0 KD
+      if (reg.studentId === 'student1') {
+        return Promise.resolve(52500);
+      } // 52.5 KD
+      if (reg.studentId === 'student2') {
+        return Promise.resolve(75000);
+      } // 75.0 KD
       return Promise.resolve(0);
     });
 
