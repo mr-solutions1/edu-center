@@ -1,8 +1,34 @@
-/**
- * Centralized API Error Parser for Edu Center ERP.
- * Translates technical error logs, HTTP status codes, and server exceptions
- * into human-friendly, high-fidelity localized messages in Arabic.
- */
+import { ErrorCatalog, ErrorSeverity } from '../constants/errorCatalog';
+import arErrors from '../../i18n/errors/ar';
+import enErrors from '../../i18n/errors/en';
+
+export class AppError extends Error {
+  constructor({
+    code,
+    title,
+    message,
+    field,
+    retryable,
+    correlationId,
+    status,
+    details,
+    severity,
+    metadata,
+  }) {
+    super(message);
+    this.name = 'AppError';
+    this.code = code || 'UNKNOWN_ERROR';
+    this.title = title || 'خطأ';
+    this.message = message || 'حدث خطأ ما';
+    this.field = field || null;
+    this.retryable = retryable ?? false;
+    this.correlationId = correlationId || null;
+    this.status = status || null;
+    this.details = details || {};
+    this.severity = severity || ErrorSeverity.ERROR;
+    this.metadata = metadata || {};
+  }
+}
 
 export function parseApiError(error) {
   // Always log the full detailed error object to the console for developer debugging
@@ -15,144 +41,99 @@ export function parseApiError(error) {
     stack: error?.stack,
   });
 
-  const parsedError = {
-    title: 'حدث خطأ ما',
-    message: 'تعذر معالجة الطلب حالياً. يرجى المحاولة مرة أخرى لاحقاً.',
-    details: [],
-    status: null,
-    isNetworkError: false,
-    isValidationError: false,
+  const metadata = {
+    route: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+    browser: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
   };
 
-  // 1. Check for Network / Connection Failures
-  if (!error) {
-    parsedError.isNetworkError = true;
-    parsedError.title = 'خطأ في الاتصال';
-    parsedError.message = 'حدث خطأ غير متوقع. يرجى التحقق من اتصالك بالإنترنت.';
-    return parsedError;
-  }
+  const isOffline = typeof window !== 'undefined' && navigator && !navigator.onLine;
 
-  // Handle case where error is a string
-  if (typeof error === 'string') {
-    parsedError.message = error;
-    return parsedError;
-  }
+  let code = 'UNKNOWN_ERROR';
+  let status = error?.response?.status || null;
+  let correlationId = error?.response?.data?.correlationId || error?.response?.data?.meta?.correlationId || error?.response?.headers?.['x-correlation-id'] || null;
+  let rawDetails = error?.response?.data?.details || error?.response?.data?.errors || {};
+  let details = {};
+  let field = null;
 
-  // Browser offline check
-  if (typeof window !== 'undefined' && navigator && !navigator.onLine) {
-    parsedError.isNetworkError = true;
-    parsedError.title = 'لا يوجد اتصال بالإنترنت';
-    parsedError.message = 'أنت غير متصل بالشبكة حالياً. يرجى التحقق من اتصال الواي فاي أو بيانات الهاتف وإعادة المحاولة.';
-    return parsedError;
-  }
-
-  // Axios network error or timeout
-  if (error.isAxiosError && (!error.response || error.code === 'ECONNABORTED' || error.message?.toLowerCase().includes('network error'))) {
-    parsedError.isNetworkError = true;
-    parsedError.title = 'فشل الاتصال بالخادم';
-
-    if (error.code === 'ECONNABORTED') {
-      parsedError.message = 'انتهت مهلة الاتصال بالخادم (Timeout). يرجى التأكد من استقرار الإنترنت لديك وإعادة المحاولة.';
-    } else {
-      parsedError.message = 'غير قادر على الاتصال بالخادم. قد يكون الخادم متوقفاً عن العمل مؤقتاً أو أن هناك مشكلة في الشبكة لديك.';
-    }
-    return parsedError;
-  }
-
-  // 2. Process Server Response Error (HTTP Status Codes)
-  if (error.response) {
-    const { status, data } = error.response;
-    parsedError.status = status;
-
-    // Extract raw message and details from backend response if present
-    const backendMessage = data?.error?.message || data?.message || data?.error || '';
-    const backendDetails = data?.error?.details || data?.errors || [];
-
+  // 1. Determine error code and status
+  if (isOffline) {
+    code = 'NETWORK_DISCONNECTED';
+    status = 0;
+  } else if (error && error.isAxiosError && (!error.response || error.code === 'ECONNABORTED' || error.message?.toLowerCase().includes('network error'))) {
+    code = 'NETWORK_TIMEOUT';
+    status = error.code === 'ECONNABORTED' ? 408 : 0;
+  } else if (error?.response?.data?.code) {
+    code = error.response.data.code;
+  } else if (status) {
     switch (status) {
-      case 400:
-        parsedError.title = 'طلب غير صالح';
-        parsedError.message = backendMessage || 'لا يمكن معالجة الطلب بسبب وجود معلومات مفقودة أو غير صالحة.';
-        break;
-
-      case 401:
-        parsedError.title = 'انتهت الجلسة';
-        parsedError.message = 'انتهت صلاحية جلسة تسجيل الدخول الخاصة بك. يرجى تسجيل الدخول مرة أخرى لمتابعة العمل.';
-        break;
-
-      case 403:
-        parsedError.title = 'غير مصرح لك';
-        parsedError.message = backendMessage || 'ليس لديك الصلاحيات الكافية للقيام بهذا الإجراء. يرجى مراجعة مسؤول النظام.';
-        break;
-
-      case 404:
-        parsedError.title = 'المورد غير موجود';
-        parsedError.message = backendMessage || 'المعلومات أو الصفحة التي تبحث عنها غير موجودة أو تم حذفها.';
-        break;
-
-      case 409:
-        parsedError.title = 'تعارض في البيانات';
-        parsedError.message = backendMessage || 'هذا السجل أو البيانات التي تحاول إدخالها موجودة بالفعل في النظام.';
-        break;
-
-      case 422:
-        parsedError.title = 'خطأ في التحقق من البيانات';
-        parsedError.message = 'الرجاء تصحيح الأخطاء التالية قبل إرسال النموذج.';
-        parsedError.isValidationError = true;
-        break;
-
-      case 429:
-        parsedError.title = 'طلبات كثيرة جداً';
-        parsedError.message = 'لقد قمت بإرسال عدد كبير جداً من الطلبات في وقت قصير. يرجى الانتظار دقيقة واحدة ثم المحاولة مرة أخرى.';
-        break;
-
+      case 400: code = 'VALIDATION_ERROR'; break;
+      case 401: code = 'UNAUTHORIZED'; break;
+      case 403: code = 'FORBIDDEN'; break;
+      case 404: code = 'NOT_FOUND'; break;
+      case 409: code = 'DUPLICATE_KEY'; break;
+      case 422: code = 'VALIDATION_ERROR'; break;
+      case 429: code = 'UNKNOWN_ERROR'; break;
       case 500:
       case 502:
       case 503:
       case 504:
-        parsedError.title = 'خطأ داخلي في الخادم';
-        parsedError.message = 'نواجه مشكلة فنية مؤقتة في خوادمنا حالياً. تم تسجيل المشكلة وسيقوم فريق الدعم الفني بإصلاحها فوراً. يرجى المحاولة بعد قليل.';
+        code = 'INTERNAL_ERROR';
         break;
-
       default:
-        parsedError.title = 'خطأ غير معروف';
-        parsedError.message = backendMessage || `حدث خطأ غير متوقع في النظام (رمز الخطأ: ${status}).`;
-        break;
+        code = 'UNKNOWN_ERROR';
     }
-
-    // Standardize validation error details / messages array
-    if (backendDetails && Array.isArray(backendDetails)) {
-      parsedError.details = backendDetails.map(d => {
-        if (!d) return '';
-        if (typeof d === 'string') return d;
-        if (typeof d === 'object') {
-          if (d.field && d.message) {
-            return `${d.field}: ${d.message}`;
-          }
-          return d.message || d.msg || d.path || JSON.stringify(d);
-        }
-        return String(d);
-      });
-    } else if (backendDetails && typeof backendDetails === 'object') {
-      // Handle key-value Mongoose validation errors format
-      parsedError.details = Object.entries(backendDetails).map(([key, d]) => {
-        if (!d) return '';
-        if (typeof d === 'string') return `${key}: ${d}`;
-        const msg = d.message || d.msg || JSON.stringify(d);
-        return `${key}: ${msg}`;
-      });
-    }
-
-    // If it's a 422 but no details extracted, use default backendMessage or a standard fallback
-    if (status === 422 && parsedError.details.length === 0) {
-      if (backendMessage) {
-        parsedError.details = [backendMessage];
-      }
-    }
-  } else {
-    // Other errors (e.g., local JS rendering or variable reference errors)
-    parsedError.title = 'خطأ في تشغيل التطبيق';
-    parsedError.message = error.message || 'حدث خطأ داخلي في واجهة النظام. يرجى المحاولة مرة أخرى أو تحديث الصفحة.';
   }
 
-  return parsedError;
+  // 2. Resolve catalog metadata
+  const catalogEntry = ErrorCatalog[code] || ErrorCatalog.UNKNOWN_ERROR;
+  const severity = catalogEntry.severity;
+  const retryable = catalogEntry.retryable;
+
+  // 3. Process details
+  if (Array.isArray(rawDetails)) {
+    rawDetails.forEach((d) => {
+      if (d && typeof d === 'object') {
+        const f = d.field || 'unknown';
+        details[f] = d.message || String(d);
+      } else if (d) {
+        details['general'] = String(d);
+      }
+    });
+  } else if (rawDetails && typeof rawDetails === 'object') {
+    details = { ...rawDetails };
+  } else if (rawDetails && typeof rawDetails === 'string') {
+    details = { general: rawDetails };
+  }
+
+  const fields = Object.keys(details);
+  if (fields.length > 0) {
+    field = fields[0];
+  }
+
+  // 4. Translate title and message based on locale
+  const locale = typeof window !== 'undefined' ? window.localStorage.getItem('edu_locale') || 'ar' : 'ar';
+  const dict = locale === 'ar' ? arErrors : enErrors;
+  const translation = dict[code] || dict.UNKNOWN_ERROR;
+
+  const title = translation.title;
+  let message = error?.response?.data?.message || translation.message;
+
+  if (code === 'VALIDATION_ERROR' && fields.length > 0) {
+    message = locale === 'ar' ? 'يرجى تصحيح الأخطاء الموضحة أدناه.' : 'Please correct the errors indicated below.';
+  }
+
+  return new AppError({
+    code,
+    title,
+    message,
+    field,
+    retryable,
+    correlationId,
+    status,
+    details,
+    severity,
+    metadata,
+  });
 }

@@ -1,6 +1,7 @@
-import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCcw, Home, Copy, LifeBuoy } from 'lucide-react';
 import React from 'react';
 import { useRouteError } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import BrandedFooter from './layout/BrandedFooter';
 import BrandedHeader from './layout/BrandedHeader';
@@ -10,6 +11,25 @@ import { Button } from '@/shared/components/ui/button';
 export const RootErrorBoundary = () => {
   const error = useRouteError();
   console.error('Root Error Boundary caught an error:', error);
+
+  const handleCopyDiagnostics = async () => {
+    const diagnosticText = `
+=== REACT RENDER FAULT REPORT ===
+Message: ${error?.message || 'N/A'}
+Stack: ${error?.stack || 'N/A'}
+Timestamp: ${new Date().toISOString()}
+Route: ${window.location.pathname}
+Browser: ${navigator.userAgent}
+================================
+`.trim();
+
+    try {
+      await navigator.clipboard.writeText(diagnosticText);
+      toast.success('تم نسخ التفاصيل التشخيصية بنجاح / Diagnostics copied successfully.');
+    } catch (e) {
+      toast.error('فشل في نسخ التفاصيل / Failed to copy details.');
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50" dir="rtl">
@@ -64,6 +84,15 @@ export const RootErrorBoundary = () => {
             >
               <RefreshCcw className="h-5 w-5" />
               إعادة تحميل الصفحة
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={handleCopyDiagnostics}
+              className="w-full h-12 rounded-xl text-lg font-bold transition-all duration-300 gap-2"
+            >
+              <Copy className="h-5 w-5" />
+              نسخ تفاصيل الخطأ (للصيانة)
             </Button>
 
             <Button

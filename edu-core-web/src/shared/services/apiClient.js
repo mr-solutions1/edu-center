@@ -52,10 +52,12 @@ export const abortAllPendingRequests = () => {
 // To be injected from AuthProvider to avoid circular dependency
 let refreshAuthToken = null;
 let getAccessToken = null;
+let handleSessionExpired = null;
 
-export const injectAuthFunctions = (refreshFn, tokenFn) => {
+export const injectAuthFunctions = (refreshFn, tokenFn, expiredFn) => {
   refreshAuthToken = refreshFn;
   getAccessToken = tokenFn;
+  handleSessionExpired = expiredFn;
 };
 
 let apiRequestCounter = 0;
@@ -171,12 +173,17 @@ apiClient.interceptors.response.use(
       activeControllers.delete(controller);
     }
 
-    // Centralized error parsing attached directly to the rejected error object
+    // Centralized error parsing into standard AppError instance
+    const parsedError = parseApiError(error);
+    parsedError.originalError = error;
+    parsedError.response = error?.response;
+    parsedError.config = error?.config;
+
     if (error) {
-      error.parsed = parseApiError(error);
+      error.parsed = parsedError;
     }
 
-    const originalRequest = error.config;
+    const originalRequest = error?.config;
     const currentApiResCount = apiRequestCounter;
 
     console.error('[EVIDENCE_TRACE] ' + JSON.stringify({
@@ -185,13 +192,26 @@ apiClient.interceptors.response.use(
       timestamp: new Date().toISOString(),
       perfTimeMs: performance.now(),
       url: originalRequest?.url,
-      status: error.response?.status,
-      errorMsg: error.response?.data || error.message,
+      status: error?.response?.status,
+      errorMsg: error?.response?.data || error?.message,
     }, null, 2));
+
+    const isSessionExpiredError = ['TOKEN_VERSION_MISMATCH', 'PASSWORD_CHANGED', 'REFRESH_TOKEN_REUSE'].includes(parsedError.code);
+
+    if (isSessionExpiredError) {
+      console.warn('[EVIDENCE_TRACE] Critical session expiration detected:', parsedError.code);
+      if (handleSessionExpired) {
+        handleSessionExpired();
+      }
+      // Trigger the global critical error dialog immediately
+      window.dispatchEvent(new CustomEvent('edu:critical_error', { detail: parsedError }));
+    }
 
     // If error is 401 and not a retry and not the refresh request itself, and we have a refresh function
     if (
-      error.response?.status === 401 &&
+      error?.response?.status === 401 &&
+      !isSessionExpiredError &&
+      originalRequest &&
       !originalRequest._retry &&
       !originalRequest.url?.includes('/auth/refresh') &&
       refreshAuthToken
@@ -216,7 +236,13 @@ apiClient.interceptors.response.use(
               originalRequest.withCredentials = true;
               return apiClient(originalRequest);
             })
-            .catch((err) => Promise.reject(err));
+            .catch((err) => {
+              const pErr = parseApiError(err);
+              pErr.originalError = err;
+              pErr.response = err?.response;
+              pErr.config = err?.config;
+              return Promise.reject(pErr);
+            });
         }
       }
 
@@ -228,11 +254,15 @@ apiClient.interceptors.response.use(
         originalRequest.withCredentials = true;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        return Promise.reject(refreshError);
+        const pErr = parseApiError(refreshError);
+        pErr.originalError = refreshError;
+        pErr.response = refreshError?.response;
+        pErr.config = refreshError?.config;
+        return Promise.reject(pErr);
       }
     }
 
-    return Promise.reject(error);
+    return Promise.reject(parsedError);
   }
 );
 
