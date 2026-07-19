@@ -198,7 +198,10 @@ const Sidebar = () => {
         .map((item) => {
           if (item.permission) {
             const allowed = hasPermission(item.permission);
-            if (!allowed) return null;
+            // Allow dashboard for TEACHER even if permission is dashboard.view is not granted
+            if (!allowed && !(item.id === 'dashboard' && user?.role === 'TEACHER')) {
+              return null;
+            }
           }
           if (item.excludeRoles && item.excludeRoles.includes(user?.role)) {
             return null;
