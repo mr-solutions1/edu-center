@@ -50,8 +50,14 @@ const PayrollListPage = () => {
   const columns = [
     {
       header: 'المعلم',
-      cell: (row) =>
-        `${row.teacherId?.userId?.firstName} ${row.teacherId?.userId?.lastName}`,
+      cell: (row) => {
+        const user = row.teacherId?.userId;
+        if (!user) {
+          return <span className="text-muted-foreground italic">مستخدم محذوف</span>;
+        }
+        const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+        return name || <span className="text-muted-foreground italic">معلم بدون اسم</span>;
+      },
     },
     { header: 'الشهر/السنة', cell: (row) => `${row.month}/${row.year}` },
     { header: 'الحصص المكتملة', accessor: 'completedLessons' },
@@ -114,11 +120,16 @@ const PayrollListPage = () => {
             className="flex h-9 w-40 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
           >
             <option value="">كل المعلمين...</option>
-            {teachers?.data?.map((t) => (
-              <option key={t._id} value={t._id}>
-                {t.userId?.firstName} {t.userId?.lastName}
-              </option>
-            ))}
+            {teachers?.data?.map((t) => {
+              const name = t.userId
+                ? `${t.userId.firstName || ''} ${t.userId.lastName || ''}`.trim()
+                : '';
+              return (
+                <option key={t._id} value={t._id}>
+                  {name || 'معلم غير معروف'}
+                </option>
+              );
+            })}
           </select>
           <Button
             onClick={handleGenerate}

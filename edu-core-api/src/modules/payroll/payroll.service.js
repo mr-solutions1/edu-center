@@ -126,7 +126,13 @@ export const getAllPayroll = async (query = {}) => {
   }
 
   return PayrollRecord.find(filter)
-    .populate('teacherId')
+    .populate({
+      path: 'teacherId',
+      populate: {
+        path: 'userId',
+        select: 'firstName lastName email phone',
+      },
+    })
     .sort({ year: -1, month: -1 });
 };
 
