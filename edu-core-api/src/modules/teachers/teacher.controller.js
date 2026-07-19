@@ -33,10 +33,10 @@ export const uploadProfileFiles = asyncHandler(async (req, res) => {
 
   const updateData = {};
   if (hasCv) {
-    updateData.cvUrl = req.files.cv[0].path;
+    updateData.cvUrl = `/uploads/teachers/cv/${req.files.cv[0].filename}`;
   }
   if (hasCert) {
-    updateData.certificatesUrl = req.files.certificates[0].path;
+    updateData.certificatesUrl = `/uploads/teachers/certificates/${req.files.certificates[0].filename}`;
   }
 
   const teacher = await teacherService.updateTeacher(teacherDoc._id, updateData);
@@ -114,10 +114,10 @@ export const deleteTeacher = asyncHandler(async (req, res) => {
 export const uploadFiles = asyncHandler(async (req, res) => {
   const updateData = {};
   if (req.files.cv) {
-    updateData.cvUrl = req.files.cv[0].path;
+    updateData.cvUrl = `/uploads/teachers/cv/${req.files.cv[0].filename}`;
   }
   if (req.files.certificates) {
-    updateData.certificatesUrl = req.files.certificates[0].path;
+    updateData.certificatesUrl = `/uploads/teachers/certificates/${req.files.certificates[0].filename}`;
   }
 
   const teacher = await teacherService.updateTeacher(req.params.id, updateData);

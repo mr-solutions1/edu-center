@@ -14,6 +14,7 @@ import {
 import { Link } from 'react-router-dom';
 
 import { teacherApi } from '../../teachers/services/teacherApi';
+import { resolveAssetUrl } from '@/shared/utils/assets';
 import ErrorState from '@/shared/components/ErrorState/ErrorState';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
 import { Skeleton } from '@/shared/components/ui/skeleton';
@@ -170,7 +171,7 @@ export const TeacherDashboard = () => {
                   <div className="flex items-center gap-4">
                     <div className="h-16 w-16 bg-white/20 border-2 border-white/40 rounded-full flex items-center justify-center overflow-hidden shrink-0">
                       {user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                        <img src={resolveAssetUrl(user.avatarUrl)} alt="Avatar" className="h-full w-full object-cover" />
                       ) : (
                         <User className="h-8 w-8 text-white" />
                       )}

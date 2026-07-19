@@ -19,6 +19,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { resolveAssetUrl } from '@/shared/utils/assets';
 import { z } from 'zod';
 import { toast } from 'sonner';
 
@@ -226,7 +227,7 @@ const TeacherProfilePage = () => {
                   <div className="h-32 w-32 rounded-full bg-primary/10 flex items-center justify-center border-4 border-white shadow-xl overflow-hidden shrink-0">
                     {user.avatarUrl ? (
                       <img
-                        src={user.avatarUrl}
+                        src={resolveAssetUrl(user.avatarUrl)}
                         alt="Avatar"
                         className="h-full w-full object-cover"
                       />
@@ -388,7 +389,7 @@ const TeacherProfilePage = () => {
                     <div className="flex items-center gap-2">
                       {profile.cvUrl && (
                         <a
-                          href={profile.cvUrl}
+                          href={resolveAssetUrl(profile.cvUrl)}
                           target="_blank"
                           rel="noreferrer"
                           className="text-xs text-primary font-bold hover:underline bg-white px-3 py-1.5 rounded-lg border border-slate-100 shadow-sm"
@@ -417,7 +418,7 @@ const TeacherProfilePage = () => {
                     <div className="flex items-center gap-2">
                       {profile.certificatesUrl && (
                         <a
-                          href={profile.certificatesUrl}
+                          href={resolveAssetUrl(profile.certificatesUrl)}
                           target="_blank"
                           rel="noreferrer"
                           className="text-xs text-primary font-bold hover:underline bg-white px-3 py-1.5 rounded-lg border border-slate-100 shadow-sm"

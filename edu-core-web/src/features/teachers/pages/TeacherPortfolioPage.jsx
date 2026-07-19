@@ -15,6 +15,7 @@ import { useParams, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { teacherApi } from '../services/teacherApi';
+import { resolveAssetUrl } from '@/shared/utils/assets';
 
 import ErrorState from '@/shared/components/ErrorState/ErrorState';
 import { Button } from '@/shared/components/ui/button';
@@ -117,7 +118,7 @@ const TeacherPortfolioPage = () => {
             <div className="h-32 w-32 md:h-40 md:w-40 rounded-full bg-white/10 p-1.5 border-4 border-white/20 shadow-2xl shrink-0 overflow-hidden">
               {user.avatarUrl ? (
                 <img
-                  src={user.avatarUrl}
+                  src={resolveAssetUrl(user.avatarUrl)}
                   alt={fullName}
                   className="h-full w-full rounded-full object-cover bg-white"
                 />
