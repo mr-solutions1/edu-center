@@ -12,7 +12,7 @@ export const useNavigation = () => {
 
 export const NavigationProvider = ({ children }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isTabletCollapsed, setIsTabletCollapsed] = useState(true);
+  const [isTabletCollapsed, setIsTabletCollapsed] = useState(false);
 
   // Close mobile navigation on window resize if layout switches to desktop
   useEffect(() => {
