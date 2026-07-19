@@ -80,6 +80,10 @@ export const login = asyncHandler(async (req, res) => {
  * @route   POST /api/v1/auth/refresh
  */
 export const refresh = asyncHandler(async (req, res) => {
+  // Production forensic audit logs to trace cookies transmission
+  console.log('[Forensic Audit] Raw Request Cookies Header:', req.headers.cookie);
+  console.log('[Forensic Audit] Parsed Request Cookies Object:', req.cookies);
+
   const { refreshToken } = req.cookies;
   const ipAddress = req.ip;
   const userAgent = req.get('user-agent');
