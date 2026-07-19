@@ -241,7 +241,7 @@ export const getTeacherByUserId = async (userId) => {
  */
 export const updateTeacher = async (id, updateData) => {
   return withTransaction(async (session) => {
-    const teacher = await teacherRepository.findById(id).session(session);
+    const teacher = await teacherRepository.findById(id, session);
     if (!teacher) {
       throw new NotFoundError('المعلم غير موجود');
     }
