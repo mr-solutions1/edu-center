@@ -14,10 +14,15 @@ const setRefreshCookie = (res, token) => {
   const days = parseInt(env.JWT_REFRESH_EXPIRES_IN) || 7;
   const maxAge = days * 24 * 60 * 60 * 1000;
 
+  // Modern browsers (Safari e.g. ITP, Brave, and Chrome) aggressively block SameSite=None
+  // cookies as third-party trackers. Since alpha.flowship.site and alpha-api.flowship.site
+  // share the same registrable domain (flowship.site), they are same-site.
+  // Using SameSite=Lax with COOKIE_DOMAIN=.flowship.site ensures the cookie is securely stored
+  // and transmitted across subdomains without being blocked by tracking protections!
   res.cookie('refreshToken', token, {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
-    sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: 'lax',
     maxAge,
     domain: env.COOKIE_DOMAIN || undefined,
   });
@@ -30,7 +35,7 @@ const clearRefreshCookie = (res) => {
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
-    sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: 'lax',
     domain: env.COOKIE_DOMAIN || undefined,
   });
 };
