@@ -20,6 +20,23 @@ export const CriticalErrorDialog = () => {
   useEffect(() => {
     const handleCriticalError = (event) => {
       if (event.detail) {
+        // Skip displaying the blocking critical error dialog if the user is already on the login or public landing page
+        const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+        const isAuthErr = [
+          'TOKEN_VERSION_MISMATCH',
+          'PASSWORD_CHANGED',
+          'TOKEN_EXPIRED',
+          'INVALID_TOKEN',
+          'REFRESH_TOKEN_REQUIRED',
+          'INVALID_REFRESH_TOKEN',
+          'REFRESH_TOKEN_REUSE',
+          'UNAUTHORIZED',
+        ].includes(event.detail.code);
+
+        if (isAuthErr && (pathname === '/login' || pathname === '/')) {
+          return;
+        }
+
         setError(event.detail);
         setIsOpen(true);
       }
