@@ -351,20 +351,89 @@ app.use((err, req, res, _next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
+  let errorsArray = [];
+  let isValidationError = false;
+
+  // 1. ZodError
+  if (err.name === 'ZodError' || (err.constructor && err.constructor.name === 'ZodError')) {
+    isValidationError = true;
+    errorsArray = err.errors.map((issue) => ({
+      field: issue.path.join('.'),
+      message: issue.message,
+    }));
+  }
+  // 2. Custom ValidationError (which wraps Zod errors from validate.js)
+  else if (err.code === 'VALIDATION_ERROR' && Array.isArray(err.details)) {
+    isValidationError = true;
+    errorsArray = err.details.map((d) => ({
+      field: d.field || 'unknown',
+      message: d.message || String(d),
+    }));
+  }
+  // 3. Joi ValidationError
+  else if (err.isJoi || (err.name === 'ValidationError' && Array.isArray(err.details))) {
+    isValidationError = true;
+    errorsArray = err.details.map((detail) => ({
+      field: detail.path ? detail.path.join('.') : (detail.context?.key || 'unknown'),
+      message: detail.message,
+    }));
+  }
+  // 4. Mongoose ValidationError
+  else if (err.name === 'ValidationError' && err.errors) {
+    isValidationError = true;
+    errorsArray = Object.keys(err.errors).map((key) => ({
+      field: key,
+      message: err.errors[key].message,
+    }));
+  }
+  // 5. Mongoose CastError
+  else if (err.name === 'CastError') {
+    isValidationError = true;
+    errorsArray = [
+      {
+        field: err.path,
+        message: `قيمة غير صالحة للنوع ${err.kind}`,
+      },
+    ];
+  }
+
+  // Handle Structured Validation Error Response
+  if (isValidationError) {
+    const response = {
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: err.message || 'خطأ في التحقق من البيانات',
+      errors: errorsArray,
+      correlationId: req.correlationId,
+      meta: {
+        correlationId: req.correlationId,
+      },
+    };
+
+    // Log with rich Winston JSON telemetry
+    const controllerService = getControllerFromStack(err.stack);
+    logger.warn(`Validation Failure: ${response.message}`, {
+      correlationId: req.correlationId,
+      endpoint: req.originalUrl,
+      method: req.method,
+      body: maskBody(req.body),
+      validationErrors: errorsArray,
+      controllerService,
+      stack: err.stack,
+    });
+
+    if (env.NODE_ENV === 'development') {
+      response.stack = err.stack;
+    }
+
+    return res.status(400).json(response);
+  }
+
+  // Handle Non-Validation Errors
   let responseErrors = {
     code: err.code || 'INTERNAL_ERROR',
     details: err.details || null,
   };
-
-  if (err.code === 'VALIDATION_ERROR' && Array.isArray(err.details)) {
-    const fieldErrors = {};
-    err.details.forEach((detail) => {
-      if (detail.field) {
-        fieldErrors[detail.field] = detail.message;
-      }
-    });
-    responseErrors = fieldErrors;
-  }
 
   const statusCode = err.statusCode || 500;
   let responseMessage = err.message || 'حدث خطأ داخلي في الخادم';
@@ -386,7 +455,7 @@ app.use((err, req, res, _next) => {
     errors: responseErrors,
   };
 
-  // Log error with high fidelity diagnostics
+  // Log non-validation error
   if (err.statusCode === 401) {
     logger.warn(`Authentication Failure [${err.code || 'UNAUTHORIZED'}]: ${err.message}`, {
       correlationId: req.correlationId,
@@ -396,17 +465,6 @@ app.use((err, req, res, _next) => {
       cookiePresent: !!req.cookies?.refreshToken,
       ip: req.ip,
       userAgent: req.get('user-agent'),
-      stack: err.stack,
-    });
-  } else if (err.code === 'VALIDATION_ERROR') {
-    const controllerService = getControllerFromStack(err.stack);
-    logger.warn(`Validation Failure: ${err.message}`, {
-      correlationId: req.correlationId,
-      endpoint: req.originalUrl,
-      method: req.method,
-      body: maskBody(req.body),
-      validationErrors: err.details,
-      controllerService,
       stack: err.stack,
     });
   } else if (err.statusCode >= 500) {

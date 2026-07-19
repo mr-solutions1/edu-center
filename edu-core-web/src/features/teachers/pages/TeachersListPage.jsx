@@ -12,6 +12,8 @@ import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import SearchFilterBar from '@/shared/components/SearchFilterBar/SearchFilterBar';
 import { Button } from '@/shared/components/ui/button';
 import { formatMoney } from '@/shared/utils/money';
+import { toast } from 'sonner';
+import { parseApiError } from '@/shared/utils/errorParser';
 
 const TeachersListPage = () => {
   const queryClient = useQueryClient();
@@ -19,6 +21,7 @@ const TeachersListPage = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
+  const [validationErrors, setValidationErrors] = useState(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['teachers', { search }],
@@ -30,6 +33,19 @@ const TeachersListPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['teachers']);
       setFormOpen(false);
+      setValidationErrors(null);
+    },
+    onError: (error) => {
+      const parsed = error.parsed || parseApiError(error);
+      const errorsList = parsed.details && parsed.details.length > 0
+        ? parsed.details.map((d) => `• ${d}`).join('\n')
+        : parsed.message;
+      toast.error(`❌ فشل إنشاء المعلم:\n${errorsList}`);
+
+      const backendErrors = error?.response?.data?.errors;
+      if (backendErrors) {
+        setValidationErrors(backendErrors);
+      }
     },
   });
 
@@ -39,6 +55,19 @@ const TeachersListPage = () => {
       queryClient.invalidateQueries(['teachers']);
       setFormOpen(false);
       setEditingTeacher(null);
+      setValidationErrors(null);
+    },
+    onError: (error) => {
+      const parsed = error.parsed || parseApiError(error);
+      const errorsList = parsed.details && parsed.details.length > 0
+        ? parsed.details.map((d) => `• ${d}`).join('\n')
+        : parsed.message;
+      toast.error(`❌ فشل تحديث المعلم:\n${errorsList}`);
+
+      const backendErrors = error?.response?.data?.errors;
+      if (backendErrors) {
+        setValidationErrors(backendErrors);
+      }
     },
   });
 
@@ -57,10 +86,12 @@ const TeachersListPage = () => {
       userId: teacher.userId?._id || teacher.userId,
     };
     setEditingTeacher(formData);
+    setValidationErrors(null);
     setFormOpen(true);
   };
 
   const handleSubmit = (formData) => {
+    setValidationErrors(null);
     if (editingTeacher) {
       updateMutation.mutate({ id: editingTeacher._id, data: formData });
     } else {
@@ -168,10 +199,16 @@ const TeachersListPage = () => {
 
       <TeacherFormDialog
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) {
+            setValidationErrors(null);
+          }
+        }}
         onSubmit={handleSubmit}
         initialData={editingTeacher}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+        serverErrors={validationErrors}
       />
 
       <ConfirmDialog
