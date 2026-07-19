@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, Landmark, Coins } from 'lucide-react';
+import { Plus, Edit, Trash2, Landmark, Coins, Globe } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -136,6 +136,11 @@ const TeachersListPage = () => {
       header: 'إجراءات',
       cell: (row) => (
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" asChild title="الملف التعريفي العام">
+            <a href={`/teachers/portfolio/${row._id}`} target="_blank" rel="noreferrer">
+              <Globe className="h-4 w-4 text-blue-500" />
+            </a>
+          </Button>
           <Button variant="ghost" size="icon" asChild title="تسوية مستحقات">
             <Link to="/teachers/settlement">
               <Coins className="h-4 w-4 text-primary" />

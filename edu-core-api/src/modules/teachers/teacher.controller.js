@@ -2,6 +2,14 @@ import * as teacherService from './teacher.service.js';
 import { ValidationError } from '../../shared/errors/ValidationError.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
+export const getPublicTeacherProfile = asyncHandler(async (req, res) => {
+  const teacher = await teacherService.getPublicTeacherProfile(req.params.id);
+  res.status(200).json({
+    success: true,
+    data: teacher,
+  });
+});
+
 export const createTeacher = asyncHandler(async (req, res) => {
   const teacher = await teacherService.createTeacher(req.body);
   res.status(201).json({

@@ -196,6 +196,9 @@ const Sidebar = () => {
     const filterRec = (items) => {
       return items
         .map((item) => {
+          if (item.id === 'website' && user?.role === 'TEACHER') {
+            return { ...item, path: '/teachers/portfolio/me' };
+          }
           if (item.permission) {
             const allowed = hasPermission(item.permission);
             // Allow dashboard for TEACHER even if permission is dashboard.view is not granted

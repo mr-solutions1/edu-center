@@ -37,6 +37,9 @@ const TeachersListPage = lazy(
 const TeacherProfilePage = lazy(
   () => import('../features/teachers/pages/TeacherProfilePage')
 );
+const TeacherPortfolioPage = lazy(
+  () => import('../features/teachers/pages/TeacherPortfolioPage')
+);
 const TeacherSettlementPage = lazy(
   () => import('../features/teachers/pages/TeacherSettlementPage')
 );
@@ -81,6 +84,20 @@ const router = createBrowserRouter([
             }
           >
             <LandingPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: '/teachers/portfolio/:id',
+        element: (
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center min-h-screen">
+                Loading...
+              </div>
+            }
+          >
+            <TeacherPortfolioPage />
           </Suspense>
         ),
       },

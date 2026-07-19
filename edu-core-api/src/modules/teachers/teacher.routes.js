@@ -10,6 +10,8 @@ import { upload } from '../../shared/utils/fileUpload.js';
 
 const router = express.Router();
 
+router.get('/public/:id', teacherController.getPublicTeacherProfile);
+
 router.use(authenticate);
 
 router.post(

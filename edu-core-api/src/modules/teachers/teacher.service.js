@@ -205,6 +205,33 @@ export const getAllTeachers = async (query = {}) => {
 /**
  * Get teacher by ID
  */
+export const getPublicTeacherProfile = async (id) => {
+  const teacher = await teacherRepository.findById(id);
+  if (!teacher) {
+    throw new NotFoundError('المعلم غير موجود');
+  }
+  await teacher.populate('userId', 'firstName lastName avatarUrl');
+  const obj = teacher.toObject ? teacher.toObject() : teacher;
+
+  // Securely cherry-pick only non-sensitive public details
+  return {
+    _id: obj._id,
+    userId: {
+      firstName: obj.userId?.firstName || '',
+      lastName: obj.userId?.lastName || '',
+      avatarUrl: obj.userId?.avatarUrl || '',
+    },
+    employeeCode: obj.employeeCode,
+    subjects: obj.subjects || [],
+    gradesTaught: obj.gradesTaught || [],
+    experienceYears: obj.experienceYears || 0,
+    bio: obj.bio || '',
+    department: obj.department || '',
+    rating: obj.rating || 5,
+    hireDate: obj.hireDate,
+  };
+};
+
 export const getTeacherById = async (id) => {
   const teacher = await teacherRepository.findById(id);
   if (!teacher) {

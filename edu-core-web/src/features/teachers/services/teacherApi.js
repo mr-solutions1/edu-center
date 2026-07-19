@@ -57,4 +57,9 @@ export const teacherApi = {
     );
     return response.data;
   },
+
+  getPublicTeacherProfile: async (id) => {
+    const response = await apiClient.get(`/v1/teachers/public/${id}`);
+    return response.data;
+  },
 };

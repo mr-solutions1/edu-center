@@ -12,10 +12,12 @@ import {
   Coins,
   Edit2,
   Save,
-  X
+  X,
+  Globe
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -136,13 +138,24 @@ const TeacherProfilePage = () => {
           description="بيانات الأداء المهني والاستحقاقات المالية الحالية"
         />
         {!isLoading && (
-          <Button
-            onClick={() => setIsEditDialogOpen(true)}
-            className="h-11 rounded-xl font-bold gap-2 bg-primary hover:bg-primary/95 text-white shadow-lg shadow-primary/20 shrink-0"
-          >
-            <Edit2 className="h-4 w-4" />
-            تعديل الملف الشخصي / Edit Profile
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/teachers/portfolio/me">
+              <Button
+                variant="outline"
+                className="h-11 rounded-xl font-bold gap-2 border-slate-200 shrink-0"
+              >
+                <Globe className="h-4 w-4 text-primary" />
+                عرض ومشاركة ملفي التعريفي
+              </Button>
+            </Link>
+            <Button
+              onClick={() => setIsEditDialogOpen(true)}
+              className="h-11 rounded-xl font-bold gap-2 bg-primary hover:bg-primary/95 text-white shadow-lg shadow-primary/20 shrink-0"
+            >
+              <Edit2 className="h-4 w-4" />
+              تعديل الملف الشخصي / Edit Profile
+            </Button>
+          </div>
         )}
       </div>
 
