@@ -50,6 +50,7 @@ const TeacherFormDialog = ({
   onSubmit,
   initialData,
   isSubmitting,
+  serverErrors,
 }) => {
   const {
     register,
@@ -57,6 +58,7 @@ const TeacherFormDialog = ({
     control,
     formState: { errors },
     reset,
+    setError,
   } = useForm({
     resolver: zodResolver(teacherSchema),
     defaultValues: initialData || {
@@ -104,6 +106,22 @@ const TeacherFormDialog = ({
       }
     }
   }, [open, reset, initialData]);
+
+  React.useEffect(() => {
+    if (serverErrors) {
+      if (Array.isArray(serverErrors)) {
+        serverErrors.forEach((err) => {
+          if (err.field) {
+            setError(err.field, { type: 'server', message: err.message });
+          }
+        });
+      } else if (typeof serverErrors === 'object') {
+        Object.entries(serverErrors).forEach(([field, msg]) => {
+          setError(field, { type: 'server', message: typeof msg === 'string' ? msg : msg?.message });
+        });
+      }
+    }
+  }, [serverErrors, setError]);
 
   return (
     <FormDialog

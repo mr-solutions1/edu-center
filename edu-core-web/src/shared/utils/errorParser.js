@@ -125,16 +125,20 @@ export function parseApiError(error) {
         if (!d) return '';
         if (typeof d === 'string') return d;
         if (typeof d === 'object') {
+          if (d.field && d.message) {
+            return `${d.field}: ${d.message}`;
+          }
           return d.message || d.msg || d.path || JSON.stringify(d);
         }
         return String(d);
       });
     } else if (backendDetails && typeof backendDetails === 'object') {
       // Handle key-value Mongoose validation errors format
-      parsedError.details = Object.values(backendDetails).map(d => {
+      parsedError.details = Object.entries(backendDetails).map(([key, d]) => {
         if (!d) return '';
-        if (typeof d === 'string') return d;
-        return d.message || d.msg || JSON.stringify(d);
+        if (typeof d === 'string') return `${key}: ${d}`;
+        const msg = d.message || d.msg || JSON.stringify(d);
+        return `${key}: ${msg}`;
       });
     }
 
