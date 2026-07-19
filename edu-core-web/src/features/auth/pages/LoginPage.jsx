@@ -33,9 +33,16 @@ const LoginPage = () => {
   React.useEffect(() => {
     if (isAuthenticated && user && !isLoading) {
       const timestamp = new Date().toISOString();
-      console.info(`[EVIDENCE_TRACE] [${timestamp}] NAVIGATE_TO_DASHBOARD - User: ${user.id || user._id}`);
-      const from = location.state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+      console.info(`[EVIDENCE_TRACE] [${timestamp}] LOGIN_REDIRECT_SEQUENCE - User: ${user.id || user._id}, Role: ${user.role}`);
+
+      let targetPath = location.state?.from?.pathname || '/dashboard';
+
+      // If the target path is '/dashboard' but the user is a Teacher, redirect to their profile instead
+      if (user.role === 'TEACHER' && targetPath === '/dashboard') {
+        targetPath = '/teacher/profile';
+      }
+
+      navigate(targetPath, { replace: true });
     }
   }, [isAuthenticated, user, isLoading, navigate, location]);
 
