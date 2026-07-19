@@ -351,137 +351,274 @@ app.use((err, req, res, _next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
-  let errorsArray = [];
+  let code = err.code || 'UNKNOWN_ERROR';
+  let message = err.message || 'حدث خطأ داخلي في الخادم';
+  let details = {};
   let isValidationError = false;
+  let isDuplicateError = false;
 
-  // 1. ZodError
-  if (err.name === 'ZodError' || (err.constructor && err.constructor.name === 'ZodError')) {
-    isValidationError = true;
-    errorsArray = err.errors.map((issue) => ({
-      field: issue.path.join('.'),
-      message: issue.message,
-    }));
+  // Define unique fields catalog for MongoDB E11000 errors
+  const uniqueFieldsMap = {
+    email: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      ar: 'البريد الإلكتروني هذا مسجل بالفعل في النظام',
+      en: 'This email is already registered in the system'
+    },
+    phone: {
+      code: 'PHONE_ALREADY_EXISTS',
+      ar: 'رقم الهاتف هذا مسجل بالفعل في النظام',
+      en: 'This phone number is already registered in the system'
+    },
+    phoneNumber: {
+      code: 'PHONE_ALREADY_EXISTS',
+      ar: 'رقم الهاتف هذا مسجل بالفعل في النظام',
+      en: 'This phone number is already registered in the system'
+    },
+    username: {
+      code: 'USERNAME_ALREADY_EXISTS',
+      ar: 'اسم المستخدم هذا مسجل بالفعل في النظام',
+      en: 'This username is already registered in the system'
+    },
+    nationalId: {
+      code: 'NATIONAL_ID_ALREADY_EXISTS',
+      ar: 'رقم الهوية الوطنية هذا مسجل بالفعل في النظام',
+      en: 'This national ID is already registered in the system'
+    },
+    teacherCode: {
+      code: 'TEACHER_CODE_ALREADY_EXISTS',
+      ar: 'كود المعلم هذا مسجل بالفعل في النظام',
+      en: 'This teacher code is already registered in the system'
+    },
+    teacherId: {
+      code: 'TEACHER_ID_ALREADY_EXISTS',
+      ar: 'رقم المعلم هذا مسجل بالفعل في النظام',
+      en: 'This teacher ID is already registered in the system'
+    },
+    studentCode: {
+      code: 'STUDENT_CODE_ALREADY_EXISTS',
+      ar: 'كود الطالب هذا مسجل بالفعل في النظام',
+      en: 'This student code is already registered in the system'
+    },
+    studentId: {
+      code: 'STUDENT_ID_ALREADY_EXISTS',
+      ar: 'رقم الطالب هذا مسجل بالفعل في النظام',
+      en: 'This student ID is already registered in the system'
+    },
+    registrationNumber: {
+      code: 'REGISTRATION_NUMBER_ALREADY_EXISTS',
+      ar: 'رقم التسجيل هذا مسجل بالفعل في النظام',
+      en: 'This registration number is already registered in the system'
+    },
+    employeeCode: {
+      code: 'EMPLOYEE_CODE_ALREADY_EXISTS',
+      ar: 'كود الموظف هذا مسجل بالفعل في النظام',
+      en: 'This employee code is already registered in the system'
+    },
+    invoiceNumber: {
+      code: 'INVOICE_NUMBER_ALREADY_EXISTS',
+      ar: 'رقم الفاتورة هذا مسجل بالفعل في النظام',
+      en: 'This invoice number is already registered in the system'
+    },
+    receiptNumber: {
+      code: 'RECEIPT_NUMBER_ALREADY_EXISTS',
+      ar: 'رقم الإيصال هذا مسجل بالفعل في النظام',
+      en: 'This receipt number is already registered in the system'
+    },
+    paymentReference: {
+      code: 'PAYMENT_REFERENCE_ALREADY_EXISTS',
+      ar: 'مرجع الدفع هذا مسجل بالفعل في النظام',
+      en: 'This payment reference is already registered in the system'
+    },
+    trackingNumber: {
+      code: 'TRACKING_NUMBER_ALREADY_EXISTS',
+      ar: 'رقم التتبع هذا مسجل بالفعل في النظام',
+      en: 'This tracking number is already registered in the system'
+    },
+    barcode: {
+      code: 'BARCODE_ALREADY_EXISTS',
+      ar: 'الباركود هذا مسجل بالفعل في النظام',
+      en: 'This barcode is already registered in the system'
+    },
+    serialNumber: {
+      code: 'SERIAL_NUMBER_ALREADY_EXISTS',
+      ar: 'الرقم التسلسلي هذا مسجل بالفعل في النظام',
+      en: 'This serial number is already registered in the system'
+    }
+  };
+
+  // 1. Check for MongoDB E11000 duplicate key error
+  if (err.code === 11000 || (err.name === 'MongoServerError' && err.code === 11000)) {
+    isDuplicateError = true;
+    err.statusCode = 409;
+    code = 'DUPLICATE_KEY';
+    message = 'هذه القيمة مسجلة بالفعل في النظام';
+
+    let duplicateField = 'unknown';
+    let duplicateValue = 'unknown';
+
+    if (err.keyValue && typeof err.keyValue === 'object') {
+      const keys = Object.keys(err.keyValue);
+      if (keys.length > 0) {
+        duplicateField = keys[0];
+        duplicateValue = err.keyValue[duplicateField];
+      }
+    } else if (err.message) {
+      const match = err.message.match(/index:\s+([^\s_]+)_?\d*\s+dup\s+key:\s+\{\s*([^\s:]+):\s*([^\s}]+)/);
+      if (match) {
+        duplicateField = match[2];
+        duplicateValue = match[3].replace(/['"]+/g, '');
+      }
+    }
+
+    const mapping = uniqueFieldsMap[duplicateField];
+    if (mapping) {
+      code = mapping.code;
+      message = mapping.ar;
+      details = { [duplicateField]: mapping.ar };
+    } else {
+      details = { [duplicateField]: 'هذه القيمة موجودة بالفعل' };
+    }
   }
-  // 2. Custom ValidationError (which wraps Zod errors from validate.js)
+  // 2. ZodError
+  else if (err.name === 'ZodError' || (err.constructor && err.constructor.name === 'ZodError')) {
+    isValidationError = true;
+    err.statusCode = 400;
+    code = 'VALIDATION_ERROR';
+    message = 'خطأ في التحقق من البيانات';
+    err.errors.forEach((issue) => {
+      const field = issue.path.join('.');
+      details[field] = issue.message;
+    });
+  }
+  // 3. Custom ValidationError (which wraps Zod errors from validate.js)
   else if (err.code === 'VALIDATION_ERROR' && Array.isArray(err.details)) {
     isValidationError = true;
-    errorsArray = err.details.map((d) => ({
-      field: d.field || 'unknown',
-      message: d.message || String(d),
-    }));
+    err.statusCode = 400;
+    code = 'VALIDATION_ERROR';
+    message = err.message || 'خطأ في التحقق من البيانات';
+    err.details.forEach((d) => {
+      const field = d.field || 'unknown';
+      details[field] = d.message || String(d);
+    });
   }
-  // 3. Joi ValidationError
+  // 4. Joi ValidationError
   else if (err.isJoi || (err.name === 'ValidationError' && Array.isArray(err.details))) {
     isValidationError = true;
-    errorsArray = err.details.map((detail) => ({
-      field: detail.path ? detail.path.join('.') : (detail.context?.key || 'unknown'),
-      message: detail.message,
-    }));
+    err.statusCode = 400;
+    code = 'VALIDATION_ERROR';
+    message = err.message || 'خطأ في التحقق من البيانات';
+    err.details.forEach((detail) => {
+      const field = detail.path ? detail.path.join('.') : (detail.context?.key || 'unknown');
+      details[field] = detail.message;
+    });
   }
-  // 4. Mongoose ValidationError
+  // 5. Mongoose ValidationError
   else if (err.name === 'ValidationError' && err.errors) {
     isValidationError = true;
-    errorsArray = Object.keys(err.errors).map((key) => ({
-      field: key,
-      message: err.errors[key].message,
-    }));
+    err.statusCode = 400;
+    code = 'VALIDATION_ERROR';
+    message = err.message || 'خطأ في التحقق من البيانات';
+    Object.keys(err.errors).forEach((key) => {
+      details[key] = err.errors[key].message;
+    });
   }
-  // 5. Mongoose CastError
+  // 6. Mongoose CastError
   else if (err.name === 'CastError') {
     isValidationError = true;
-    errorsArray = [
-      {
-        field: err.path,
-        message: `قيمة غير صالحة للنوع ${err.kind}`,
-      },
-    ];
+    err.statusCode = 400;
+    code = 'VALIDATION_ERROR';
+    message = 'خطأ في التحقق من البيانات';
+    details[err.path] = `قيمة غير صالحة للنوع ${err.kind}`;
+  }
+  // 7. Standard operational AppErrors
+  else {
+    code = err.code || 'UNKNOWN_ERROR';
+    // Translate standard HTTP status codes if no specific code is set
+    if (code === 'UNKNOWN_ERROR') {
+      if (err.statusCode === 403) code = 'FORBIDDEN';
+      else if (err.statusCode === 404) code = 'NOT_FOUND';
+      else if (err.statusCode === 401) code = 'UNAUTHORIZED';
+    }
+    message = err.message || 'حدث خطأ داخلي في الخادم';
+    details = err.details || {};
   }
 
-  // Handle Structured Validation Error Response
-  if (isValidationError) {
-    const response = {
-      success: false,
-      code: 'VALIDATION_ERROR',
-      message: err.message || 'خطأ في التحقق من البيانات',
-      errors: errorsArray,
-      correlationId: req.correlationId,
-      meta: {
-        correlationId: req.correlationId,
-      },
-    };
+  // Force certain codes based on status code for standard compliance
+  if (err.statusCode === 403 && code === 'UNKNOWN_ERROR') {
+    code = 'FORBIDDEN';
+  } else if (err.statusCode === 404 && code === 'UNKNOWN_ERROR') {
+    code = 'NOT_FOUND';
+  } else if (err.statusCode === 401 && code === 'UNKNOWN_ERROR') {
+    code = 'UNAUTHORIZED';
+  }
 
-    // Log with rich Winston JSON telemetry
-    const controllerService = getControllerFromStack(err.stack);
-    logger.warn(`Validation Failure: ${response.message}`, {
+  // Prevent internal database details leaking in production
+  if (env.NODE_ENV === 'production' && err.statusCode === 500) {
+    message = 'حدث خطأ داخلي في الخادم، يرجى المحاولة لاحقاً';
+    code = 'INTERNAL_ERROR';
+    details = {};
+  }
+
+  // Check if error is retryable (502 Gateway, 503 Service Unavailable, 504 Gateway Timeout, or custom marked retryable)
+  const retryable = [502, 503, 504].includes(err.statusCode) || !!err.retryable;
+
+  // Build high-fidelity standardized JSON error response
+  const response = {
+    success: false,
+    code,
+    message,
+    details,
+    correlationId: req.correlationId || null,
+    timestamp: new Date().toISOString(),
+    retryable
+  };
+
+  // Add backward compatibility for any existing code expecting .errors (as field list) or .meta
+  if (isValidationError) {
+    response.errors = Object.entries(details).map(([field, msg]) => ({ field, message: msg }));
+  }
+  response.meta = { correlationId: req.correlationId || null };
+
+  // Log failures with rich Winston JSON telemetry
+  const controllerService = getControllerFromStack(err.stack);
+
+  if (isValidationError) {
+    logger.warn(`Validation Failure: ${message}`, {
       correlationId: req.correlationId,
       endpoint: req.originalUrl,
       method: req.method,
       body: maskBody(req.body),
-      validationErrors: errorsArray,
+      validationErrors: response.errors,
       controllerService,
       stack: err.stack,
     });
-
-    if (env.NODE_ENV === 'development') {
-      response.stack = err.stack;
-    }
-
-    return res.status(400).json(response);
-  }
-
-  // Handle Non-Validation Errors
-  let responseErrors = {
-    code: err.code || 'INTERNAL_ERROR',
-    details: err.details || null,
-  };
-
-  const statusCode = err.statusCode || 500;
-  let responseMessage = err.message || 'حدث خطأ داخلي في الخادم';
-  if (env.NODE_ENV === 'production' && statusCode === 500) {
-    responseMessage = 'حدث خطأ داخلي في الخادم، يرجى المحاولة لاحقاً';
-    responseErrors = {
-      code: 'INTERNAL_ERROR',
-      details: null,
-    };
-  }
-
-  const response = {
-    success: false,
-    message: responseMessage,
-    data: null,
-    meta: {
-      correlationId: req.correlationId,
-    },
-    errors: responseErrors,
-  };
-
-  // Log non-validation error
-  if (err.statusCode === 401) {
-    logger.warn(`Authentication Failure [${err.code || 'UNAUTHORIZED'}]: ${err.message}`, {
+  } else if (err.statusCode === 401) {
+    logger.warn(`Authentication Failure [${code}]: ${message}`, {
       correlationId: req.correlationId,
       endpoint: req.originalUrl,
       method: req.method,
-      reason: err.code || 'UNAUTHORIZED',
+      reason: code,
       cookiePresent: !!req.cookies?.refreshToken,
       ip: req.ip,
       userAgent: req.get('user-agent'),
       stack: err.stack,
     });
   } else if (err.statusCode >= 500) {
-    logger.error(`${err.message}`, {
+    logger.error(`Internal System Failure [${code}]: ${message}`, {
       correlationId: req.correlationId,
       stack: err.stack,
       url: req.originalUrl,
       method: req.method,
     });
   } else {
-    logger.warn(`${err.statusCode} - ${err.message}`, {
+    logger.warn(`Client Request Error [${err.statusCode} - ${code}]: ${message}`, {
       correlationId: req.correlationId,
       url: req.originalUrl,
+      method: req.method,
     });
   }
 
-  if (env.NODE_ENV === 'development') {
+  if (env.NODE_ENV === 'development' || env.NODE_ENV === 'test') {
     response.stack = err.stack;
   }
 

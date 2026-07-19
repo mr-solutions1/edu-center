@@ -11,8 +11,13 @@ export const queryClient = new QueryClient({
           return false;
         }
 
-        // Determine the HTTP status code from the Axios error response
-        const status = error?.response?.status || error?.status;
+        // Use standardized AppError retryable metadata if available
+        if (error && typeof error.retryable === 'boolean') {
+          return error.retryable;
+        }
+
+        // Fallback: Determine from HTTP status code
+        const status = error?.status || error?.response?.status;
 
         // Never retry client side errors (4xx)
         if (status && status >= 400 && status < 500) {

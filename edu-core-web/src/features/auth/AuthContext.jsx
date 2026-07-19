@@ -267,9 +267,13 @@ export const AuthProvider = ({ children }) => {
     });
   }, [performLogoutCleanup, updateAuth]);
 
+  const handleSessionExpired = useCallback(() => {
+    performLogoutCleanup(true);
+  }, [performLogoutCleanup]);
+
   useEffect(() => {
-    injectAuthFunctions(refresh, getAccessToken);
-  }, [refresh, getAccessToken]);
+    injectAuthFunctions(refresh, getAccessToken, handleSessionExpired);
+  }, [refresh, getAccessToken, handleSessionExpired]);
 
   useEffect(() => {
     const initAuth = async () => {
