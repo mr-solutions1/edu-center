@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import fs from 'fs';
 import path from 'path';
 
 import multer from 'multer';
@@ -14,7 +15,20 @@ const storage = multer.diskStorage({
     } else if (file.fieldname === 'certificates') {
       dest += 'teachers/certificates';
     }
-    cb(null, dest);
+
+    try {
+      // 1. Path Absolute Standardization: Enforce absolute path resolution to avoid path discrepancies
+      const absoluteDest = path.resolve(dest);
+
+      // 2. Automated Directory Provisioning: Check and recursively create directories on startup or lazy-load
+      if (!fs.existsSync(absoluteDest)) {
+        fs.mkdirSync(absoluteDest, { recursive: true });
+      }
+
+      cb(null, absoluteDest);
+    } catch (err) {
+      cb(new AppError('فشل تهيئة مجلد رفع الملفات على الخادم.', 500));
+    }
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = crypto.randomBytes(16).toString('hex');

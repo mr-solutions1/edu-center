@@ -1,4 +1,5 @@
 import * as teacherService from './teacher.service.js';
+import { ValidationError } from '../../shared/errors/ValidationError.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 
 export const createTeacher = asyncHandler(async (req, res) => {
@@ -12,11 +13,21 @@ export const createTeacher = asyncHandler(async (req, res) => {
 export const uploadProfileFiles = asyncHandler(async (req, res) => {
   const teacherDoc = await teacherService.getTeacherByUserId(req.user.id);
 
+  const hasCv = req.files && req.files.cv && req.files.cv.length > 0;
+  const hasCert = req.files && req.files.certificates && req.files.certificates.length > 0;
+
+  // Graceful Fallbacks: If both files are missing, return a clear, localized ValidationError
+  if (!hasCv && !hasCert) {
+    throw new ValidationError('يرجى اختيار ملف السيرة الذاتية أو الشهادات لرفعه', [
+      { field: 'file', message: 'يرجى اختيار ملف السيرة الذاتية أو الشهادات لرفعه' }
+    ]);
+  }
+
   const updateData = {};
-  if (req.files && req.files.cv) {
+  if (hasCv) {
     updateData.cvUrl = req.files.cv[0].path;
   }
-  if (req.files && req.files.certificates) {
+  if (hasCert) {
     updateData.certificatesUrl = req.files.certificates[0].path;
   }
 
