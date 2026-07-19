@@ -25,5 +25,5 @@ export const getNextSequenceValue = async (id, session = null) => {
  */
 export const generateCode = async (id, prefix, session = null, padding = 4) => {
   const seq = await getNextSequenceValue(id, session);
-  return `${prefix}${seq.toString().padStart(padding, '0')}`;
+  return `${prefix}-${seq.toString().padStart(padding, '0')}`;
 };

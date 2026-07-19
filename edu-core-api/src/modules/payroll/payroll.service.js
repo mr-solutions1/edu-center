@@ -262,7 +262,7 @@ export const payPayroll = async (id, userId) => {
       const { generateCode } =
         await import('../../shared/utils/atomicCounter.js');
 
-      const transactionId = await generateCode('transactionId', 'TXN', session);
+      const transactionId = await generateCode('transactionId', 'MOV', session);
       const actualTeacherId = record.teacherId?._id || record.teacherId;
       const teacher = await Teacher.findById(actualTeacherId).session(session);
       let teacherName = 'معلم';

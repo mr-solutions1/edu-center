@@ -31,6 +31,6 @@ describe('Atomic Counter', () => {
 
     const code = await generateCode('student', 'STD', null, 5);
 
-    expect(code).toBe('STD00042');
+    expect(code).toBe('STD-00042');
   });
 });

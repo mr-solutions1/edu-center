@@ -34,7 +34,7 @@ export const recalculateRunningBalances = async (session = null) => {
  */
 export const createTransaction = async (txnData, performedBy) => {
   return withTransaction(async (session) => {
-    const transactionId = await generateCode('transactionId', 'TXN', session);
+    const transactionId = await generateCode('transactionId', 'MOV', session);
     const amountInFils = toFils(txnData.amount);
 
     const [transaction] = await Transaction.create(

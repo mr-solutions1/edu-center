@@ -190,7 +190,7 @@ describe('Integration: New Features (Upload & PDF)', () => {
 
       expect(regRes.status).toBe(201);
       expect(regRes.body.data.registrationId).toBeDefined();
-      expect(regRes.body.data.registrationId).toMatch(/^REG\d{4}$/);
+      expect(regRes.body.data.registrationId).toMatch(/^REG-\d{4}$/);
     });
   });
 });
