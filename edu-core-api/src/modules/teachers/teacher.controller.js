@@ -9,6 +9,25 @@ export const createTeacher = asyncHandler(async (req, res) => {
   });
 });
 
+export const uploadProfileFiles = asyncHandler(async (req, res) => {
+  const teacherDoc = await teacherService.getTeacherByUserId(req.user.id);
+
+  const updateData = {};
+  if (req.files && req.files.cv) {
+    updateData.cvUrl = req.files.cv[0].path;
+  }
+  if (req.files && req.files.certificates) {
+    updateData.certificatesUrl = req.files.certificates[0].path;
+  }
+
+  const teacher = await teacherService.updateTeacher(teacherDoc._id, updateData);
+
+  res.status(200).json({
+    success: true,
+    data: teacher,
+  });
+});
+
 export const updateProfile = asyncHandler(async (req, res) => {
   const teacherDoc = await teacherService.getTeacherByUserId(req.user.id);
 

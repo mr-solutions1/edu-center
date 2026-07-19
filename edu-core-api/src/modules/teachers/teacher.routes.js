@@ -30,6 +30,16 @@ router.patch(
   teacherController.updateProfile
 );
 
+router.post(
+  '/profile/upload',
+  authorize(UserRole.TEACHER, UserRole.ADMIN),
+  upload.fields([
+    { name: 'cv', maxCount: 1 },
+    { name: 'certificates', maxCount: 1 },
+  ]),
+  teacherController.uploadProfileFiles
+);
+
 router.get('/:id', teacherController.getTeacher);
 
 router.patch(

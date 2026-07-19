@@ -46,4 +46,15 @@ export const teacherApi = {
     const response = await apiClient.patch('/v1/teachers/profile', profileData);
     return response.data;
   },
+
+  uploadProfileFiles: async (formData) => {
+    const response = await apiClient.post(
+      '/v1/teachers/profile/upload',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
+    return response.data;
+  },
 };

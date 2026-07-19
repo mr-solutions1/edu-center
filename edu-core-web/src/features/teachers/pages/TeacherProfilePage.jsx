@@ -104,6 +104,26 @@ const TeacherProfilePage = () => {
     updateMutation.mutate(formData);
   };
 
+  const uploadMutation = useMutation({
+    mutationFn: teacherApi.uploadProfileFiles,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher-profile'] });
+      toast.success('تم رفع المستند بنجاح / Document uploaded successfully.');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'فشل في رفع المستند / Failed to upload document.');
+    },
+  });
+
+  const handleFileChange = (e, fieldName) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append(fieldName, file);
+    uploadMutation.mutate(formData);
+  };
+
   if (isError) {
     return <ErrorState error={error} onRetry={refetch} />;
   }
@@ -327,40 +347,81 @@ const TeacherProfilePage = () => {
               <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4">
                 <h3 className="font-bold text-lg flex items-center gap-2">
                   <GraduationCap className="h-5 w-5 text-primary" />
-                  المستندات
+                  المستندات / Attached Documents
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm font-medium">
-                      السيرة الذاتية (CV)
-                    </span>
-                    {profile.cvUrl ? (
-                      <a
-                        href={profile.cvUrl}
-                        className="text-xs text-primary font-bold hover:underline"
+                  {/* File Inputs (Hidden) */}
+                  <input
+                    type="file"
+                    id="cv-upload"
+                    accept=".pdf,.docx,.doc,.jpg,.jpeg,.png"
+                    className="hidden"
+                    onChange={(e) => handleFileChange(e, 'cv')}
+                  />
+                  <input
+                    type="file"
+                    id="certificates-upload"
+                    accept=".pdf,.docx,.doc,.jpg,.jpeg,.png"
+                    className="hidden"
+                    onChange={(e) => handleFileChange(e, 'certificates')}
+                  />
+
+                  {/* CV Row */}
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg gap-4">
+                    <div className="flex flex-col text-right">
+                      <span className="text-sm font-bold">السيرة الذاتية (CV)</span>
+                      <span className="text-[10px] text-slate-400">PDF, Word, or Images</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {profile.cvUrl && (
+                        <a
+                          href={profile.cvUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary font-bold hover:underline bg-white px-3 py-1.5 rounded-lg border border-slate-100 shadow-sm"
+                        >
+                          عرض / View
+                        </a>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={uploadMutation.isPending}
+                        onClick={() => document.getElementById('cv-upload').click()}
+                        className="h-8 rounded-lg text-xs font-bold gap-1 border-slate-200"
                       >
-                        عرض
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        غير متوفر
-                      </span>
-                    )}
+                        {uploadMutation.isPending ? 'جاري الرفع...' : profile.cvUrl ? 'تحديث / Update' : 'إرفاق / Upload'}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm font-medium">الشهادات العلمية</span>
-                    {profile.certificatesUrl ? (
-                      <a
-                        href={profile.certificatesUrl}
-                        className="text-xs text-primary font-bold hover:underline"
+
+                  {/* Certificates Row */}
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg gap-4">
+                    <div className="flex flex-col text-right">
+                      <span className="text-sm font-bold">الشهادات العلمية</span>
+                      <span className="text-[10px] text-slate-400">PDF, Word, or Images</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {profile.certificatesUrl && (
+                        <a
+                          href={profile.certificatesUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary font-bold hover:underline bg-white px-3 py-1.5 rounded-lg border border-slate-100 shadow-sm"
+                        >
+                          عرض / View
+                        </a>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={uploadMutation.isPending}
+                        onClick={() => document.getElementById('certificates-upload').click()}
+                        className="h-8 rounded-lg text-xs font-bold gap-1 border-slate-200"
                       >
-                        عرض
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        غير متوفر
-                      </span>
-                    )}
+                        {uploadMutation.isPending ? 'جاري الرفع...' : profile.certificatesUrl ? 'تحديث / Update' : 'إرفاق / Upload'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
