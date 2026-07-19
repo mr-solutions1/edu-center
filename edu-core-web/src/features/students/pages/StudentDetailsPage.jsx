@@ -211,6 +211,7 @@ const StudentDetailsPage = () => {
                       <div>
                         <h4 className="font-bold text-lg text-primary flex items-center gap-2">
                           {reg.subject}
+                          {reg.registrationId && <span className="text-sm font-normal text-muted-foreground">({reg.registrationId})</span>}
                           {reg.primaryRow && <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">التسجيل الرئيسي</span>}
                         </h4>
                         <p className="text-xs text-muted-foreground mt-0.5">

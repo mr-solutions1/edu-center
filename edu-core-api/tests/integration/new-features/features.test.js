@@ -155,4 +155,43 @@ describe('Integration: New Features (Upload & PDF)', () => {
       );
     });
   });
+
+  describe('StudentRegistration Code Generation', () => {
+    it('should generate a sparse unique registrationId automatically upon registration creation', async () => {
+      const manualToken = jwt.sign(
+        { id: adminId, role: 'ADMIN', tokenVersion: 0 },
+        env.JWT_ACCESS_SECRET,
+        { expiresIn: '15m' }
+      );
+
+      // 1. Create a dummy student first
+      const studentRes = await request(app)
+        .post('/api/v1/students')
+        .set('Authorization', `Bearer={manualToken}`)
+        .set('Authorization', `Bearer ${manualToken}`)
+        .send({
+          parentName: 'Al-Farabi Parent',
+          parentPhone: '96512345',
+          address: 'Kuwait City',
+          grade: 'ابتدائي',
+        });
+
+      expect(studentRes.status).toBe(201);
+      const studentId = studentRes.body.data._id;
+
+      // 2. Register a new package/subject for this student
+      const regRes = await request(app)
+        .post(`/api/v1/students/${studentId}/registrations`)
+        .set('Authorization', `Bearer ${manualToken}`)
+        .send({
+          subject: 'Mathmatics',
+          purchasedHours: 10,
+          pricePerHour: 10, // 10 KD
+        });
+
+      expect(regRes.status).toBe(201);
+      expect(regRes.body.data.registrationId).toBeDefined();
+      expect(regRes.body.data.registrationId).toMatch(/^REG\d{4}$/);
+    });
+  });
 });
