@@ -25,12 +25,14 @@ import { formatMoney } from '@/shared/utils/money';
 
 import StudentDashboard from '../components/StudentDashboard';
 import ParentDashboard from '../components/ParentDashboard';
+import TeacherDashboard from '../components/TeacherDashboard';
 
 const DashboardPage = () => {
   const { user, accessToken, isAuthenticated, hasPermission } = useAuth();
 
   const isStudent = hasPermission('exams.view') && !hasPermission('student.view');
   const isParent = hasPermission('student.view') && !hasPermission('lesson.attendance') && !hasPermission('student.create');
+  const isTeacher = user?.role === 'TEACHER';
 
   // Unified redirection for Student Portal
   if (isStudent) {
@@ -38,6 +40,16 @@ const DashboardPage = () => {
       <div className="space-y-6">
         <PageHeader title="بوابة الطالب" description={`أهلاً بك مجدداً، ${user?.firstName} ${user?.lastName}`} />
         <StudentDashboard />
+      </div>
+    );
+  }
+
+  // Unified redirection for Teacher Portal
+  if (isTeacher) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="بوابة المعلم" description={`أهلاً بك مجدداً، أستاذ ${user?.firstName} ${user?.lastName}`} />
+        <TeacherDashboard />
       </div>
     );
   }
