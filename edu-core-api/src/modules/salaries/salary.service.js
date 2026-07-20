@@ -36,6 +36,16 @@ export const createSalary = async (salaryData) => {
       }
     });
 
+    // Mirror frontend calculation on backend to ensure consistency
+    const calculatedTotal = Math.max(
+      0,
+      (data.hoursWorked || 0) * (data.hourlyRate || 0) +
+        (data.bonuses || 0) +
+        (data.transportationAllowance || 0) -
+        (data.deductions || 0)
+    );
+    data.totalSalary = calculatedTotal;
+
     const [salary] = await TeacherSalary.create([data], { session });
     return salary;
   });
@@ -73,6 +83,30 @@ export const updateSalary = async (id, updateData) => {
       data[field] = toFils(data[field]);
     }
   });
+
+  const current = await TeacherSalary.findById(id);
+  if (!current) {
+    throw new NotFoundError('سجل الراتب غير موجود');
+  }
+
+  // Merge with existing fields if some are not provided in partial update
+  const merged = {
+    hoursWorked: data.hoursWorked !== undefined ? data.hoursWorked : current.hoursWorked,
+    hourlyRate: data.hourlyRate !== undefined ? data.hourlyRate : current.hourlyRate,
+    bonuses: data.bonuses !== undefined ? data.bonuses : current.bonuses,
+    transportationAllowance: data.transportationAllowance !== undefined ? data.transportationAllowance : current.transportationAllowance,
+    deductions: data.deductions !== undefined ? data.deductions : current.deductions,
+  };
+
+  // Mirror frontend calculation on backend to ensure consistency
+  const calculatedTotal = Math.max(
+    0,
+    (merged.hoursWorked || 0) * (merged.hourlyRate || 0) +
+      (merged.bonuses || 0) +
+      (merged.transportationAllowance || 0) -
+      (merged.deductions || 0)
+  );
+  data.totalSalary = calculatedTotal;
 
   const salary = await TeacherSalary.findByIdAndUpdate(id, data, {
     new: true,
