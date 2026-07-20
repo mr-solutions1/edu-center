@@ -17,6 +17,8 @@ import {
 import Lesson from '../lessons/lesson.model.js';
 import Teacher from '../teachers/teacher.model.js';
 import { SettingsService } from '../tenants/SettingsService.js';
+import ApprovalService from '../ledger/approval.service.js';
+import ApprovalRequest from '../ledger/approvalRequest.model.js';
 
 /**
  * Recalculate payroll for a teacher for a specific month/year
@@ -153,6 +155,15 @@ export const submitForApproval = async (id, userId) => {
     record.status = 'PENDING_APPROVAL';
     await record.save({ session });
 
+    // Spawn a sequential multi-level approval request
+    await ApprovalService.submitRequest(
+      'PAYROLL_APPROVAL',
+      record._id,
+      record.tenantId,
+      `طلب اعتماد كشف راتب المعلم - شهر ${record.month}/${record.year}`,
+      session
+    );
+
     await PayrollTransaction.create(
       [
         {
@@ -182,8 +193,9 @@ export const submitForApproval = async (id, userId) => {
 
 /**
  * Approve payroll (PENDING_APPROVAL ➔ APPROVED)
+ * Sequentially approves active level signatures of the request
  */
-export const approvePayroll = async (id, userId) => {
+export const approvePayroll = async (id, userId, userRole = 'ADMIN') => {
   return withTransaction(async (session) => {
     const record = await PayrollRecord.findById(id).session(session);
     if (!record) {
@@ -191,6 +203,38 @@ export const approvePayroll = async (id, userId) => {
     }
 
     const previousValue = record.toObject();
+
+    // Fetch matching pending approval request
+    const request = await ApprovalRequest.findOne({
+      referenceId: record._id,
+      status: 'PENDING',
+    }).session(session);
+
+    if (request) {
+      // Execute consecutive step approval signature
+      await ApprovalService.approveStep(request._id, userId, userRole, session);
+
+      // Reload record to capture updated status (promoted to APPROVED if all levels signed)
+      const updatedRecord = await PayrollRecord.findById(id).session(session);
+
+      await PayrollTransaction.create(
+        [
+          {
+            teacherId: record.teacherId,
+            userId,
+            payrollRecordId: record._id,
+            action: 'UPDATE',
+            previousValue,
+            newValue: updatedRecord.toObject(),
+          },
+        ],
+        { session }
+      );
+
+      return updatedRecord;
+    }
+
+    // Direct bypass fallback (for backward compatibility if no request exists)
     record.status = 'APPROVED';
     await record.save({ session });
 
