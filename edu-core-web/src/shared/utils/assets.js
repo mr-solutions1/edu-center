@@ -7,6 +7,19 @@
 export const resolveAssetUrl = (url) => {
   if (!url) return '';
 
+  // Self-Healing Legacy Path Normalization:
+  // If the path contains an absolute server filesystem directory,
+  // extract only the portion starting from "/uploads/" onwards.
+  const uploadsIndex = url.indexOf('/uploads/');
+  if (uploadsIndex !== -1) {
+    url = url.substring(uploadsIndex);
+  } else {
+    const uploadsIndexNoSlash = url.indexOf('uploads/');
+    if (uploadsIndexNoSlash !== -1) {
+      url = '/' + url.substring(uploadsIndexNoSlash);
+    }
+  }
+
   // If it's already an absolute URL, return it as is
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
