@@ -26,6 +26,10 @@ const roleSchema = new mongoose.Schema(
       type: [String], // Array of permission keys
       default: [],
     },
+    inherits: {
+      type: [String], // Keys of parent roles to inherit permissions from recursively
+      default: [],
+    },
   },
   {
     timestamps: true,
