@@ -91,11 +91,17 @@ export const updateSalary = async (id, updateData) => {
 
   // Merge with existing fields if some are not provided in partial update
   const merged = {
-    hoursWorked: data.hoursWorked !== undefined ? data.hoursWorked : current.hoursWorked,
-    hourlyRate: data.hourlyRate !== undefined ? data.hourlyRate : current.hourlyRate,
+    hoursWorked:
+      data.hoursWorked !== undefined ? data.hoursWorked : current.hoursWorked,
+    hourlyRate:
+      data.hourlyRate !== undefined ? data.hourlyRate : current.hourlyRate,
     bonuses: data.bonuses !== undefined ? data.bonuses : current.bonuses,
-    transportationAllowance: data.transportationAllowance !== undefined ? data.transportationAllowance : current.transportationAllowance,
-    deductions: data.deductions !== undefined ? data.deductions : current.deductions,
+    transportationAllowance:
+      data.transportationAllowance !== undefined
+        ? data.transportationAllowance
+        : current.transportationAllowance,
+    deductions:
+      data.deductions !== undefined ? data.deductions : current.deductions,
   };
 
   // Mirror frontend calculation on backend to ensure consistency

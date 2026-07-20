@@ -1,20 +1,14 @@
 import mongoose from 'mongoose';
 import logger from '../logger.js';
 
-import {
-  SMTPEmailProvider,
-  MockEmailProvider
-} from './EmailProviders.js';
+import { SMTPEmailProvider, MockEmailProvider } from './EmailProviders.js';
 
-import {
-  TwilioSMSProvider,
-  MockSMSProvider
-} from './SMSProviders.js';
+import { TwilioSMSProvider, MockSMSProvider } from './SMSProviders.js';
 
 import {
   TwilioWhatsAppProvider,
   MetaWhatsAppProvider,
-  MockWhatsAppProvider
+  MockWhatsAppProvider,
 } from './WhatsAppProviders.js';
 
 /**
@@ -34,7 +28,9 @@ export class ProviderFactory {
         const TenantSettings = mongoose.model('TenantSettings');
         settings = await TenantSettings.findOne({ tenantId });
       } catch (err) {
-        logger.error(`[ProviderFactory] Failed to fetch settings for tenant ${tenantId}: ${err.message}`);
+        logger.error(
+          `[ProviderFactory] Failed to fetch settings for tenant ${tenantId}: ${err.message}`
+        );
       }
     }
 
@@ -72,7 +68,9 @@ export class ProviderFactory {
     } else {
       // Fallback to system-wide TwilioWhatsAppProvider
       const systemWa = new TwilioWhatsAppProvider();
-      whatsappProvider = systemWa.enabled ? systemWa : new MockWhatsAppProvider();
+      whatsappProvider = systemWa.enabled
+        ? systemWa
+        : new MockWhatsAppProvider();
     }
 
     return {

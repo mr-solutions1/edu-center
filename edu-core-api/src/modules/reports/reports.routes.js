@@ -12,6 +12,12 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get(
+  '/financial-statements',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  reportsController.getFinancialStatements
+);
+
+router.get(
   '/overview',
   authorize(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.RECEPTIONIST),
   reportsController.getOverview

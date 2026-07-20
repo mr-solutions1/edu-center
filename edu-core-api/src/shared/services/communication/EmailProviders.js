@@ -11,7 +11,7 @@ export class SMTPEmailProvider extends MessagingProvider {
     super('SMTPEmailProvider');
     this.host = config.host || env.SMTP_HOST;
     this.port = config.port || env.SMTP_PORT || 587;
-    this.secure = config.secure ?? (this.port === 465);
+    this.secure = config.secure ?? this.port === 465;
     this.user = config.user || env.SMTP_USER;
     this.pass = config.pass || env.SMTP_PASS;
     this.from = config.from || env.SMTP_FROM || this.user;
@@ -48,7 +48,9 @@ export class SMTPEmailProvider extends MessagingProvider {
         html: `<div dir="rtl" style="font-family: Tajawal, sans-serif;">${body}</div>`,
       });
 
-      logger.info(`[SMTPEmailProvider] Email dispatched successfully: ${info.messageId}`);
+      logger.info(
+        `[SMTPEmailProvider] Email dispatched successfully: ${info.messageId}`
+      );
       return { success: true, messageId: info.messageId };
     } catch (error) {
       logger.error(`[SMTPEmailProvider] Dispatched error: ${error.message}`);

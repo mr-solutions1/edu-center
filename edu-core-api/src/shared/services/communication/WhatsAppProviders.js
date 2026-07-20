@@ -10,7 +10,8 @@ export class TwilioWhatsAppProvider extends MessagingProvider {
     super('TwilioWhatsAppProvider');
     this.accountSid = config.accountSid || env.TWILIO_ACCOUNT_SID;
     this.authToken = config.authToken || env.TWILIO_AUTH_TOKEN;
-    this.from = config.from || env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
+    this.from =
+      config.from || env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886';
 
     this.enabled = !!(this.accountSid && this.authToken && this.from);
   }
@@ -24,7 +25,9 @@ export class TwilioWhatsAppProvider extends MessagingProvider {
     }
 
     try {
-      logger.info(`[TwilioWhatsAppProvider] Sending WhatsApp to ${to}: ${body}`);
+      logger.info(
+        `[TwilioWhatsAppProvider] Sending WhatsApp to ${to}: ${body}`
+      );
 
       // In production environment with twilio SDK:
       // import twilio from 'twilio';
@@ -73,7 +76,10 @@ export class MetaWhatsAppProvider extends MessagingProvider {
       // https://graph.facebook.com/v19.0/${this.phoneNumberId}/messages
       // with Authorization: Bearer ${this.accessToken} and payload containing recipient and template variables.
 
-      return { success: true, messageId: `mock-meta-wa-${crypto.randomUUID()}` };
+      return {
+        success: true,
+        messageId: `mock-meta-wa-${crypto.randomUUID()}`,
+      };
     } catch (error) {
       logger.error(`[MetaWhatsAppProvider] Error: ${error.message}`);
       return { success: false, error: error.message };

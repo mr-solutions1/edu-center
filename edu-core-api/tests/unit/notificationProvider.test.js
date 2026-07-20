@@ -1,12 +1,12 @@
 process.env.NODE_ENV = 'test';
 
 import mongoose from 'mongoose';
-import { connectDB, closeDB, clearDB } from '../integration/setup.js';
+
+import { SMTPEmailProvider } from '../../src/shared/services/communication/EmailProviders.js';
 import { ProviderFactory } from '../../src/shared/services/communication/ProviderFactory.js';
-import { SMTPEmailProvider, MockEmailProvider } from '../../src/shared/services/communication/EmailProviders.js';
-import { TwilioSMSProvider, MockSMSProvider } from '../../src/shared/services/communication/SMSProviders.js';
-import { TwilioWhatsAppProvider, MockWhatsAppProvider } from '../../src/shared/services/communication/WhatsAppProviders.js';
+import { TwilioSMSProvider } from '../../src/shared/services/communication/SMSProviders.js';
 import { notificationService } from '../../src/shared/services/notification.service.js';
+import { connectDB, closeDB, clearDB } from '../integration/setup.js';
 
 beforeAll(async () => await connectDB());
 afterEach(async () => await clearDB());
@@ -44,7 +44,10 @@ describe('Notification Provider Abstraction Suite', () => {
 
     it('should fallback to mock provider when SMTP credentials are not configured', async () => {
       const provider = new SMTPEmailProvider({ host: null });
-      const result = await provider.send({ to: 'test@example.com', body: 'Hello' });
+      const result = await provider.send({
+        to: 'test@example.com',
+        body: 'Hello',
+      });
       expect(result.success).toBe(false);
       expect(result.error).toBe('SMTP not configured');
     });
@@ -81,8 +84,8 @@ describe('Notification Provider Abstraction Suite', () => {
             provider: 'META',
             accessToken: 'META_TOKEN',
             phoneNumberId: 'META_PHONE_ID',
-          }
-        }
+          },
+        },
       });
 
       const providers = await ProviderFactory.getProviders(customTenantId);
@@ -107,7 +110,7 @@ describe('Notification Provider Abstraction Suite', () => {
         title: 'تنبيه تجريبي',
         message: 'محتوى الرسالة من معهد ركان',
         type: 'TEST_ALERT',
-        data: { sendSMS: true }
+        data: { sendSMS: true },
       };
 
       let notifiedCount = 0;

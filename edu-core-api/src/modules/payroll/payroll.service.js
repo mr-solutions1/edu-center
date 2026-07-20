@@ -60,7 +60,9 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
 
     // 4. Calculate transport deduction (only if teacher uses institute car)
     // Business rule: Flat rate per lesson if using institute car
-    const TRANSPORT_RATE = await SettingsService.getTransportationDeductionRate(teacher.tenantId);
+    const TRANSPORT_RATE = await SettingsService.getTransportationDeductionRate(
+      teacher.tenantId
+    );
     let transportDeductions = 0;
     if (teacher.usesInstituteCar) {
       transportDeductions = multiplyFils(TRANSPORT_RATE, completedLessons);

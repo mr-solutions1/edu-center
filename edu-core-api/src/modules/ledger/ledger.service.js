@@ -157,7 +157,9 @@ export const recordLedgerEntry = async (data, session = null) => {
   } catch (err) {
     // Log accounting failure but prevent breaking critical operations
     import('../../shared/services/logger.js').then((m) =>
-      m.default.error(`[LedgerService] Failed to record balanced double-entry: ${err.message}`)
+      m.default.error(
+        `[LedgerService] Failed to record balanced double-entry: ${err.message}`
+      )
     );
   }
 
@@ -186,14 +188,19 @@ export const removeLedgerEntriesByReference = async (
   try {
     // Retrieve target ledger entry IDs that will be deleted to clean up matched General Ledger double-entries
     const ledgerEntries = await FinancialLedger.find(query).session(session);
-    const ledgerIds = ledgerEntries.map(entry => entry._id);
+    const ledgerIds = ledgerEntries.map((entry) => entry._id);
 
     if (ledgerIds.length > 0) {
-      await GeneralLedger.deleteMany({ referenceId: { $in: ledgerIds } }, options);
+      await GeneralLedger.deleteMany(
+        { referenceId: { $in: ledgerIds } },
+        options
+      );
     }
   } catch (err) {
     import('../../shared/services/logger.js').then((m) =>
-      m.default.error(`[LedgerService] Failed to clear balanced general ledger entries: ${err.message}`)
+      m.default.error(
+        `[LedgerService] Failed to clear balanced general ledger entries: ${err.message}`
+      )
     );
   }
 

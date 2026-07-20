@@ -22,13 +22,20 @@ export const uploadProfileFiles = asyncHandler(async (req, res) => {
   const teacherDoc = await teacherService.getTeacherByUserId(req.user.id);
 
   const hasCv = req.files && req.files.cv && req.files.cv.length > 0;
-  const hasCert = req.files && req.files.certificates && req.files.certificates.length > 0;
+  const hasCert =
+    req.files && req.files.certificates && req.files.certificates.length > 0;
 
   // Graceful Fallbacks: If both files are missing, return a clear, localized ValidationError
   if (!hasCv && !hasCert) {
-    throw new ValidationError('يرجى اختيار ملف السيرة الذاتية أو الشهادات لرفعه', [
-      { field: 'file', message: 'يرجى اختيار ملف السيرة الذاتية أو الشهادات لرفعه' }
-    ]);
+    throw new ValidationError(
+      'يرجى اختيار ملف السيرة الذاتية أو الشهادات لرفعه',
+      [
+        {
+          field: 'file',
+          message: 'يرجى اختيار ملف السيرة الذاتية أو الشهادات لرفعه',
+        },
+      ]
+    );
   }
 
   const updateData = {};
@@ -39,7 +46,10 @@ export const uploadProfileFiles = asyncHandler(async (req, res) => {
     updateData.certificatesUrl = `/uploads/teachers/certificates/${req.files.certificates[0].filename}`;
   }
 
-  const teacher = await teacherService.updateTeacher(teacherDoc._id, updateData);
+  const teacher = await teacherService.updateTeacher(
+    teacherDoc._id,
+    updateData
+  );
 
   res.status(200).json({
     success: true,
@@ -51,9 +61,16 @@ export const updateProfile = asyncHandler(async (req, res) => {
   const teacherDoc = await teacherService.getTeacherByUserId(req.user.id);
 
   const allowedUpdates = [
-    'firstName', 'lastName', 'phone', 'whatsapp',
-    'subjects', 'gradesTaught', 'experienceYears',
-    'address', 'googleMapsUrl', 'bio'
+    'firstName',
+    'lastName',
+    'phone',
+    'whatsapp',
+    'subjects',
+    'gradesTaught',
+    'experienceYears',
+    'address',
+    'googleMapsUrl',
+    'bio',
   ];
 
   const updates = {};
@@ -63,7 +80,10 @@ export const updateProfile = asyncHandler(async (req, res) => {
     }
   });
 
-  const updatedTeacher = await teacherService.updateTeacher(teacherDoc._id, updates);
+  const updatedTeacher = await teacherService.updateTeacher(
+    teacherDoc._id,
+    updates
+  );
 
   res.status(200).json({
     success: true,

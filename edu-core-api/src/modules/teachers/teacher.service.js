@@ -105,7 +105,13 @@ export const createTeacher = async (teacherData) => {
     let userId = teacherData.userId;
 
     // Auto-create a User if personal details are provided
-    if (!userId && teacherData.firstName && teacherData.lastName && teacherData.email && teacherData.phone) {
+    if (
+      !userId &&
+      teacherData.firstName &&
+      teacherData.lastName &&
+      teacherData.email &&
+      teacherData.phone
+    ) {
       const context = getTenantContext();
       const tenantId = context?.tenantId || null;
 
@@ -128,7 +134,9 @@ export const createTeacher = async (teacherData) => {
     }
 
     if (!userId) {
-      throw new Error('رقم المستخدم أو تفاصيل الحساب الجديد مطلوبة لإنشاء معلم');
+      throw new Error(
+        'رقم المستخدم أو تفاصيل الحساب الجديد مطلوبة لإنشاء معلم'
+      );
     }
 
     const employeeCode = await generateCode('employeeCode', 'TCH', session);
@@ -274,7 +282,13 @@ export const updateTeacher = async (id, updateData) => {
     }
 
     // Sync User details if personal details are provided
-    if (teacher.userId && (updateData.firstName || updateData.lastName || updateData.email || updateData.phone)) {
+    if (
+      teacher.userId &&
+      (updateData.firstName ||
+        updateData.lastName ||
+        updateData.email ||
+        updateData.phone)
+    ) {
       const userUpdate = {};
       if (updateData.firstName) userUpdate.firstName = updateData.firstName;
       if (updateData.lastName) userUpdate.lastName = updateData.lastName;
@@ -289,7 +303,9 @@ export const updateTeacher = async (id, updateData) => {
       data.hourlyRate = toFils(data.hourlyRate);
     }
 
-    const updatedTeacher = await teacherRepository.findByIdAndUpdate(id, data, { session });
+    const updatedTeacher = await teacherRepository.findByIdAndUpdate(id, data, {
+      session,
+    });
     return updatedTeacher;
   });
 };

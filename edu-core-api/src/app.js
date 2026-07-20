@@ -326,7 +326,14 @@ app.all('*', (req, res, next) => {
 
 const maskBody = (body) => {
   if (!body || typeof body !== 'object') return body;
-  const sensitiveFields = ['password', 'oldPassword', 'newPassword', 'token', 'refreshToken', 'accessToken'];
+  const sensitiveFields = [
+    'password',
+    'oldPassword',
+    'newPassword',
+    'token',
+    'refreshToken',
+    'accessToken',
+  ];
   const masked = { ...body };
   for (const field of sensitiveFields) {
     if (field in masked) {
@@ -338,7 +345,9 @@ const maskBody = (body) => {
 
 const getControllerFromStack = (stack) => {
   if (!stack) return 'unknown';
-  const match = stack.match(/src\/modules\/([a-zA-Z0-9_-]+)\/([a-zA-Z0-9._-]+):(\d+)/);
+  const match = stack.match(
+    /src\/modules\/([a-zA-Z0-9_-]+)\/([a-zA-Z0-9._-]+):(\d+)/
+  );
   if (match) {
     return `${match[1]}Module -> ${match[2]}:${match[3]}`;
   }
@@ -362,92 +371,95 @@ app.use((err, req, res, _next) => {
     email: {
       code: 'EMAIL_ALREADY_EXISTS',
       ar: 'البريد الإلكتروني هذا مسجل بالفعل في النظام',
-      en: 'This email is already registered in the system'
+      en: 'This email is already registered in the system',
     },
     phone: {
       code: 'PHONE_ALREADY_EXISTS',
       ar: 'رقم الهاتف هذا مسجل بالفعل في النظام',
-      en: 'This phone number is already registered in the system'
+      en: 'This phone number is already registered in the system',
     },
     phoneNumber: {
       code: 'PHONE_ALREADY_EXISTS',
       ar: 'رقم الهاتف هذا مسجل بالفعل في النظام',
-      en: 'This phone number is already registered in the system'
+      en: 'This phone number is already registered in the system',
     },
     username: {
       code: 'USERNAME_ALREADY_EXISTS',
       ar: 'اسم المستخدم هذا مسجل بالفعل في النظام',
-      en: 'This username is already registered in the system'
+      en: 'This username is already registered in the system',
     },
     nationalId: {
       code: 'NATIONAL_ID_ALREADY_EXISTS',
       ar: 'رقم الهوية الوطنية هذا مسجل بالفعل في النظام',
-      en: 'This national ID is already registered in the system'
+      en: 'This national ID is already registered in the system',
     },
     teacherCode: {
       code: 'TEACHER_CODE_ALREADY_EXISTS',
       ar: 'كود المعلم هذا مسجل بالفعل في النظام',
-      en: 'This teacher code is already registered in the system'
+      en: 'This teacher code is already registered in the system',
     },
     teacherId: {
       code: 'TEACHER_ID_ALREADY_EXISTS',
       ar: 'رقم المعلم هذا مسجل بالفعل في النظام',
-      en: 'This teacher ID is already registered in the system'
+      en: 'This teacher ID is already registered in the system',
     },
     studentCode: {
       code: 'STUDENT_CODE_ALREADY_EXISTS',
       ar: 'كود الطالب هذا مسجل بالفعل في النظام',
-      en: 'This student code is already registered in the system'
+      en: 'This student code is already registered in the system',
     },
     studentId: {
       code: 'STUDENT_ID_ALREADY_EXISTS',
       ar: 'رقم الطالب هذا مسجل بالفعل في النظام',
-      en: 'This student ID is already registered in the system'
+      en: 'This student ID is already registered in the system',
     },
     registrationNumber: {
       code: 'REGISTRATION_NUMBER_ALREADY_EXISTS',
       ar: 'رقم التسجيل هذا مسجل بالفعل في النظام',
-      en: 'This registration number is already registered in the system'
+      en: 'This registration number is already registered in the system',
     },
     employeeCode: {
       code: 'EMPLOYEE_CODE_ALREADY_EXISTS',
       ar: 'كود الموظف هذا مسجل بالفعل في النظام',
-      en: 'This employee code is already registered in the system'
+      en: 'This employee code is already registered in the system',
     },
     invoiceNumber: {
       code: 'INVOICE_NUMBER_ALREADY_EXISTS',
       ar: 'رقم الفاتورة هذا مسجل بالفعل في النظام',
-      en: 'This invoice number is already registered in the system'
+      en: 'This invoice number is already registered in the system',
     },
     receiptNumber: {
       code: 'RECEIPT_NUMBER_ALREADY_EXISTS',
       ar: 'رقم الإيصال هذا مسجل بالفعل في النظام',
-      en: 'This receipt number is already registered in the system'
+      en: 'This receipt number is already registered in the system',
     },
     paymentReference: {
       code: 'PAYMENT_REFERENCE_ALREADY_EXISTS',
       ar: 'مرجع الدفع هذا مسجل بالفعل في النظام',
-      en: 'This payment reference is already registered in the system'
+      en: 'This payment reference is already registered in the system',
     },
     trackingNumber: {
       code: 'TRACKING_NUMBER_ALREADY_EXISTS',
       ar: 'رقم التتبع هذا مسجل بالفعل في النظام',
-      en: 'This tracking number is already registered in the system'
+      en: 'This tracking number is already registered in the system',
     },
     barcode: {
       code: 'BARCODE_ALREADY_EXISTS',
       ar: 'الباركود هذا مسجل بالفعل في النظام',
-      en: 'This barcode is already registered in the system'
+      en: 'This barcode is already registered in the system',
     },
     serialNumber: {
       code: 'SERIAL_NUMBER_ALREADY_EXISTS',
       ar: 'الرقم التسلسلي هذا مسجل بالفعل في النظام',
-      en: 'This serial number is already registered in the system'
-    }
+      en: 'This serial number is already registered in the system',
+    },
   };
 
   // 1. Check for MongoDB E11000 duplicate key error
-  if (err.code === 11000 || (err.name === 'MongoServerError' && err.code === 11000)) {
+  if (
+    err.code === 11000 ||
+    (err.name === 'MongoServerError' && err.code === 11000)
+  ) {
     isDuplicateError = true;
     err.statusCode = 409;
     code = 'DUPLICATE_KEY';
@@ -463,7 +475,9 @@ app.use((err, req, res, _next) => {
         duplicateValue = err.keyValue[duplicateField];
       }
     } else if (err.message) {
-      const match = err.message.match(/index:\s+([^\s_]+)_?\d*\s+dup\s+key:\s+\{\s*([^\s:]+):\s*([^\s}]+)/);
+      const match = err.message.match(
+        /index:\s+([^\s_]+)_?\d*\s+dup\s+key:\s+\{\s*([^\s:]+):\s*([^\s}]+)/
+      );
       if (match) {
         duplicateField = match[2];
         duplicateValue = match[3].replace(/['"]+/g, '');
@@ -480,7 +494,10 @@ app.use((err, req, res, _next) => {
     }
   }
   // 2. ZodError
-  else if (err.name === 'ZodError' || (err.constructor && err.constructor.name === 'ZodError')) {
+  else if (
+    err.name === 'ZodError' ||
+    (err.constructor && err.constructor.name === 'ZodError')
+  ) {
     isValidationError = true;
     err.statusCode = 400;
     code = 'VALIDATION_ERROR';
@@ -502,13 +519,18 @@ app.use((err, req, res, _next) => {
     });
   }
   // 4. Joi ValidationError
-  else if (err.isJoi || (err.name === 'ValidationError' && Array.isArray(err.details))) {
+  else if (
+    err.isJoi ||
+    (err.name === 'ValidationError' && Array.isArray(err.details))
+  ) {
     isValidationError = true;
     err.statusCode = 400;
     code = 'VALIDATION_ERROR';
     message = err.message || 'خطأ في التحقق من البيانات';
     err.details.forEach((detail) => {
-      const field = detail.path ? detail.path.join('.') : (detail.context?.key || 'unknown');
+      const field = detail.path
+        ? detail.path.join('.')
+        : detail.context?.key || 'unknown';
       details[field] = detail.message;
     });
   }
@@ -570,12 +592,15 @@ app.use((err, req, res, _next) => {
     details,
     correlationId: req.correlationId || null,
     timestamp: new Date().toISOString(),
-    retryable
+    retryable,
   };
 
   // Add backward compatibility for any existing code expecting .errors (as field list) or .meta
   if (isValidationError) {
-    response.errors = Object.entries(details).map(([field, msg]) => ({ field, message: msg }));
+    response.errors = Object.entries(details).map(([field, msg]) => ({
+      field,
+      message: msg,
+    }));
   }
   response.meta = { correlationId: req.correlationId || null };
 
@@ -611,11 +636,14 @@ app.use((err, req, res, _next) => {
       method: req.method,
     });
   } else {
-    logger.warn(`Client Request Error [${err.statusCode} - ${code}]: ${message}`, {
-      correlationId: req.correlationId,
-      url: req.originalUrl,
-      method: req.method,
-    });
+    logger.warn(
+      `Client Request Error [${err.statusCode} - ${code}]: ${message}`,
+      {
+        correlationId: req.correlationId,
+        url: req.originalUrl,
+        method: req.method,
+      }
+    );
   }
 
   if (env.NODE_ENV === 'development' || env.NODE_ENV === 'test') {

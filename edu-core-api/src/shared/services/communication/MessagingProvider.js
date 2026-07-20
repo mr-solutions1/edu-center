@@ -18,6 +18,8 @@ export class MessagingProvider {
    * @param {Object} [params.variables] - Optional key-value variables to compile templates
    */
   async send({ to, subject, body, template, variables }) {
-    throw new Error(`Method "send" must be implemented on provider "${this.name}"`);
+    throw new Error(
+      `Method "send" must be implemented on provider "${this.name}"`
+    );
   }
 }

@@ -49,7 +49,10 @@ export const login = asyncHandler(async (req, res) => {
   const ipAddress = req.ip;
   const userAgent = req.get('user-agent');
 
-  console.log('[Forensic Login Audit] Initiating login attempt for email:', email);
+  console.log(
+    '[Forensic Login Audit] Initiating login attempt for email:',
+    email
+  );
 
   const { user, accessToken, refreshToken } = await authService.login(
     email,
@@ -58,14 +61,20 @@ export const login = asyncHandler(async (req, res) => {
     userAgent
   );
 
-  console.log('[Forensic Login Audit] Authentication successful for user ID:', user._id);
-  console.log('[Forensic Login Audit] Setting refresh token cookie with options:', {
-    httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: (parseInt(env.JWT_REFRESH_EXPIRES_IN) || 7) * 24 * 60 * 60 * 1000,
-    domain: env.COOKIE_DOMAIN || undefined,
-  });
+  console.log(
+    '[Forensic Login Audit] Authentication successful for user ID:',
+    user._id
+  );
+  console.log(
+    '[Forensic Login Audit] Setting refresh token cookie with options:',
+    {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: (parseInt(env.JWT_REFRESH_EXPIRES_IN) || 7) * 24 * 60 * 60 * 1000,
+      domain: env.COOKIE_DOMAIN || undefined,
+    }
+  );
 
   setRefreshCookie(res, refreshToken);
 
@@ -97,11 +106,23 @@ export const login = asyncHandler(async (req, res) => {
  */
 export const refresh = asyncHandler(async (req, res) => {
   // Production forensic audit logs to trace cookies transmission
-  console.log('[Forensic Audit] Raw Request Cookies Header:', req.headers.cookie);
+  console.log(
+    '[Forensic Audit] Raw Request Cookies Header:',
+    req.headers.cookie
+  );
   console.log('[Forensic Audit] Parsed Request Cookies Object:', req.cookies);
-  console.log('[Forensic Audit] Request Origin:', req.get('origin') || req.headers.origin);
-  console.log('[Forensic Audit] Request Host:', req.get('host') || req.headers.host);
-  console.log('[Forensic Audit] Request Referer:', req.get('referer') || req.headers.referer);
+  console.log(
+    '[Forensic Audit] Request Origin:',
+    req.get('origin') || req.headers.origin
+  );
+  console.log(
+    '[Forensic Audit] Request Host:',
+    req.get('host') || req.headers.host
+  );
+  console.log(
+    '[Forensic Audit] Request Referer:',
+    req.get('referer') || req.headers.referer
+  );
 
   const { refreshToken } = req.cookies;
   const ipAddress = req.ip;

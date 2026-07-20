@@ -10,6 +10,28 @@ import StudentRegistration from '../students/registration.model.js';
 import Student from '../students/student.model.js';
 import Teacher from '../teachers/teacher.model.js';
 import { SettingsService } from '../tenants/SettingsService.js';
+import AccountingService from '../ledger/accounting.service.js';
+
+/**
+ * @desc    Get enterprise double-entry financial statements (Balance Sheet, Income Statement, Cash Flow)
+ * @route   GET /api/v1/reports/financial-statements
+ * @access  Private (Admin, Accountant)
+ */
+export const getFinancialStatements = asyncHandler(async (req, res) => {
+  const { startDate, endDate, tenantId } = req.query;
+  const activeTenantId = tenantId || req.user.tenantId || null;
+
+  const statements = await AccountingService.generateFinancialStatements(
+    activeTenantId,
+    startDate,
+    endDate
+  );
+
+  res.status(200).json({
+    success: true,
+    data: statements,
+  });
+});
 
 /**
  * @desc    Get dashboard overview stats (dynamic & real-time)
