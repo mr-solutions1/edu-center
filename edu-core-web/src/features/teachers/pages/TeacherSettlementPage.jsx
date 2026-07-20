@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { teacherApi } from '../services/teacherApi';
+import { transactionApi } from '@/features/payments/services/transactionApi';
 
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { formatMoney } from '@/shared/utils/money';
+import { formatMoney, toKWD } from '@/shared/utils/money';
 
 const TeacherSettlementPage = () => {
   const queryClient = useQueryClient();
@@ -25,16 +26,20 @@ const TeacherSettlementPage = () => {
     enabled: !!selectedTeacherId,
   });
 
-  // Since we also have global settlements/payroll service in the app, we can integrate
-  // with the existing payrollMarkPaid / generatePayroll if needed, or trigger custom simulated ones.
-  // We can let accountants mark settled by recording a ledger entry or simulated action.
+  // Connect with transactionApi to create actual teacher payout in financial ledger
   const query = queryClient;
   const payMutation = useMutation({
-    mutationFn: async (amount) => {
-      // Simulate/trigger payout recording via API
-      // Since payouts generate FinancialLedger, we can integrate or simulate.
-      // We will show a success notification.
-      return { success: true };
+    mutationFn: async (amountInFils) => {
+      const amountInKWD = toKWD(amountInFils);
+      return transactionApi.createTransaction({
+        type: 'TEACHER_PAYMENT',
+        teacherId: selectedTeacherId,
+        name: `${teacher?.userId?.firstName || ''} ${teacher?.userId?.lastName || ''}`.trim(),
+        amount: amountInKWD,
+        paymentMethod: 'CASH',
+        notes: `تسوية مستحقات المعلم عبر صفحة التسويات`,
+        date: new Date().toISOString().substring(0, 10),
+      });
     },
     onSuccess: () => {
       query.invalidateQueries(['teacher-detail', selectedTeacherId]);

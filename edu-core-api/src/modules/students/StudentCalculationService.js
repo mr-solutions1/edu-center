@@ -163,10 +163,7 @@ export const StudentCalculationService = {
       await Payment.find({ studentId, status: 'PAID' })
     ).reduce((sum, p) => sum + p.amount, 0);
 
-    const outstandingBalance = Math.max(
-      0,
-      totalRegistrationsAmount - totalPaidPayments
-    );
+    const outstandingBalance = totalRegistrationsAmount - totalPaidPayments;
 
     // 6. Aggregate calculations as requested by the spec
     const activeRegs = regs.filter((r) => r.status === 'ACTIVE');

@@ -61,12 +61,18 @@ const SalaryFormDialog = ({
   const transport = watch('transportationAllowance') || 0;
 
   React.useEffect(() => {
+    const parseAmount = (val) => {
+      const p = parseFloat(val);
+      return isNaN(p) ? 0 : p;
+    };
     const calc =
-      parseFloat(hours) * parseFloat(rate) +
-      parseFloat(bonuses) +
-      parseFloat(transport) -
-      parseFloat(deductions);
-    setValue('totalSalary', Math.max(0, calc));
+      parseAmount(hours) * parseAmount(rate) +
+      parseAmount(bonuses) +
+      parseAmount(transport) -
+      parseAmount(deductions);
+    // Standardize to 3 decimal places to eliminate floating point issues
+    const rounded = Math.round(calc * 1000) / 1000;
+    setValue('totalSalary', Math.max(0, rounded));
   }, [hours, rate, bonuses, deductions, transport, setValue]);
 
   React.useEffect(() => {
@@ -149,7 +155,7 @@ const SalaryFormDialog = ({
             <Input
               id="hourlyRate"
               type="number"
-              step="0.1"
+              step="0.001"
               {...register('hourlyRate')}
             />
           </div>
@@ -158,19 +164,20 @@ const SalaryFormDialog = ({
         <div className="grid grid-cols-3 gap-2">
           <div className="space-y-2">
             <Label htmlFor="bonuses">مكافآت</Label>
-            <Input id="bonuses" type="number" {...register('bonuses')} />
+            <Input id="bonuses" type="number" step="0.001" {...register('bonuses')} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="transportationAllowance">بدل نقل</Label>
             <Input
               id="transportationAllowance"
               type="number"
+              step="0.001"
               {...register('transportationAllowance')}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="deductions">خصومات</Label>
-            <Input id="deductions" type="number" {...register('deductions')} />
+            <Input id="deductions" type="number" step="0.001" {...register('deductions')} />
           </div>
         </div>
 

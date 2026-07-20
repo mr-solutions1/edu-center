@@ -96,7 +96,7 @@ const PaymentFormDialog = ({
             <Input
               id="amount"
               type="number"
-              step="0.5"
+              step="0.001"
               {...register('amount')}
             />
           </div>

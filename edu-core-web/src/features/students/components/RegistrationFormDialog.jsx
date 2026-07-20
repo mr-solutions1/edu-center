@@ -132,7 +132,7 @@ const RegistrationFormDialog = ({
 
           <div className="space-y-2">
             <Label htmlFor="pricePerHour">سعر الساعة (KD)</Label>
-            <Input id="pricePerHour" type="number" step="0.5" {...register('pricePerHour')} />
+            <Input id="pricePerHour" type="number" step="0.001" {...register('pricePerHour')} />
             {errors.pricePerHour && <p className="text-xs text-red-500">{errors.pricePerHour.message}</p>}
           </div>
         </div>

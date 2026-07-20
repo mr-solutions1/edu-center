@@ -147,7 +147,7 @@ const StudentFormDialog = ({
             <Input
               id="monthlyFee"
               type="number"
-              step="0.5"
+              step="0.001"
               {...register('monthlyFee')}
             />
           </div>

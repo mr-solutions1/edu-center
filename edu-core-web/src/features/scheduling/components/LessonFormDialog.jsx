@@ -149,7 +149,7 @@ const LessonFormDialog = ({
           <Input
             id="lessonPrice"
             type="number"
-            step="0.5"
+            step="0.001"
             {...register('lessonPrice')}
           />
         </div>

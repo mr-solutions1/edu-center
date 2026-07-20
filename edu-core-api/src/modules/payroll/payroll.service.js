@@ -16,6 +16,7 @@ import {
 } from '../ledger/ledger.service.js';
 import Lesson from '../lessons/lesson.model.js';
 import Teacher from '../teachers/teacher.model.js';
+import { SettingsService } from '../tenants/SettingsService.js';
 
 /**
  * Recalculate payroll for a teacher for a specific month/year
@@ -59,7 +60,7 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
 
     // 4. Calculate transport deduction (only if teacher uses institute car)
     // Business rule: Flat rate per lesson if using institute car
-    const TRANSPORT_RATE = toFils(0.5); // Example constant, could be env-driven
+    const TRANSPORT_RATE = await SettingsService.getTransportationDeductionRate(teacher.tenantId);
     let transportDeductions = 0;
     if (teacher.usesInstituteCar) {
       transportDeductions = multiplyFils(TRANSPORT_RATE, completedLessons);

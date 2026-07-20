@@ -417,7 +417,7 @@ const SettingsPage = () => {
                       <Label>قيمة خصم السيارة (KWD لكل حصة)</Label>
                       <Input
                         type="number"
-                        step="0.1"
+                        step="0.001"
                         value={carDeduction}
                         onChange={(e) => setCarDeduction(e.target.value)}
                         min="0"
@@ -433,6 +433,7 @@ const SettingsPage = () => {
                         <Label>تأسيس / ابتدائي (PRIMARY)</Label>
                         <Input
                           type="number"
+                          step="0.001"
                           value={hourlyRates.PRIMARY}
                           onChange={(e) =>
                             setHourlyRates({
@@ -448,6 +449,7 @@ const SettingsPage = () => {
                         <Label>متوسط (INTERMEDIATE)</Label>
                         <Input
                           type="number"
+                          step="0.001"
                           value={hourlyRates.INTERMEDIATE}
                           onChange={(e) =>
                             setHourlyRates({
@@ -463,6 +465,7 @@ const SettingsPage = () => {
                         <Label>ثانوي (SECONDARY)</Label>
                         <Input
                           type="number"
+                          step="0.001"
                           value={hourlyRates.SECONDARY}
                           onChange={(e) =>
                             setHourlyRates({
@@ -478,6 +481,7 @@ const SettingsPage = () => {
                         <Label>جامعي (UNIVERSITY)</Label>
                         <Input
                           type="number"
+                          step="0.001"
                           value={hourlyRates.UNIVERSITY}
                           onChange={(e) =>
                             setHourlyRates({
@@ -493,6 +497,7 @@ const SettingsPage = () => {
                         <Label>قدرات / مدارس أجنبية (FOREIGN)</Label>
                         <Input
                           type="number"
+                          step="0.001"
                           value={hourlyRates.FOREIGN}
                           onChange={(e) =>
                             setHourlyRates({
@@ -508,6 +513,7 @@ const SettingsPage = () => {
                         <Label>صعوبات تعلم / تحصيلي (SPECIAL_NEEDS)</Label>
                         <Input
                           type="number"
+                          step="0.001"
                           value={hourlyRates.SPECIAL_NEEDS}
                           onChange={(e) =>
                             setHourlyRates({

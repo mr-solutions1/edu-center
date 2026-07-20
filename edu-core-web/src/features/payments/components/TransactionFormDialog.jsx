@@ -213,7 +213,7 @@ const TransactionFormDialog = ({
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="amount">المبلغ (KD)</Label>
-            <Input id="amount" type="number" step="0.5" {...register('amount')} error={errors.amount?.message} />
+            <Input id="amount" type="number" step="0.001" {...register('amount')} error={errors.amount?.message} />
             {errors.amount && <p className="text-xs text-red-500">{errors.amount.message}</p>}
           </div>
 

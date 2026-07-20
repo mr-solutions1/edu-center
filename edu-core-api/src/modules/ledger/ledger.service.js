@@ -5,6 +5,7 @@ import { generateCode } from '../../shared/utils/atomicCounter.js';
 import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
 import { recalculateStudentBalances } from '../students/studentBalance.service.js';
+import { FinancialCalculationService } from './FinancialCalculationService.js';
 
 /**
  * Recalculates remaining cash balances chronologically across all transactions
@@ -12,21 +13,7 @@ import { recalculateStudentBalances } from '../students/studentBalance.service.j
  * @param {import('mongoose').ClientSession} [session]
  */
 export const recalculateRunningBalances = async (session = null) => {
-  const options = session ? { session } : {};
-  const transactions = await Transaction.find()
-    .sort({ date: 1, createdAt: 1 })
-    .session(session);
-
-  let running = 0;
-  for (const t of transactions) {
-    if (t.type === 'STUDENT_PAYMENT') {
-      running += t.amount;
-    } else {
-      running -= t.amount;
-    }
-    t.remainingBalance = running;
-    await t.save(options);
-  }
+  return FinancialCalculationService.recalculateRunningBalances(session);
 };
 
 /**

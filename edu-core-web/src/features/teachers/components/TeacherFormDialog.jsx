@@ -205,7 +205,7 @@ const TeacherFormDialog = ({
             <Input
               id="hourlyRate"
               type="number"
-              step="0.5"
+              step="0.001"
               {...register('hourlyRate')}
             />
           </div>
