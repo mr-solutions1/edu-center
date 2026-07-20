@@ -15,4 +15,14 @@ export const payrollApi = {
     const response = await apiClient.patch(`/v1/payroll/${id}/paid`);
     return response.data;
   },
+
+  submitApproval: async (id) => {
+    const response = await apiClient.patch(`/v1/payroll/${id}/submit-approval`);
+    return response.data;
+  },
+
+  approvePayroll: async (id) => {
+    const response = await apiClient.patch(`/v1/payroll/${id}/approve`);
+    return response.data;
+  },
 };
