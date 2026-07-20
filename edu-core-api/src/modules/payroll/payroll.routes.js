@@ -24,6 +24,12 @@ router.post(
   payrollController.generatePayroll
 );
 
+router.get(
+  '/:id/approval',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  payrollController.getApprovalDetails
+);
+
 router.patch(
   '/:id/submit-approval',
   authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
@@ -34,6 +40,12 @@ router.patch(
   '/:id/approve',
   authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
   payrollController.approvePayroll
+);
+
+router.patch(
+  '/:id/reject',
+  authorize(UserRole.ADMIN, UserRole.ACCOUNTANT),
+  payrollController.rejectPayroll
 );
 
 router.patch(

@@ -19,6 +19,7 @@ import Teacher from '../teachers/teacher.model.js';
 import { SettingsService } from '../tenants/SettingsService.js';
 import ApprovalService from '../ledger/approval.service.js';
 import ApprovalRequest from '../ledger/approvalRequest.model.js';
+import ApprovalChain from '../ledger/approvalChain.model.js';
 
 /**
  * Recalculate payroll for a teacher for a specific month/year
@@ -381,4 +382,74 @@ export const payPayroll = async (id, userId) => {
  */
 export const markPaid = async (id, userId) => {
   return payPayroll(id, userId);
+};
+
+/**
+ * Get active approval request and signature details for a payroll record
+ */
+export const getApprovalDetails = async (id) => {
+  const request = await ApprovalRequest.findOne({ referenceId: id })
+    .sort({ createdAt: -1 })
+    .populate('signatures.userId', 'firstName lastName email');
+
+  const chain = await ApprovalChain.findOne({ workflowType: 'PAYROLL_APPROVAL' });
+
+  return {
+    request,
+    levels: chain ? chain.levels : ['ACCOUNTANT', 'ADMIN'],
+  };
+};
+
+/**
+ * Reject active approval request for a payroll record
+ */
+export const rejectPayroll = async (id, userId, userRole, rejectReason) => {
+  return withTransaction(async (session) => {
+    const record = await PayrollRecord.findById(id).session(session);
+    if (!record) {
+      throw new NotFoundError('سجل الراتب غير موجود');
+    }
+
+    const previousValue = record.toObject();
+
+    // Fetch matching pending approval request
+    const request = await ApprovalRequest.findOne({
+      referenceId: record._id,
+      status: 'PENDING',
+    }).session(session);
+
+    if (request) {
+      await ApprovalService.rejectRequest(request._id, userId, userRole, rejectReason, session);
+
+      // Reload record to capture updated status (resets back to CALCULATED state on decline)
+      const updatedRecord = await PayrollRecord.findById(id).session(session);
+
+      await PayrollTransaction.create(
+        [
+          {
+            teacherId: record.teacherId,
+            userId,
+            payrollRecordId: record._id,
+            action: 'UPDATE',
+            previousValue,
+            newValue: updatedRecord.toObject(),
+          },
+        ],
+        { session }
+      );
+
+      // Activity Log
+      await auditLogger.logActivity({
+        userId,
+        action: 'REJECT_PAYROLL_APPROVAL',
+        entityType: 'PayrollRecord',
+        entityId: record._id,
+        details: { month: record.month, year: record.year, rejectReason },
+      });
+
+      return updatedRecord;
+    }
+
+    throw new ValidationError('لا يوجد طلب اعتماد قيد الانتظار لهذا السجل');
+  });
 };
