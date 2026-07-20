@@ -6,6 +6,8 @@ import { toFils } from '../../shared/utils/money.js';
 import { withTransaction } from '../../shared/utils/withTransaction.js';
 import { recalculateStudentBalances } from '../students/studentBalance.service.js';
 import { FinancialCalculationService } from './FinancialCalculationService.js';
+import AccountingService from './accounting.service.js';
+import GeneralLedger from './generalLedger.model.js';
 
 /**
  * Recalculates remaining cash balances chronologically across all transactions
@@ -148,6 +150,17 @@ export const recordLedgerEntry = async (data, session = null) => {
 
   const options = session ? { session } : {};
   const [entry] = await FinancialLedger.create([ledgerData], options);
+
+  // Automatically pipe ledger entry into balanced double-entry accounting records
+  try {
+    await AccountingService.pipeLedgerToDoubleEntry(entry, session);
+  } catch (err) {
+    // Log accounting failure but prevent breaking critical operations
+    import('../../shared/services/logger.js').then((m) =>
+      m.default.error(`[LedgerService] Failed to record balanced double-entry: ${err.message}`)
+    );
+  }
+
   return entry;
 };
 
@@ -169,6 +182,22 @@ export const removeLedgerEntriesByReference = async (
     query.type = type;
   }
   const options = session ? { session } : {};
+
+  try {
+    // Retrieve target ledger entry IDs that will be deleted to clean up matched General Ledger double-entries
+    const ledgerEntries = await FinancialLedger.find(query).session(session);
+    const ledgerIds = ledgerEntries.map(entry => entry._id);
+
+    if (ledgerIds.length > 0) {
+      await GeneralLedger.deleteMany({ referenceId: { $in: ledgerIds } }, options);
+    }
+  } catch (err) {
+    import('../../shared/services/logger.js').then((m) =>
+      m.default.error(`[LedgerService] Failed to clear balanced general ledger entries: ${err.message}`)
+    );
+  }
+
+  // Delete matching FinancialLedger single-entries
   await FinancialLedger.deleteMany(query, options);
 };
 
