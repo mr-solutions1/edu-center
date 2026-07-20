@@ -42,4 +42,11 @@ export const reportsApi = {
     });
     return response.data;
   },
+
+  getFinancialStatements: async ({ startDate, endDate } = {}) => {
+    const response = await apiClient.get('/v1/reports/financial-statements', {
+      params: { startDate, endDate },
+    });
+    return response.data;
+  },
 };
