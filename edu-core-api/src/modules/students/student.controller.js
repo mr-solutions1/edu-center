@@ -7,6 +7,7 @@ import {
   calculateRegistrationTeacherDue,
 } from './studentBalance.service.js';
 import { StudentCalculationService } from './StudentCalculationService.js';
+import { SettingsService } from '../tenants/SettingsService.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import { logAuditTrail } from '../../shared/services/auditLogger.js';
 import { generateCode } from '../../shared/utils/atomicCounter.js';
@@ -82,6 +83,9 @@ export const createRegistration = asyncHandler(async (req, res) => {
       purchasedHours
     );
 
+  const tenantId = req.user?.tenantId || null;
+  const teacherPercentageSnapshot = await SettingsService.getTeacherPercentage(tenantId);
+
   // Perform with transaction to ensure ledger and registration are atomic
   const registration = await withTransaction(async (session) => {
     const registrationId = await generateCode('registrationId', 'REG', session);
@@ -94,6 +98,7 @@ export const createRegistration = asyncHandler(async (req, res) => {
           subject,
           purchasedHours,
           pricePerHour: priceInFils,
+          teacherPercentageSnapshot,
           discountPercentage: discountPct,
           discountAmount,
           totalAmount,

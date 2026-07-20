@@ -37,6 +37,12 @@ const studentRegistrationSchema = new mongoose.Schema(
       min: [0, 'سعر الساعة لا يمكن أن يكون سالباً'],
       default: 0,
     },
+    teacherPercentageSnapshot: {
+      type: Number, // percentage out of 100
+      min: 0,
+      max: 100,
+      default: 75,
+    },
     discountPercentage: {
       type: Number,
       min: 0,

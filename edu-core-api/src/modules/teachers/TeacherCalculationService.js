@@ -13,12 +13,18 @@ export const TeacherCalculationService = {
       return 0;
     }
 
-    const stageRateInFils = await SettingsService.getStageHourlyRate(
-      tenantId,
-      studentGrade
-    );
+    // Use frozen snapshot hourly rate or fallback to live settings stage rate
+    const stageRateInFils =
+      typeof reg.pricePerHour === 'number' && reg.pricePerHour > 0
+        ? reg.pricePerHour
+        : await SettingsService.getStageHourlyRate(tenantId, studentGrade);
+
+    // Use frozen snapshot teacher percentage or fallback to live settings percentage
     const teacherPercentage =
-      await SettingsService.getTeacherPercentage(tenantId);
+      typeof reg.teacherPercentageSnapshot === 'number'
+        ? reg.teacherPercentageSnapshot
+        : await SettingsService.getTeacherPercentage(tenantId);
+
     const teacherPctDecimal = teacherPercentage / 100;
 
     const baseDue = reg.consumedHours * stageRateInFils * teacherPctDecimal;
