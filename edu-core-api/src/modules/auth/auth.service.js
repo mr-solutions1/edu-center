@@ -17,7 +17,7 @@ import User from '../users/user.model.js';
  */
 export const login = async (email, password, ipAddress, userAgent) => {
   const user = await User.findOne({ email }).select(
-    '+passwordHash loginAttempts lockUntil isActive deletedAt tokenVersion tenantId role'
+    '+passwordHash loginAttempts lockUntil isActive deletedAt tokenVersion tenantId role mfaEnabled'
   );
 
   // Forensic debugging logs for authentication troubleshooting
@@ -91,6 +91,17 @@ export const login = async (email, password, ipAddress, userAgent) => {
   user.loginAttempts = 0;
   user.lockUntil = undefined;
   await user.save();
+
+  // If Multi-Factor Authentication is enabled, issue partial gate-token instead of full credentials JWTs
+  if (user.mfaEnabled) {
+    const tempMfaToken = tokenService.signAccessToken(user);
+    user.passwordHash = undefined;
+    return {
+      user,
+      mfaRequired: true,
+      mfaToken: tempMfaToken,
+    };
+  }
 
   const accessToken = tokenService.signAccessToken(user);
   const refreshToken = await tokenService.signRefreshToken(

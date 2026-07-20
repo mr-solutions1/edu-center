@@ -12,9 +12,12 @@ const router = express.Router();
 router.post('/login', validate(loginSchema), authController.login);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
+router.post('/mfa/verify', authController.mfaVerify);
 
 // Protected routes
 router.use(authenticate);
+router.post('/mfa/setup', authController.mfaSetup);
+router.post('/mfa/enable', authController.mfaEnable);
 router.post('/logout-all', authController.logoutAll);
 router.get('/me', authController.me);
 router.get('/sessions', authController.getSessions);

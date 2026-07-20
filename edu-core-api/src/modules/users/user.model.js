@@ -89,6 +89,18 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    mfaEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    mfaSecret: {
+      type: String,
+      select: false,
+    },
+    mfaTempSecret: {
+      type: String,
+      select: false,
+    },
   },
   {
     timestamps: true,
