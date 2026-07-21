@@ -349,7 +349,6 @@ const StudentFormDialog = ({
           days: [{ id: 1, day: '', from: '', to: '' }]
         }
       ]);
-      setPercentagePreset('75');
       setIsInstallment('no');
       setPriceOverrideReason('');
       setCourseCreateOpen(false);
