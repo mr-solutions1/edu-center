@@ -20,6 +20,18 @@ const StudentsListPage = () => {
   const [editingStudent, setEditingStudent] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
 
+  // Listen to global sidebar add student form trigger
+  React.useEffect(() => {
+    const handleGlobalOpen = () => {
+      setEditingStudent(null);
+      setFormOpen(true);
+    };
+    window.addEventListener('edu:open_new_student', handleGlobalOpen);
+    return () => {
+      window.removeEventListener('edu:open_new_student', handleGlobalOpen);
+    };
+  }, []);
+
   const { data, isLoading } = useQuery({
     queryKey: ['students', { search }],
     queryFn: () => studentApi.getAllStudents({ search }),

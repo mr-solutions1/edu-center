@@ -38,19 +38,12 @@ const menuItems = [
     category: 'الرئيسية',
   },
   {
-    id: 'inbox',
-    label: 'صندوق الرسائل',
-    icon: Mail,
-    path: '/inbox',
-    permission: 'inbox.view',
+    id: 'new-student-sidebar',
+    label: 'إضافة طالب جديد',
+    icon: Users,
+    path: '/students', // fallback list link, can trigger dialog
     category: 'الرئيسية',
-  },
-  {
-    id: 'website',
-    label: 'الموقع التعريفي',
-    icon: Globe,
-    path: '/',
-    category: 'الرئيسية',
+    stateTrigger: 'open_new_student_modal', // helper flag for global handlers or navigation click
   },
   {
     id: 'teacher-profile',
@@ -90,13 +83,6 @@ const menuItems = [
         icon: Shield,
         path: '/guardians',
         permission: 'student.view',
-      },
-      {
-        id: 'crm',
-        label: 'إدارة العملاء CRM',
-        icon: TrendingUp,
-        path: '/crm',
-        permission: 'crm.view',
       },
     ],
   },
@@ -206,6 +192,14 @@ const Sidebar = () => {
       ...prev,
       [id]: !prev[id],
     }));
+  };
+
+  const handleSidebarClick = (item, e) => {
+    if (item.stateTrigger === 'open_new_student_modal') {
+      console.info('Dispatched global add student form trigger.');
+      window.dispatchEvent(new CustomEvent('edu:open_new_student'));
+    }
+    handleLinkClick();
   };
 
   const filteredItems = useMemo(() => {
@@ -348,7 +342,7 @@ const Sidebar = () => {
                             <NavLink
                               key={subItem.path}
                               to={subItem.path}
-                              onClick={handleLinkClick}
+                              onClick={(e) => handleSidebarClick(subItem, e)}
                               className={({ isActive }) =>
                                 cn(
                                   'flex items-center rounded-lg text-xs font-medium transition-all duration-150 gap-3 px-4 py-2 hover:bg-white/4 hover:text-white',
@@ -371,7 +365,7 @@ const Sidebar = () => {
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    onClick={handleLinkClick}
+                    onClick={(e) => handleSidebarClick(item, e)}
                     title={isTabletCollapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       cn(
