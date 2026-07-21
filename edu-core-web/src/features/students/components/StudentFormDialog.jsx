@@ -2,7 +2,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { BookOpen, CreditCard, User, Check, AlertCircle } from 'lucide-react';
+import {
+  BookOpen,
+  CreditCard,
+  User,
+  Check,
+  AlertCircle,
+  Phone,
+  MapPin,
+  School,
+  Calendar,
+  Settings,
+  FileText,
+  Clock
+} from 'lucide-react';
 
 import { studentSchema } from '../validations/studentSchema';
 import { teacherApi } from '../../teachers/services/teacherApi';
@@ -88,6 +101,16 @@ const StudentFormDialog = ({
       curriculum: 'مخرجات حكومي',
       subjects: [],
       monthlyFee: 0,
+      // Additional database fields
+      preferredTeacherGender: 'MALE',
+      preferredSchedule: '',
+      notes: '',
+      dateOfBirth: '',
+      enrollmentDate: new Date().toISOString().split('T')[0],
+      status: 'ACTIVE',
+      // Unified UI phone
+      unifiedPhone: '',
+      // Combined Registration Fields
       subject: '',
       purchasedHours: 10,
       pricePerHour: 10,
@@ -105,7 +128,7 @@ const StudentFormDialog = ({
 
   const selectedGrade = watch('grade');
   const selectedGovernorate = watch('governorate');
-  const parentPhoneWatch = watch('parentPhone');
+  const unifiedPhoneWatch = watch('unifiedPhone');
   const selectedTeacherId = watch('teacherId');
 
   // Load teachers for the academic assignment section
@@ -118,12 +141,14 @@ const StudentFormDialog = ({
   const teachers = teachersRes?.data || [];
   const selectedTeacherObj = teachers.find(t => t._id === selectedTeacherId);
 
-  // Automatically update whatsapp from parent phone unless user edits it
+  // Automatically propagate unified phone number to subfields to respect API/DB schemas
   useEffect(() => {
-    if (parentPhoneWatch && !initialData) {
-      setValue('whatsapp', parentPhoneWatch);
+    if (unifiedPhoneWatch) {
+      setValue('parentPhone', unifiedPhoneWatch);
+      setValue('studentPhone', unifiedPhoneWatch);
+      setValue('whatsapp', unifiedPhoneWatch);
     }
-  }, [parentPhoneWatch, setValue, initialData]);
+  }, [unifiedPhoneWatch, setValue]);
 
   // Handle grade change to auto-set first available classYear
   useEffect(() => {
@@ -155,6 +180,10 @@ const StudentFormDialog = ({
       if (data.monthlyFee !== undefined) {
         data.monthlyFee = toKWD(data.monthlyFee);
       }
+      if (initialData) {
+        // Set unified phone default if editing
+        data.unifiedPhone = initialData.parentPhone || initialData.studentPhone || initialData.whatsapp || '';
+      }
       reset(data || {
         studentName: '',
         studentPhone: '',
@@ -172,6 +201,13 @@ const StudentFormDialog = ({
         curriculum: 'مخرجات حكومي',
         subjects: [],
         monthlyFee: 0,
+        preferredTeacherGender: 'MALE',
+        preferredSchedule: '',
+        notes: '',
+        dateOfBirth: '',
+        enrollmentDate: new Date().toISOString().split('T')[0],
+        status: 'ACTIVE',
+        unifiedPhone: '',
         subject: '',
         purchasedHours: 10,
         pricePerHour: 10,
@@ -190,8 +226,13 @@ const StudentFormDialog = ({
   }, [open, reset, initialData]);
 
   const onFormSubmit = (data) => {
-    // Sanitize values
+    // Sanitize optional registrations / payments values
     const sanitized = { ...data };
+    // Double-guarantee unified phone propagation
+    sanitized.parentPhone = data.unifiedPhone;
+    sanitized.studentPhone = data.unifiedPhone;
+    sanitized.whatsapp = data.unifiedPhone;
+
     if (!sanitized.subject) {
       delete sanitized.subject;
       delete sanitized.purchasedHours;
@@ -222,15 +263,15 @@ const StudentFormDialog = ({
       formId="student-form"
       className="max-w-4xl"
     >
-      {/* Visual Navigation Steps */}
-      <div className="flex border-b mb-4 justify-around text-sm font-semibold" dir="rtl">
+      {/* Visual Navigation Tabs */}
+      <div className="flex border-b mb-6 justify-around text-sm font-semibold" dir="rtl">
         <button
           type="button"
           onClick={() => setActiveTab('personal')}
-          className={`flex items-center gap-2 pb-3 pt-1 border-b-2 px-4 transition-all ${
+          className={`flex items-center gap-2 pb-3 pt-1 border-b-2 px-4 transition-all duration-300 ${
             activeTab === 'personal'
               ? 'border-primary text-primary font-bold'
-              : 'border-transparent text-muted-foreground'
+              : 'border-transparent text-muted-foreground hover:text-slate-700'
           }`}
         >
           <User className="h-4 w-4" />
@@ -239,10 +280,10 @@ const StudentFormDialog = ({
         <button
           type="button"
           onClick={() => setActiveTab('academic')}
-          className={`flex items-center gap-2 pb-3 pt-1 border-b-2 px-4 transition-all ${
+          className={`flex items-center gap-2 pb-3 pt-1 border-b-2 px-4 transition-all duration-300 ${
             activeTab === 'academic'
               ? 'border-primary text-primary font-bold'
-              : 'border-transparent text-muted-foreground'
+              : 'border-transparent text-muted-foreground hover:text-slate-700'
           }`}
         >
           <BookOpen className="h-4 w-4" />
@@ -251,10 +292,10 @@ const StudentFormDialog = ({
         <button
           type="button"
           onClick={() => setActiveTab('financial')}
-          className={`flex items-center gap-2 pb-3 pt-1 border-b-2 px-4 transition-all ${
+          className={`flex items-center gap-2 pb-3 pt-1 border-b-2 px-4 transition-all duration-300 ${
             activeTab === 'financial'
               ? 'border-primary text-primary font-bold'
-              : 'border-transparent text-muted-foreground'
+              : 'border-transparent text-muted-foreground hover:text-slate-700'
           }`}
         >
           <CreditCard className="h-4 w-4" />
@@ -265,300 +306,384 @@ const StudentFormDialog = ({
       <form
         id="student-form"
         onSubmit={handleSubmit(onFormSubmit)}
-        className="space-y-4 max-h-[62vh] overflow-y-auto px-2 text-right"
+        className="space-y-6 max-h-[62vh] overflow-y-auto px-2 text-right"
         dir="rtl"
       >
         {/* Step 1: Personal and Contact */}
         {activeTab === 'personal' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="studentName">اسم الطالب (ثنائي/ثلاثي)</Label>
-                <Input
-                  id="studentName"
-                  {...register('studentName')}
-                  error={errors.studentName?.message}
-                  placeholder="مثال: عبدالرحمن العتيبي"
-                />
-                {errors.studentName && (
-                  <p className="text-xs text-red-500">
-                    {errors.studentName.message}
-                  </p>
-                )}
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* Core Personal Details */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b pb-2 mb-2">
+                <User className="h-4 w-4 text-primary" />
+                <span>البيانات الأساسية والشخصية للطالب</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="studentName" className="font-semibold text-slate-700">اسم الطالب (ثنائي/ثلاثي)</Label>
+                  <Input
+                    id="studentName"
+                    {...register('studentName')}
+                    error={errors.studentName?.message}
+                    placeholder="مثال: عبدالرحمن العتيبي"
+                    className="bg-white"
+                  />
+                  {errors.studentName && (
+                    <p className="text-xs text-red-500">{errors.studentName.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="parentName" className="font-semibold text-slate-700">اسم ولي الأمر</Label>
+                  <Input
+                    id="parentName"
+                    {...register('parentName')}
+                    error={errors.parentName?.message}
+                    placeholder="مثال: محمد العتيبي"
+                    className="bg-white"
+                  />
+                  {errors.parentName && (
+                    <p className="text-xs text-red-500">{errors.parentName.message}</p>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="studentPhone">رقم هاتف الطالب (إن وجد)</Label>
-                <Input
-                  id="studentPhone"
-                  {...register('studentPhone')}
-                  placeholder="مثال: 99887766"
-                />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Consolidated Unified Phone Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="unifiedPhone" className="font-semibold text-slate-700 flex items-center gap-1">
+                    <Phone className="h-3.5 w-3.5 text-primary" />
+                    <span>رقم هاتف التواصل والواتساب الموحد</span>
+                  </Label>
+                  <Input
+                    id="unifiedPhone"
+                    {...register('unifiedPhone')}
+                    placeholder="مثال: 55667788"
+                    className="bg-white font-semibold tracking-wide"
+                  />
+                  <p className="text-[10px] text-muted-foreground">سيتم تطبيق هذا الرقم كـ (رقم الطالب، هاتف ولي الأمر، والواتساب تلقائياً).</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="siblingGroup" className="font-semibold text-slate-700">كود مجموعة الأشقاء (اختياري)</Label>
+                  <Input id="siblingGroup" {...register('siblingGroup')} placeholder="مثال: FAM-01" className="bg-white" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth" className="font-semibold text-slate-700">تاريخ الميلاد</Label>
+                  <Input id="dateOfBirth" type="date" {...register('dateOfBirth')} className="bg-white" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="enrollmentDate" className="font-semibold text-slate-700">تاريخ التسجيل بالمركز</Label>
+                  <Input id="enrollmentDate" type="date" {...register('enrollmentDate')} className="bg-white" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="status" className="font-semibold text-slate-700">حالة ملف الطالب</Label>
+                  <select
+                    id="status"
+                    {...register('status')}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="ACTIVE">نشط (Active)</option>
+                    <option value="SUSPENDED">موقوف مؤقتاً (Suspended)</option>
+                    <option value="WITHDRAWN">منسحب (Withdrawn)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="parentName">اسم ولي الأمر</Label>
-                <Input
-                  id="parentName"
-                  {...register('parentName')}
-                  error={errors.parentName?.message}
-                  placeholder="مثال: محمد العتيبي"
-                />
-                {errors.parentName && (
-                  <p className="text-xs text-red-500">
-                    {errors.parentName.message}
-                  </p>
-                )}
+            {/* Academic Information */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b pb-2 mb-2">
+                <School className="h-4 w-4 text-primary" />
+                <span>البيانات الأكاديمية والمدرسية</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="grade" className="font-semibold text-slate-700">المرحلة الدراسية</Label>
+                  <select
+                    id="grade"
+                    {...register('grade')}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="تأسيس">تأسيس</option>
+                    <option value="ابتدائي">ابتدائي</option>
+                    <option value="متوسط">متوسط</option>
+                    <option value="ثانوي">ثانوي</option>
+                    <option value="جامعي">جامعي</option>
+                    <option value="قدرات">قدرات</option>
+                    <option value="تحصيلي">تحصيلي</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="classYear" className="font-semibold text-slate-700">الصف الدراسي</Label>
+                  <select
+                    id="classYear"
+                    {...register('classYear')}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {(classYearsByGrade[selectedGrade] || ['أخرى']).map((cl) => (
+                      <option key={cl} value={cl}>
+                        {cl}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="curriculum" className="font-semibold text-slate-700">المنهج الدراسي</Label>
+                  <select
+                    id="curriculum"
+                    {...register('curriculum')}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {curricula.map((cur) => (
+                      <option key={cur} value={cur}>
+                        {cur}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="parentPhone">رقم هاتف وواتساب ولي الأمر</Label>
-                <Input
-                  id="parentPhone"
-                  {...register('parentPhone')}
-                  placeholder="مثال: 55667788"
-                />
-                {errors.parentPhone && (
-                  <p className="text-xs text-red-500">
-                    {errors.parentPhone.message}
-                  </p>
-                )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="school" className="font-semibold text-slate-700">المدرسة (اختياري)</Label>
+                  <Input id="school" {...register('school')} placeholder="مثال: مدرسة المباركية" className="bg-white" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="preferredTeacherGender" className="font-semibold text-slate-700">جنس المعلم المفضل</Label>
+                  <select
+                    id="preferredTeacherGender"
+                    {...register('preferredTeacherGender')}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="MALE">ذكر (Male)</option>
+                    <option value="FEMALE">أنثى (Female)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="whatsapp">رقم الواتساب للمتابعة</Label>
-                <Input id="whatsapp" {...register('whatsapp')} />
+            {/* Address Details */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b pb-2 mb-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span>العنوان الجغرافي والسكن داخل الكويت</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="governorate" className="font-semibold text-slate-700">المحافظة</Label>
+                  <select
+                    id="governorate"
+                    {...register('governorate')}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {Object.keys(kuwaitGeodata).map((gov) => (
+                      <option key={gov} value={gov}>
+                        {gov}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="area" className="font-semibold text-slate-700">المنطقة</Label>
+                  <select
+                    id="area"
+                    {...register('area')}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {(kuwaitGeodata[selectedGovernorate] || []).map((ar) => (
+                      <option key={ar} value={ar}>
+                        {ar}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="siblingGroup">كود مجموعة الأشقاء (اختياري)</Label>
-                <Input id="siblingGroup" {...register('siblingGroup')} placeholder="مثال: FAM-01" />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="font-semibold text-slate-700">العنوان بالتفصيل (القطعة، الشارع، المنزل)</Label>
+                  <Input id="address" {...register('address')} placeholder="القطعة 3، الشارع 5، المنزل 12" className="bg-white" />
+                  {errors.address && (
+                    <p className="text-xs text-red-500">{errors.address.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="googleMapsUrl" className="font-semibold text-slate-700">رابط الموقع (Google Maps)</Label>
+                  <Input
+                    id="googleMapsUrl"
+                    {...register('googleMapsUrl')}
+                    placeholder="https://maps.app.goo.gl/..."
+                    className="bg-white"
+                  />
+                  {errors.googleMapsUrl && (
+                    <p className="text-xs text-red-500">{errors.googleMapsUrl.message}</p>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="governorate">المحافظة</Label>
-                <select
-                  id="governorate"
-                  {...register('governorate')}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  {Object.keys(kuwaitGeodata).map((gov) => (
-                    <option key={gov} value={gov}>
-                      {gov}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="area">المنطقة</Label>
-                <select
-                  id="area"
-                  {...register('area')}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  {(kuwaitGeodata[selectedGovernorate] || []).map((ar) => (
-                    <option key={ar} value={ar}>
-                      {ar}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="school">المدرسة (اختياري)</Label>
-                <Input id="school" {...register('school')} placeholder="مثال: مدرسة المباركية" />
+            {/* Notes and preferences */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b pb-2 mb-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <span>ملاحظات ومواعيد مفضلة إضافية</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="preferredSchedule" className="font-semibold text-slate-700">المواعيد المفضلة بشكل عام</Label>
+                  <Input id="preferredSchedule" {...register('preferredSchedule')} placeholder="مثال: مساء الأحد والثلاثاء" className="bg-white" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notes" className="font-semibold text-slate-700">ملاحظات إدارية / أكاديمية</Label>
+                  <Input id="notes" {...register('notes')} placeholder="أي ملاحظات تخص مستوى الطالب" className="bg-white" />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="address">العنوان بالتفصيل (القطعة، الشارع، المنزل)</Label>
-              <Input id="address" {...register('address')} placeholder="القطعة 3، الشارع 5، المنزل 12" />
-              {errors.address && (
-                <p className="text-xs text-red-500">{errors.address.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-right">
-              <div className="space-y-2">
-                <Label htmlFor="grade">المرحلة الدراسية</Label>
-                <select
-                  id="grade"
-                  {...register('grade')}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="تأسيس">تأسيس</option>
-                  <option value="ابتدائي">ابتدائي</option>
-                  <option value="متوسط">متوسط</option>
-                  <option value="ثانوي">ثانوي</option>
-                  <option value="جامعي">جامعي</option>
-                  <option value="قدرات">قدرات</option>
-                  <option value="تحصيلي">تحصيلي</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="classYear">الصف الدراسي</Label>
-                <select
-                  id="classYear"
-                  {...register('classYear')}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  {(classYearsByGrade[selectedGrade] || ['أخرى']).map((cl) => (
-                    <option key={cl} value={cl}>
-                      {cl}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="curriculum">المنهج الدراسي</Label>
-                <select
-                  id="curriculum"
-                  {...register('curriculum')}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  {curricula.map((cur) => (
-                    <option key={cur} value={cur}>
-                      {cur}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="googleMapsUrl">رابط الموقع (Google Maps)</Label>
-                <Input
-                  id="googleMapsUrl"
-                  {...register('googleMapsUrl')}
-                  placeholder="https://maps.app.goo.gl/..."
-                />
-                {errors.googleMapsUrl && (
-                  <p className="text-xs text-red-500">
-                    {errors.googleMapsUrl.message}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-end justify-start">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('academic')}
-                  className="bg-primary/10 text-primary px-6 py-2 rounded-md font-bold hover:bg-primary/20 transition-all text-sm"
-                >
-                  متابعة للتسجيل الأكاديمي ⟵
-                </button>
-              </div>
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('academic')}
+                className="bg-primary text-white hover:bg-primary/90 px-8 py-2.5 rounded-lg font-bold shadow-md transition-all text-sm"
+              >
+                متابعة للتسجيل الأكاديمي وحجز الحصص ⟵
+              </button>
             </div>
           </div>
         )}
 
         {/* Step 2: Academic Registration (Optional) */}
         {activeTab === 'academic' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-amber-800 text-xs flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <p>هذا القسم اختياري. إذا أردت حجز باقة حصص للطالب فوراً، املأ اسم المادة؛ وإلا اترك الحقول فارغة للملف التعريفي فقط.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="subject">المادة الدراسية المسجلة</Label>
-                <Input id="subject" {...register('subject')} placeholder="مثال: لغة إنجليزية، رياضيات" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="teacherId">المعلم المخصص للمادة</Label>
-                <select
-                  id="teacherId"
-                  {...register('teacherId')}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="">اختر معلماً...</option>
-                  {teachers.map((t) => (
-                    <option key={t._id} value={t._id}>
-                      {t.userId?.firstName} {t.userId?.lastName} {t.usesInstituteCar ? '🚗' : ''}
-                    </option>
-                  ))}
-                </select>
-                {selectedTeacherObj && (
-                  <div className="flex gap-2 mt-1 items-center">
-                    <span className="text-xs bg-slate-100 text-slate-800 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      {selectedTeacherObj.usesInstituteCar ? '🚗 يستخدم سيارة الأكاديمية' : '🚗 لا يستخدم سيارة الأكاديمية'}
-                    </span>
-                  </div>
-                )}
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-900 text-xs flex items-start gap-2 shadow-sm">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+              <div>
+                <p className="font-bold mb-1 text-sm">قسم اختياري بالكامل</p>
+                <p>إذا أردت حجز باقة حصص أولية للطالب في نفس اللحظة، املأ حقل اسم المادة وسعر الساعة؛ وإلا اتركها فارغة لإنشاء ملف تعريف فقط.</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="purchasedHours">عدد الساعات المشتراة للباقة الأولى</Label>
-                <Input id="purchasedHours" type="number" {...register('purchasedHours')} />
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-4">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b pb-2 mb-2">
+                <BookOpen className="h-4 w-4 text-primary" />
+                <span>تفاصيل المادة وباقة الساعات وحصة المعلم</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="subject" className="font-semibold text-slate-700">المادة الدراسية المراد حجزها</Label>
+                  <Input id="subject" {...register('subject')} placeholder="مثال: لغة إنجليزية، رياضيات" className="bg-white font-bold text-slate-900" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="teacherId" className="font-semibold text-slate-700">المعلم المخصص للمادة</Label>
+                  <select
+                    id="teacherId"
+                    {...register('teacherId')}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">اختر معلماً...</option>
+                    {teachers.map((t) => (
+                      <option key={t._id} value={t._id}>
+                        {t.userId?.firstName} {t.userId?.lastName} {t.usesInstituteCar ? '🚗' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedTeacherObj && (
+                    <div className="flex gap-2 mt-1 items-center">
+                      <span className="text-xs bg-slate-100 text-slate-800 px-3 py-1 rounded-full flex items-center gap-1 border border-slate-200">
+                        {selectedTeacherObj.usesInstituteCar ? '🚗 يستخدم سيارة الأكاديمية' : '🚗 لا يستخدم سيارة الأكاديمية'}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="pricePerHour">سعر الساعة المتفق عليه (KWD)</Label>
-                <Input id="pricePerHour" type="number" step="0.001" {...register('pricePerHour')} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="purchasedHours" className="font-semibold text-slate-700">عدد الساعات المشتراة للباقة الأولى</Label>
+                  <Input id="purchasedHours" type="number" {...register('purchasedHours')} className="bg-white" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pricePerHour" className="font-semibold text-slate-700">سعر الساعة المتفق عليه (KWD)</Label>
+                  <Input id="pricePerHour" type="number" step="0.001" {...register('pricePerHour')} className="bg-white" />
+                </div>
               </div>
             </div>
 
             {/* Weekly Schedule Days */}
-            <div className="border-t pt-3 mt-2">
-              <h4 className="font-semibold text-sm mb-2 text-primary">الموعد الأسبوعي الأول (رئيسي)</h4>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="day1" className="text-xs">اليوم</Label>
-                  <select id="day1" {...register('day1')} className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs">
-                    <option value="">لا يوجد</option>
-                    <option value="Saturday">السبت</option>
-                    <option value="Sunday">الأحد</option>
-                    <option value="Monday">الإثنين</option>
-                    <option value="Tuesday">الثلاثاء</option>
-                    <option value="Wednesday">الأربعاء</option>
-                    <option value="Thursday">الخميس</option>
-                    <option value="Friday">الجمعة</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="from1" className="text-xs">من (HH:mm)</Label>
-                  <Input id="from1" placeholder="14:00" {...register('from1')} className="h-8 text-xs" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="to1" className="text-xs">إلى (HH:mm)</Label>
-                  <Input id="to1" placeholder="16:00" {...register('to1')} className="h-8 text-xs" />
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-4">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b pb-2 mb-2">
+                <Clock className="h-4 w-4 text-primary" />
+                <span>الجدول الدراسي الأسبوعي المفصل لحجوزات الطالب</span>
+              </h3>
+
+              <div className="border border-slate-200 p-4 rounded-lg bg-white space-y-4">
+                <h4 className="font-bold text-xs text-primary">الموعد الأسبوعي الأول (رئيسي)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="day1" className="text-xs text-slate-600">اليوم</Label>
+                    <select id="day1" {...register('day1')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-2 text-xs">
+                      <option value="">لا يوجد</option>
+                      <option value="Saturday">السبت</option>
+                      <option value="Sunday">الأحد</option>
+                      <option value="Monday">الإثنين</option>
+                      <option value="Tuesday">الثلاثاء</option>
+                      <option value="Wednesday">الأربعاء</option>
+                      <option value="Thursday">الخميس</option>
+                      <option value="Friday">الجمعة</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="from1" className="text-xs text-slate-600">توقيت البداية (من) (HH:mm)</Label>
+                    <Input id="from1" placeholder="14:00" {...register('from1')} className="h-9 text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="to1" className="text-xs text-slate-600">توقيت النهاية (إلى) (HH:mm)</Label>
+                    <Input id="to1" placeholder="16:00" {...register('to1')} className="h-9 text-xs" />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="border-t pt-3">
-              <h4 className="font-semibold text-sm mb-2 text-muted-foreground">الموعد الأسبوعي الثاني (اختياري)</h4>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="day2" className="text-xs">اليوم</Label>
-                  <select id="day2" {...register('day2')} className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs">
-                    <option value="">لا يوجد</option>
-                    <option value="Saturday">السبت</option>
-                    <option value="Sunday">الأحد</option>
-                    <option value="Monday">الإثنين</option>
-                    <option value="Tuesday">الثلاثاء</option>
-                    <option value="Wednesday">الأربعاء</option>
-                    <option value="Thursday">الخميس</option>
-                    <option value="Friday">الجمعة</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="from2" className="text-xs">من (HH:mm)</Label>
-                  <Input id="from2" placeholder="14:00" {...register('from2')} className="h-8 text-xs" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="to2" className="text-xs">إلى (HH:mm)</Label>
-                  <Input id="to2" placeholder="16:00" {...register('to2')} className="h-8 text-xs" />
+              <div className="border border-slate-200 p-4 rounded-lg bg-white space-y-4">
+                <h4 className="font-bold text-xs text-muted-foreground">الموعد الأسبوعي الثاني (اختياري)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="day2" className="text-xs text-slate-600">اليوم</Label>
+                    <select id="day2" {...register('day2')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-2 text-xs">
+                      <option value="">لا يوجد</option>
+                      <option value="Saturday">السبت</option>
+                      <option value="Sunday">الأحد</option>
+                      <option value="Monday">الإثنين</option>
+                      <option value="Tuesday">الثلاثاء</option>
+                      <option value="Wednesday">الأربعاء</option>
+                      <option value="Thursday">الخميس</option>
+                      <option value="Friday">الجمعة</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="from2" className="text-xs text-slate-600">توقيت البداية (من) (HH:mm)</Label>
+                    <Input id="from2" placeholder="14:00" {...register('from2')} className="h-9 text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="to2" className="text-xs text-slate-600">توقيت النهاية (إلى) (HH:mm)</Label>
+                    <Input id="to2" placeholder="16:00" {...register('to2')} className="h-9 text-xs" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -567,16 +692,16 @@ const StudentFormDialog = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('personal')}
-                className="text-muted-foreground font-bold hover:underline text-sm"
+                className="text-muted-foreground font-bold hover:underline text-sm flex items-center gap-1"
               >
-                ⟵ العودة للملف الشخصي
+                ← العودة للملف الشخصي والعنوان
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('financial')}
-                className="bg-primary/10 text-primary px-6 py-2 rounded-md font-bold hover:bg-primary/20 transition-all text-sm"
+                className="bg-primary text-white hover:bg-primary/90 px-8 py-2.5 rounded-lg font-bold shadow-md transition-all text-sm"
               >
-                متابعة للمدفوعات والشحن ⟵
+                متابعة للمدفوعات والشحن المالي ⟵
               </button>
             </div>
           </div>
@@ -584,59 +709,71 @@ const StudentFormDialog = ({
 
         {/* Step 3: Initial Payment & Fees (Optional) */}
         {activeTab === 'financial' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-amber-800 text-xs flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <p>هذا القسم اختياري. يمكنك تسجيل دفعة أولى أو شحن رصيد الطالب المالي فوراً، مع تحديد طريقة السداد والرسوم الشهرية.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="monthlyFee">الرسوم الشهرية المتفق عليها (KWD)</Label>
-                <Input
-                  id="monthlyFee"
-                  type="number"
-                  step="0.001"
-                  {...register('monthlyFee')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="initialPaidAmount">مبلغ الدفعة الأولى / الشحن الفوري (KWD)</Label>
-                <Input
-                  id="initialPaidAmount"
-                  type="number"
-                  step="0.001"
-                  {...register('initialPaidAmount')}
-                  placeholder="مثال: 50.000"
-                />
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-900 text-xs flex items-start gap-2 shadow-sm">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+              <div>
+                <p className="font-bold mb-1 text-sm">شحن الرصيد المالي وتسجيل السداد</p>
+                <p>هذا القسم اختياري. يمكنك تسجيل دفعة أولى أو شحن رصيد الطالب المالي فوراً، مع تحديد طريقة السداد والرسوم الشهرية.</p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="paymentMethod">طريقة الدفع للمبلغ المستلم</Label>
-              <select
-                id="paymentMethod"
-                {...register('paymentMethod')}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="CASH">نقداً (Cash)</option>
-                <option value="KNET">كي نت (K-Net)</option>
-                <option value="BANK_TRANSFER">تحويل بنكي (Bank Transfer)</option>
-              </select>
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-4">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b pb-2 mb-2">
+                <CreditCard className="h-4 w-4 text-primary" />
+                <span>الرسوم والدفع المالي المباشر (الشحن الفوري للرصيد)</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyFee" className="font-semibold text-slate-700">الرسوم الشهرية المقررة للطالب (KWD)</Label>
+                  <Input
+                    id="monthlyFee"
+                    type="number"
+                    step="0.001"
+                    {...register('monthlyFee')}
+                    className="bg-white font-bold text-slate-900"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="initialPaidAmount" className="font-semibold text-slate-700">مبلغ الدفعة الأولى المستلمة (KWD)</Label>
+                  <Input
+                    id="initialPaidAmount"
+                    type="number"
+                    step="0.001"
+                    {...register('initialPaidAmount')}
+                    placeholder="مثال: 50.000"
+                    className="bg-white font-black text-emerald-700"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paymentMethod" className="font-semibold text-slate-700">طريقة الدفع للمبلغ المستلم</Label>
+                <select
+                  id="paymentMethod"
+                  {...register('paymentMethod')}
+                  className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="CASH">نقداً (Cash)</option>
+                  <option value="KNET">كي نت (K-Net)</option>
+                  <option value="BANK_TRANSFER">تحويل بنكي (Bank Transfer)</option>
+                </select>
+              </div>
             </div>
 
-            <div className="flex justify-between items-center pt-6">
+            <div className="flex justify-between items-center pt-6 border-t">
               <button
                 type="button"
                 onClick={() => setActiveTab('academic')}
-                className="text-muted-foreground font-bold hover:underline text-sm"
+                className="text-muted-foreground font-bold hover:underline text-sm flex items-center gap-1"
               >
-                ⟵ العودة للتسجيل الأكاديمي
+                ← العودة للتسجيل الأكاديمي
               </button>
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                <Check className="h-4 w-4 text-emerald-500" />
-                <span>جاهز للاعتماد، اضغط على زر الإضافة بالأسفل لإتمام التسجيل بالكامل!</span>
+              <div className="text-xs text-slate-700 flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-4 py-2.5 rounded-lg">
+                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="font-semibold text-emerald-800">جاهز للتفعيل والاعتماد. اضغط على زر الإضافة بالأسفل لإتمام المعاملة فوراً!</span>
               </div>
             </div>
           </div>
