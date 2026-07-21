@@ -18,13 +18,11 @@ const lessonSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'StudentRegistration',
       default: null,
-      index: true,
     },
     payrollRecordId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'PayrollRecord',
       default: null,
-      index: true,
     },
     subject: {
       type: String,
