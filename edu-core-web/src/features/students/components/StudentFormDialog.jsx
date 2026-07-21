@@ -723,8 +723,8 @@ const StudentFormDialog = ({
                       {...register('preferredTeacherGender')}
                       className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <option value="MALE">ذكر (Male)</option>
-                      <option value="FEMALE">أنثى (Female)</option>
+                      <option value="MALE">ذكر</option>
+                      <option value="FEMALE">أنثى</option>
                     </select>
                   </div>
                 </div>
@@ -989,7 +989,7 @@ const StudentFormDialog = ({
                           >
                             <option value="75">٧٥٪ للمعلم مقابل ٢٥٪ للمعهد</option>
                             <option value="80">٨٠٪ للمعلم مقابل ٢٠٪ للمعهد</option>
-                            <option value="custom">نسبة مخصصة يدوياً (Custom)</option>
+                            <option value="custom">نسبة مخصصة يدوياً</option>
                           </select>
                         </div>
                       </div>
@@ -1209,8 +1209,8 @@ const StudentFormDialog = ({
                       onChange={(e) => setIsInstallment(e.target.value)}
                       className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <option value="no">دفع كامل المبلغ (Fully Paid)</option>
-                      <option value="yes">تقسيط المبلغ على دفعات (Installments)</option>
+                      <option value="no">دفع كامل المبلغ</option>
+                      <option value="yes">تقسيط المبلغ على دفعات</option>
                     </select>
                   </div>
 
@@ -1221,9 +1221,9 @@ const StudentFormDialog = ({
                       {...register('paymentMethod')}
                       className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <option value="CASH">نقداً (Cash)</option>
-                      <option value="KNET">كي نت (K-Net)</option>
-                      <option value="BANK_TRANSFER">تحويل بنكي (Bank Transfer)</option>
+                      <option value="CASH">نقداً</option>
+                      <option value="KNET">كي نت</option>
+                      <option value="BANK_TRANSFER">تحويل بنكي</option>
                     </select>
                   </div>
                 </div>
