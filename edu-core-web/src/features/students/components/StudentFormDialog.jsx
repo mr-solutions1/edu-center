@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {
@@ -81,6 +81,7 @@ const StudentFormDialog = ({
   initialData,
   isSubmitting,
 }) => {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('personal');
   const [percentagePreset, setPercentagePreset] = useState('75');
 
@@ -89,6 +90,18 @@ const StudentFormDialog = ({
   const [installmentsCount, setInstallmentsCount] = useState(2);
   const [installmentValue, setInstallmentsValue] = useState(0);
   const [priceOverrideReason, setPriceOverrideReason] = useState('');
+
+  // Creation popups state triggers
+  const [courseCreateOpen, setCourseCreateOpen] = useState(false);
+  const [newCourseName, setNewCourseName] = useState('');
+  const [newCourseCode, setNewCourseCode] = useState('');
+
+  const [teacherCreateOpen, setTeacherCreateOpen] = useState(false);
+  const [newTeacherFirst, setNewTeacherFirst] = useState('');
+  const [newTeacherLast, setNewTeacherLast] = useState('');
+  const [newTeacherPhone, setNewTeacherPhone] = useState('');
+  const [newTeacherEmail, setNewTeacherEmail] = useState('');
+  const [newTeacherSpec, setNewTeacherSpec] = useState('');
 
   // Dynamic schedule list containing day elements [{ id, day, from, to }]
   const [scheduleDays, setScheduleDays] = useState([{ id: 1, day: '', from: '', to: '' }]);
@@ -173,6 +186,70 @@ const StudentFormDialog = ({
     queryFn: () => courseApi.getAll(),
     enabled: open,
   });
+
+  // Create course inline mutation
+  const createCourseMutation = useMutation({
+    mutationFn: courseApi.create,
+    onSuccess: (res) => {
+      queryClient.invalidateQueries(['courses-all']);
+      toast.success('تم إنشاء الدورة بنجاح!');
+      setValue('subject', res.data?.name || res.name);
+      setCourseCreateOpen(false);
+      setNewCourseName('');
+      setNewCourseCode('');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'فشل إنشاء الدورة');
+    }
+  });
+
+  const handleCreateCourseInline = () => {
+    if (!newCourseName || !newCourseCode) {
+      toast.warning('يرجى كتابة اسم وكود الدورة.');
+      return;
+    }
+    createCourseMutation.mutate({
+      name: newCourseName,
+      code: newCourseCode,
+      subject: newCourseName,
+      educationalLevel: selectedGrade || 'ابتدائي',
+    });
+  };
+
+  // Create teacher inline mutation
+  const createTeacherMutation = useMutation({
+    mutationFn: teacherApi.createTeacher,
+    onSuccess: (res) => {
+      queryClient.invalidateQueries(['teachers-all']);
+      toast.success('تم تسجيل المعلم الجديد بنجاح!');
+      setValue('teacherId', res.data?._id || res._id);
+      setTeacherCreateOpen(false);
+      setNewTeacherFirst('');
+      setNewTeacherLast('');
+      setNewTeacherPhone('');
+      setNewTeacherEmail('');
+      setNewTeacherSpec('');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'فشل تسجيل المعلم');
+    }
+  });
+
+  const handleCreateTeacherInline = () => {
+    if (!newTeacherFirst || !newTeacherLast || !newTeacherPhone) {
+      toast.warning('الاسم الأول، العائلة، ورقم الهاتف مطلوبة لتسجيل المعلم.');
+      return;
+    }
+    createTeacherMutation.mutate({
+      firstName: newTeacherFirst,
+      lastName: newTeacherLast,
+      phone: newTeacherPhone,
+      email: newTeacherEmail || `${newTeacherFirst.toLowerCase()}@alphacenter.com`,
+      department: newTeacherSpec || 'عام',
+      subjects: selectedSubject ? [selectedSubject] : [],
+      hourlyRate: 10,
+    });
+  };
 
   const teachers = teachersRes?.data || [];
   const courses = coursesRes?.data || [];
@@ -344,6 +421,8 @@ const StudentFormDialog = ({
       setScheduleDays([{ id: 1, day: '', from: '', to: '' }]);
       setIsInstallment('no');
       setPriceOverrideReason('');
+      setCourseCreateOpen(false);
+      setTeacherCreateOpen(false);
       setActiveTab('personal');
     }
   }, [open, reset, initialData]);
@@ -409,230 +488,231 @@ const StudentFormDialog = ({
   };
 
   return (
-    <FormDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title={initialData ? 'تعديل بيانات طالب' : 'مركز تسجيل الطلاب الموحد (All-in-One)'}
-      description="يمكنك من هذه النافذة تسجيل الطالب بالكامل، وحجز باقة الحصص الأولى له، وشحن رصيده المالي دفعة واحدة."
-      saveText={initialData ? 'تحديث' : 'إضافة وتفعيل الحساب'}
-      isSubmitting={isSubmitting}
-      formId="student-form"
-      className="max-w-[85vw] xl:max-w-[75vw] min-h-[82vh] flex flex-col justify-between"
-    >
-      {/* Dynamic Form Alert banner if any errors exist */}
-      {Object.keys(errors).length > 0 && (
-        <div className="bg-red-50 border border-red-200 text-red-800 text-xs p-4 rounded-xl flex items-start gap-2 mb-4 mx-6" dir="rtl">
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
-          <div>
-            <p className="font-bold mb-1">يرجى تصحيح الأخطاء التالية قبل المتابعة:</p>
-            <ul className="list-disc list-inside space-y-0.5">
-              {Object.keys(errors).map((key) => (
-                <li key={key}>
-                  {errors[key]?.message || `${key} غير صالح`}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* Visual Navigation Tabs - Spacious Widescreen Row tabs */}
-      <div className="flex border-b mb-6 justify-around text-sm font-semibold mx-6 bg-slate-50/70 p-1.5 rounded-2xl" dir="rtl">
-        <button
-          type="button"
-          onClick={() => setActiveTab('personal')}
-          className={`flex items-center justify-center gap-2 pb-3.5 pt-3.5 border-b-2 px-8 transition-all duration-300 w-full rounded-xl ${
-            activeTab === 'personal'
-              ? 'border-primary text-primary font-bold bg-white shadow-sm'
-              : 'border-transparent text-muted-foreground hover:text-slate-700'
-          }`}
-        >
-          <User className="h-5 w-5 animate-pulse" />
-          <span className="text-sm">١. ملف الطالب وعنوانه السكني</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('academic')}
-          className={`flex items-center justify-center gap-2 pb-3.5 pt-3.5 border-b-2 px-8 transition-all duration-300 w-full rounded-xl ${
-            activeTab === 'academic'
-              ? 'border-primary text-primary font-bold bg-white shadow-sm'
-              : 'border-transparent text-muted-foreground hover:text-slate-700'
-          }`}
-        >
-          <BookOpen className="h-5 w-5" />
-          <span className="text-sm">٢. تسجيل المادة والمعلم والدورة (اختياري)</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('financial')}
-          className={`flex items-center justify-center gap-2 pb-3.5 pt-3.5 border-b-2 px-8 transition-all duration-300 w-full rounded-xl ${
-            activeTab === 'financial'
-              ? 'border-primary text-primary font-bold bg-white shadow-sm'
-              : 'border-transparent text-muted-foreground hover:text-slate-700'
-          }`}
-        >
-          <CreditCard className="h-5 w-5" />
-          <span className="text-sm">٣. الرسوم الشهرية والشحن المالي (اختياري)</span>
-        </button>
-      </div>
-
-      <form
-        id="student-form"
-        onSubmit={handleSubmit(onFormSubmit)}
-        className="space-y-6 max-h-[66vh] overflow-y-auto px-8 text-right flex-1"
-        dir="rtl"
+    <>
+      <FormDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title={initialData ? 'تعديل بيانات طالب' : 'مركز تسجيل الطلاب الموحد (All-in-One)'}
+        description="يمكنك من هذه النافذة تسجيل الطالب بالكامل، وحجز باقة الحصص الأولى له، وشحن رصيده المالي دفعة واحدة."
+        saveText={initialData ? 'تحديث' : 'إضافة وتفعيل الحساب'}
+        isSubmitting={isSubmitting}
+        formId="student-form"
+        className="max-w-[85vw] xl:max-w-[75vw] min-h-[82vh] flex flex-col justify-between"
       >
-        {/* Step 1: Personal and Contact */}
-        {activeTab === 'personal' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Core Personal Details - Broad 3 columns */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm">
-              <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4 text-primary">
-                <User className="h-5 w-5" />
-                <span>البيانات الأساسية والشخصية للطالب</span>
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="studentName" className="font-bold text-slate-700 text-sm">اسم الطالب (ثنائي/ثلاثي) <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="studentName"
-                    {...register('studentName')}
-                    error={errors.studentName?.message}
-                    placeholder="مثال: عبدالرحمن العتيبي"
-                    className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg transition-colors border-slate-200"
-                  />
-                  {errors.studentName && (
-                    <p className="text-xs text-red-500">{errors.studentName.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="parentName" className="font-bold text-slate-700 text-sm">اسم ولي الأمر <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="parentName"
-                    {...register('parentName')}
-                    error={errors.parentName?.message}
-                    placeholder="مثال: محمد العتيبي"
-                    className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg transition-colors border-slate-200"
-                  />
-                  {errors.parentName && (
-                    <p className="text-xs text-red-500">{errors.parentName.message}</p>
-                  )}
-                </div>
-
-                {/* Consolidated Unified Phone Input */}
-                <div className="space-y-2">
-                  <Label htmlFor="unifiedPhone" className="font-bold text-slate-700 text-sm flex items-center gap-1.5">
-                    <Phone className="h-4 w-4 text-primary shrink-0" />
-                    <span>رقم هاتف التواصل والواتساب الموحد <span className="text-red-500">*</span></span>
-                  </Label>
-                  <Input
-                    id="unifiedPhone"
-                    {...register('unifiedPhone')}
-                    placeholder="مثال: 55667788"
-                    className="bg-slate-50/50 focus:bg-white font-bold tracking-wide h-11 text-sm rounded-lg transition-colors border-slate-200"
-                  />
-                  {errors.parentPhone && (
-                    <p className="text-xs text-red-500">{errors.parentPhone.message}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 pt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="siblingGroup" className="font-semibold text-slate-700 text-sm">كود مجموعة الأشقاء (اختياري)</Label>
-                  <Input id="siblingGroup" {...register('siblingGroup')} placeholder="مثال: FAM-01" className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth" className="font-semibold text-slate-700 text-sm">تاريخ الميلاد</Label>
-                  <Input id="dateOfBirth" type="date" {...register('dateOfBirth')} className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
-                </div>
-              </div>
+        {/* Dynamic Form Alert banner if any errors exist */}
+        {Object.keys(errors).length > 0 && (
+          <div className="bg-red-50 border border-red-200 text-red-800 text-xs p-4 rounded-xl flex items-start gap-2 mb-4 mx-6" dir="rtl">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
+            <div>
+              <p className="font-bold mb-1">يرجى تصحيح الأخطاء التالية قبل المتابعة:</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                {Object.keys(errors).map((key) => (
+                  <li key={key}>
+                    {errors[key]?.message || `${key} غير صالح`}
+                  </li>
+                ))}
+              </ul>
             </div>
+          </div>
+        )}
 
-            {/* Academic Information - Broad Horizontal layout */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm">
-              <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4 text-primary">
-                <School className="h-5 w-5" />
-                <span>البيانات الأكاديمية والمدرسية</span>
-              </h3>
+        {/* Visual Navigation Tabs - Spacious Widescreen Row tabs */}
+        <div className="flex border-b mb-6 justify-around text-sm font-semibold mx-6 bg-slate-50/70 p-1.5 rounded-2xl" dir="rtl">
+          <button
+            type="button"
+            onClick={() => setActiveTab('personal')}
+            className={`flex items-center justify-center gap-2 pb-3.5 pt-3.5 border-b-2 px-8 transition-all duration-300 w-full rounded-xl ${
+              activeTab === 'personal'
+                ? 'border-primary text-primary font-bold bg-white shadow-sm'
+                : 'border-transparent text-muted-foreground hover:text-slate-700'
+            }`}
+          >
+            <User className="h-5 w-5 animate-pulse" />
+            <span className="text-sm">١. ملف الطالب وعنوانه السكني</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('academic')}
+            className={`flex items-center justify-center gap-2 pb-3.5 pt-3.5 border-b-2 px-8 transition-all duration-300 w-full rounded-xl ${
+              activeTab === 'academic'
+                ? 'border-primary text-primary font-bold bg-white shadow-sm'
+                : 'border-transparent text-muted-foreground hover:text-slate-700'
+            }`}
+          >
+            <BookOpen className="h-5 w-5" />
+            <span className="text-sm">٢. تسجيل المادة والمعلم والدورة (اختياري)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('financial')}
+            className={`flex items-center justify-center gap-2 pb-3.5 pt-3.5 border-b-2 px-8 transition-all duration-300 w-full rounded-xl ${
+              activeTab === 'financial'
+                ? 'border-primary text-primary font-bold bg-white shadow-sm'
+                : 'border-transparent text-muted-foreground hover:text-slate-700'
+            }`}
+          >
+            <CreditCard className="h-5 w-5" />
+            <span className="text-sm">٣. الرسوم الشهرية والشحن المالي (اختياري)</span>
+          </button>
+        </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="grade" className="font-bold text-slate-700 text-sm">المرحلة الدراسية <span className="text-red-500">*</span></Label>
-                  <select
-                    id="grade"
-                    {...register('grade')}
-                    className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    <option value="تأسيس">تأسيس</option>
-                    <option value="ابتدائي">ابتدائي</option>
-                    <option value="متوسط">متوسط</option>
-                    <option value="ثانوي">ثانوي</option>
-                    <option value="جامعي">جامعي</option>
-                    <option value="قدرات">قدرات</option>
-                    <option value="تحصيلي">تحصيلي</option>
-                  </select>
+        <form
+          id="student-form"
+          onSubmit={handleSubmit(onFormSubmit)}
+          className="space-y-6 max-h-[66vh] overflow-y-auto px-8 text-right flex-1"
+          dir="rtl"
+        >
+          {/* Step 1: Personal and Contact */}
+          {activeTab === 'personal' && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              {/* Core Personal Details - Broad 3 columns */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm">
+                <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4 text-primary">
+                  <User className="h-5 w-5" />
+                  <span>البيانات الأساسية والشخصية للطالب</span>
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="studentName" className="font-bold text-slate-700 text-sm">اسم الطالب (ثنائي/ثلاثي) <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="studentName"
+                      {...register('studentName')}
+                      error={errors.studentName?.message}
+                      placeholder="مثال: عبدالرحمن العتيبي"
+                      className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg transition-colors border-slate-200"
+                    />
+                    {errors.studentName && (
+                      <p className="text-xs text-red-500">{errors.studentName.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="parentName" className="font-bold text-slate-700 text-sm">اسم ولي الأمر <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="parentName"
+                      {...register('parentName')}
+                      error={errors.parentName?.message}
+                      placeholder="مثال: محمد العتيبي"
+                      className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg transition-colors border-slate-200"
+                    />
+                    {errors.parentName && (
+                      <p className="text-xs text-red-500">{errors.parentName.message}</p>
+                    )}
+                  </div>
+
+                  {/* Consolidated Unified Phone Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="unifiedPhone" className="font-bold text-slate-700 text-sm flex items-center gap-1.5">
+                      <Phone className="h-4 w-4 text-primary shrink-0" />
+                      <span>رقم هاتف التواصل والواتساب الموحد <span className="text-red-500">*</span></span>
+                    </Label>
+                    <Input
+                      id="unifiedPhone"
+                      {...register('unifiedPhone')}
+                      placeholder="مثال: 55667788"
+                      className="bg-slate-50/50 focus:bg-white font-bold tracking-wide h-11 text-sm rounded-lg transition-colors border-slate-200"
+                    />
+                    {errors.parentPhone && (
+                      <p className="text-xs text-red-500">{errors.parentPhone.message}</p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="classYear" className="font-bold text-slate-700 text-sm">الصف الدراسي <span className="text-red-500">*</span></Label>
-                  <select
-                    id="classYear"
-                    {...register('classYear')}
-                    className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    {(classYearsByGrade[selectedGrade] || ['أخرى']).map((cl) => (
-                      <option key={cl} value={cl}>
-                        {cl}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 pt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="siblingGroup" className="font-semibold text-slate-700 text-sm">كود مجموعة الأشقاء (اختياري)</Label>
+                    <Input id="siblingGroup" {...register('siblingGroup')} placeholder="مثال: FAM-01" className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="curriculum" className="font-bold text-slate-700 text-sm">المنهج الدراسي <span className="text-red-500">*</span></Label>
-                  <select
-                    id="curriculum"
-                    {...register('curriculum')}
-                    className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    {curricula.map((cur) => (
-                      <option key={cur} value={cur}>
-                        {cur}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth" className="font-semibold text-slate-700 text-sm">تاريخ الميلاد</Label>
+                    <Input id="dateOfBirth" type="date" {...register('dateOfBirth')} className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="school" className="font-semibold text-slate-700 text-sm">المدرسة (اختياري)</Label>
-                  <Input id="school" {...register('school')} placeholder="مثال: مدرسة المباركية" className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
+              {/* Academic Information - Broad Horizontal layout */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm">
+                <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4 text-primary">
+                  <School className="h-5 w-5" />
+                  <span>البيانات الأكاديمية والمدرسية</span>
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="grade" className="font-bold text-slate-700 text-sm">المرحلة الدراسية <span className="text-red-500">*</span></Label>
+                    <select
+                      id="grade"
+                      {...register('grade')}
+                      className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="تأسيس">تأسيس</option>
+                      <option value="ابتدائي">ابتدائي</option>
+                      <option value="متوسط">متوسط</option>
+                      <option value="ثانوي">ثانوي</option>
+                      <option value="جامعي">جامعي</option>
+                      <option value="قدرات">قدرات</option>
+                      <option value="تحصيلي">تحصيلي</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="classYear" className="font-bold text-slate-700 text-sm">الصف الدراسي <span className="text-red-500">*</span></Label>
+                    <select
+                      id="classYear"
+                      {...register('classYear')}
+                      className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      {(classYearsByGrade[selectedGrade] || ['أخرى']).map((cl) => (
+                        <option key={cl} value={cl}>
+                          {cl}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="curriculum" className="font-bold text-slate-700 text-sm">المنهج الدراسي <span className="text-red-500">*</span></Label>
+                    <select
+                      id="curriculum"
+                      {...register('curriculum')}
+                      className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      {curricula.map((cur) => (
+                        <option key={cur} value={cur}>
+                          {cur}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="studentSpecialization" className="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
-                    <Award className="h-4 w-4 text-primary shrink-0" />
-                    <span>التخصص الدراسي للطالب (علمي / أدبي)</span>
-                  </Label>
-                  <Input
-                    id="studentSpecialization"
-                    {...register('studentSpecialization')}
-                    placeholder="مثال: علمي، أدبي، لغات"
-                    className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200"
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="school" className="font-semibold text-slate-700 text-sm">المدرسة (اختياري)</Label>
+                    <Input id="school" {...register('school')} placeholder="مثال: مدرسة المباركية" className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200" />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="preferredTeacherGender" className="font-semibold text-slate-700 text-sm">جنس المعلم المفضل</Label>
-                  <select
-                    id="preferredTeacherGender"
-                    {...register('preferredTeacherGender')}
-                    className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  <div className="space-y-2">
+                    <Label htmlFor="studentSpecialization" className="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
+                      <Award className="h-4 w-4 text-primary shrink-0" />
+                      <span>التخصص الدراسي للطالب (علمي / أدبي)</span>
+                    </Label>
+                    <Input
+                      id="studentSpecialization"
+                      {...register('studentSpecialization')}
+                      placeholder="مثال: علمي، أدبي، لغات"
+                      className="bg-slate-50/50 focus:bg-white h-11 text-sm rounded-lg border-slate-200"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="preferredTeacherGender" className="font-semibold text-slate-700 text-sm">جنس المعلم المفضل</Label>
+                    <select
+                      id="preferredTeacherGender"
+                      {...register('preferredTeacherGender')}
+                      className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="MALE">ذكر (Male)</option>
                     <option value="FEMALE">أنثى (Female)</option>
@@ -759,10 +839,20 @@ const StudentFormDialog = ({
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm">
-              <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4 text-primary">
-                <BookOpen className="h-5 w-5" />
-                <span>تفاصيل المادة وباقة الساعات وحصة المعلم</span>
-              </h3>
+              <div className="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 text-primary">
+                  <BookOpen className="h-5 w-5" />
+                  <span>تفاصيل المادة وباقة الساعات وحصة المعلم</span>
+                </h3>
+                {/* Create Course Trigger Button */}
+                <button
+                  type="button"
+                  onClick={() => setCourseCreateOpen(true)}
+                  className="bg-secondary/15 text-secondary-foreground hover:bg-secondary/25 text-xs px-3 py-1.5 rounded-lg font-bold transition-all"
+                >
+                  ⚡ إنشاء دورة جديدة غير مسجلة بالسيستم
+                </button>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -792,7 +882,16 @@ const StudentFormDialog = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="teacherId" className="font-bold text-slate-700 text-sm">المعلم المخصص لتدريس المادة للطالب <span className="text-red-500">*</span></Label>
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="teacherId" className="font-bold text-slate-700 text-sm">المعلم المخصص لتدريس المادة للطالب <span className="text-red-500">*</span></Label>
+                    <button
+                      type="button"
+                      onClick={() => setTeacherCreateOpen(true)}
+                      className="text-xs text-primary hover:underline font-bold"
+                    >
+                      + تسجيل معلم جديد
+                    </button>
+                  </div>
                   <select
                     id="teacherId"
                     {...register('teacherId')}
@@ -801,7 +900,7 @@ const StudentFormDialog = ({
                     <option value="">اختر معلماً من القائمة...</option>
                     {sortedTeachers.map((t) => {
                       const spec = t.department || 'عام';
-                      const subs = t.subjects && t.subjects.length > 0 ? t.subjects.join('، ') : 'غير محدد';
+                      const subs = t.subjects && t.subjects.length > 0 ? t.subjects.join('، ') : 'غير حدد';
                       const isRecommended = selectedSubject && t.subjects?.some(sub => sub.toLowerCase().includes(selectedSubject.toLowerCase()));
                       return (
                         <option key={t._id} value={t._id}>
@@ -1126,6 +1225,65 @@ const StudentFormDialog = ({
         )}
       </form>
     </FormDialog>
+
+    {/* Dynamic Inline Course Creation Dialog */}
+    <FormDialog
+      open={courseCreateOpen}
+      onOpenChange={setCourseCreateOpen}
+      title="إنشاء دورة دراسية جديدة"
+      description="يرجى إدخال تفاصيل الدورة لكي تظهر فوراً في خيارات تسجيل الطلاب."
+      saveText="إنشاء"
+      isSubmitting={createCourseMutation.isPending}
+      onSave={handleCreateCourseInline}
+    >
+      <div className="space-y-4 text-right" dir="rtl">
+        <div className="space-y-2">
+          <Label>اسم الدورة الدراسية</Label>
+          <Input value={newCourseName} onChange={(e) => setNewCourseName(e.target.value)} placeholder="مثال: لغة فرنسية متقدمة" />
+        </div>
+        <div className="space-y-2">
+          <Label>كود الدورة (رمز فريد)</Label>
+          <Input value={newCourseCode} onChange={(e) => setNewCourseCode(e.target.value.toUpperCase())} placeholder="مثال: CRS-FRANCE" />
+        </div>
+      </div>
+    </FormDialog>
+
+    {/* Dynamic Inline Teacher Creation Dialog */}
+    <FormDialog
+      open={teacherCreateOpen}
+      onOpenChange={setTeacherCreateOpen}
+      title="تسجيل معلم جديد بالسيستم"
+      description="يرجى إدخال تفاصيل حساب المعلم الجديد لإنشاء ملف تعريفي فوراً."
+      saveText="تسجيل"
+      isSubmitting={createTeacherMutation.isPending}
+      onSave={handleCreateTeacherInline}
+    >
+      <div className="space-y-4 text-right overflow-y-auto max-h-[50vh] px-1" dir="rtl">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label>الاسم الأول</Label>
+            <Input value={newTeacherFirst} onChange={(e) => setNewTeacherFirst(e.target.value)} placeholder="مثال: صالح" />
+          </div>
+          <div className="space-y-1">
+            <Label>اسم العائلة</Label>
+            <Input value={newTeacherLast} onChange={(e) => setNewTeacherLast(e.target.value)} placeholder="مثال: العجمي" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>رقم هاتف المعلم</Label>
+          <Input value={newTeacherPhone} onChange={(e) => setNewTeacherPhone(e.target.value)} placeholder="مثال: 99881122" />
+        </div>
+        <div className="space-y-2">
+          <Label>البريد الإلكتروني (اختياري)</Label>
+          <Input value={newTeacherEmail} onChange={(e) => setNewTeacherEmail(e.target.value)} placeholder="teacher@domain.com" />
+        </div>
+        <div className="space-y-2">
+          <Label>التخصص الرئيسي / القسم</Label>
+          <Input value={newTeacherSpec} onChange={(e) => setNewTeacherSpec(e.target.value)} placeholder="مثال: لغات، علوم، قدرات" />
+        </div>
+      </div>
+    </FormDialog>
+    </>
   );
 };
 
