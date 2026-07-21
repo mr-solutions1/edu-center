@@ -95,15 +95,24 @@ lessonSchema.index({ lessonDate: 1 });
 lessonSchema.index({ registrationId: 1 });
 lessonSchema.index({ payrollRecordId: 1 });
 
+// Helper to block updates if lesson is locked in a finalized payroll
+const checkAndBlockIfLocked = async (payrollRecordId) => {
+  if (payrollRecordId) {
+    const PayrollRecord = mongoose.model('PayrollRecord');
+    const pr = await PayrollRecord.findById(payrollRecordId);
+    if (pr && ['PENDING_APPROVAL', 'APPROVED', 'PAID'].includes(pr.status)) {
+      throw new Error('لا يمكن تعديل أو حذف حصة مغلقة ومدرجة في كشف الرواتب المعتمد');
+    }
+  }
+};
+
 // Lesson Immutability Lock Pre-Save Guard
 lessonSchema.pre('save', async function (next) {
   if (!this.isNew && (this.isModified('status') || this.isModified('lessonPrice') || this.isModified('durationHours') || this.isModified('lessonDate'))) {
-    if (this.payrollRecordId) {
-      const PayrollRecord = mongoose.model('PayrollRecord');
-      const pr = await PayrollRecord.findById(this.payrollRecordId);
-      if (pr && ['PENDING_APPROVAL', 'APPROVED', 'PAID'].includes(pr.status)) {
-        return next(new Error('لا يمكن تعديل حصة مغلقة ومدرجة في كشف الرواتب المعتمد'));
-      }
+    try {
+      await checkAndBlockIfLocked(this.payrollRecordId);
+    } catch (err) {
+      return next(err);
     }
   }
   next();
@@ -111,15 +120,35 @@ lessonSchema.pre('save', async function (next) {
 
 // Lesson Immutability Lock Pre-Remove Guard
 lessonSchema.pre('remove', async function (next) {
-  if (this.payrollRecordId) {
-    const PayrollRecord = mongoose.model('PayrollRecord');
-    const pr = await PayrollRecord.findById(this.payrollRecordId);
-    if (pr && ['PENDING_APPROVAL', 'APPROVED', 'PAID'].includes(pr.status)) {
-      return next(new Error('لا يمكن حذف حصة مغلقة ومدرجة في كشف الرواتب المعتمد'));
-    }
+  try {
+    await checkAndBlockIfLocked(this.payrollRecordId);
+  } catch (err) {
+    return next(err);
   }
   next();
 });
+
+// Lesson Immutability Lock Query-Level Guard (updateOne, updateMany, findOneAndUpdate, deleteOne, deleteMany, findOneAndDelete)
+const blockQueryIfLocked = async function (next) {
+  try {
+    const query = this.getQuery();
+    const Lesson = mongoose.model('Lesson');
+    const docs = await Lesson.find(query);
+    for (const doc of docs) {
+      await checkAndBlockIfLocked(doc.payrollRecordId);
+    }
+  } catch (err) {
+    return next(err);
+  }
+  next();
+};
+
+lessonSchema.pre('updateOne', blockQueryIfLocked);
+lessonSchema.pre('updateMany', blockQueryIfLocked);
+lessonSchema.pre('findOneAndUpdate', blockQueryIfLocked);
+lessonSchema.pre('deleteOne', blockQueryIfLocked);
+lessonSchema.pre('deleteMany', blockQueryIfLocked);
+lessonSchema.pre('findOneAndDelete', blockQueryIfLocked);
 
 const Lesson = mongoose.model('Lesson', lessonSchema);
 

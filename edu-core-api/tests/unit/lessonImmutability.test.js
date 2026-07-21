@@ -46,7 +46,7 @@ describe('Lesson Immutability Lock Engine Suite', () => {
         err = e;
       }
       expect(err).not.toBeNull();
-      expect(err.message).toContain('لا يمكن تعديل حصة مغلقة ومدرجة في كشف الرواتب المعتمد');
+      expect(err.message).toContain('لا يمكن تعديل أو حذف حصة مغلقة ومدرجة في كشف الرواتب المعتمد');
 
       // 4. Reset payroll status to CALCULATED (reopened)
       pr.status = 'CALCULATED';
