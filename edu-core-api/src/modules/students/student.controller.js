@@ -464,26 +464,37 @@ export const createStudent = asyncHandler(async (req, res) => {
       );
     }
 
-    // 4. Run chronological allocation FIFO if we have both registration and payment
-    if (registration && payment) {
+    // 4. Run chronological allocation FIFO across all created registrations
+    if (createdRegistrations.length > 0 && payment) {
       const PaymentAllocation = mongoose.model('PaymentAllocation');
-      const allocated = Math.min(payment.amount, registration.totalAmount);
-      if (allocated > 0) {
-        registration.paidAmount = allocated;
-        await registration.save({ session });
+      let remainingPaymentAmount = payment.amount;
 
-        await PaymentAllocation.create(
-          [
-            {
-              paymentId: payment._id,
-              registrationId: registration._id,
-              studentId: student._id,
-              amount: allocated,
-              allocatedAt: payment.createdAt || new Date(),
-            },
-          ],
-          session ? { session } : {}
-        );
+      for (const reg of createdRegistrations) {
+        if (remainingPaymentAmount <= 0) break;
+
+        const needed = reg.totalAmount - (reg.paidAmount || 0);
+        if (needed <= 0) continue;
+
+        const allocated = Math.min(remainingPaymentAmount, needed);
+        if (allocated > 0) {
+          reg.paidAmount = (reg.paidAmount || 0) + allocated;
+          await reg.save({ session });
+
+          await PaymentAllocation.create(
+            [
+              {
+                paymentId: payment._id,
+                registrationId: reg._id,
+                studentId: student._id,
+                amount: allocated,
+                allocatedAt: payment.createdAt || new Date(),
+              },
+            ],
+            session ? { session } : {}
+          );
+
+          remainingPaymentAmount -= allocated;
+        }
       }
     }
 
