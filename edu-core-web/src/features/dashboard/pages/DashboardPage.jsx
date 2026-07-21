@@ -85,65 +85,90 @@ const DashboardPage = () => {
         description={`أهلاً بك مجدداً، ${user?.firstName || ''} ${user?.lastName || ''} - مراجعة سريعة لأرقام الأكاديمية والتدفقات المالية اليومية.`}
       />
 
-      {/* 8 KPIs Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {isLoading ? (
-          Array.from({ length: 8 }).map((_, i) => (
+      {/* 8 KPIs Grid - Split into Executive and Operational Sections */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-28 sm:h-32 w-full rounded-lg" />
-          ))
-        ) : (
-          <>
-            <StatCard
-              label="إجمالي الطلاب"
-              value={stats.activeStudents ?? 0}
-              icon={Users}
-              className="border-r-4 border-r-blue-500"
-            />
-            <StatCard
-              label="المعلمون النشطون"
-              value={stats.activeTeachers ?? 0}
-              icon={GraduationCap}
-              className="border-r-4 border-r-indigo-500"
-            />
-            <StatCard
-              label="إجمالي الإيرادات"
-              value={formatMoney(stats.monthlyRevenue ?? 0)}
-              icon={DollarSign}
-              className="border-r-4 border-r-green-500"
-            />
-            <StatCard
-              label="إجمالي المصروفات"
-              value={formatMoney(stats.monthlyExpenses ?? 0)}
-              icon={FileSpreadsheet}
-              className="border-r-4 border-r-red-500"
-            />
-            <StatCard
-              label="تكلفة رواتب المعلمين"
-              value={formatMoney(stats.teacherCost ?? 0)}
-              icon={Coins}
-              className="border-r-4 border-r-orange-500"
-            />
-            <StatCard
-              label="صافي الأرباح"
-              value={formatMoney(stats.instituteProfit ?? 0)}
-              icon={PiggyBank}
-              className="border-r-4 border-r-teal-500"
-            />
-            <StatCard
-              label="مستحقات الطلاب المعلقة"
-              value={formatMoney(stats.outstandingStudentBalances ?? 0)}
-              icon={Landmark}
-              className="border-r-4 border-r-amber-500"
-            />
-            <StatCard
-              label="مستحقات المعلمين غير المدفوعة"
-              value={formatMoney(stats.outstandingTeacherDues ?? 0)}
-              icon={Landmark}
-              className="border-r-4 border-r-rose-500"
-            />
-          </>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Executive & Financial Sector */}
+          <div className="space-y-3">
+            <h3 className="text-md font-bold text-slate-700 border-r-2 border-r-primary pr-2">
+              التحليلات والمؤشرات المالية التنفيذية (Executive Financial KPIs)
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+              <StatCard
+                label="صافي الإيرادات المسجلة"
+                value={formatMoney(stats.monthlyRevenue ?? 0)}
+                icon={DollarSign}
+                className="border-r-4 border-r-green-500"
+                trend="up"
+                trendValue="أساس الاستحقاق"
+              />
+              <StatCard
+                label="التدفقات النقدية والمصروفات"
+                value={formatMoney(stats.monthlyExpenses ?? 0)}
+                icon={FileSpreadsheet}
+                className="border-r-4 border-r-red-500"
+              />
+              <StatCard
+                label="صافي الأرباح المحتسبة"
+                value={formatMoney(stats.instituteProfit ?? 0)}
+                icon={PiggyBank}
+                className="border-r-4 border-r-teal-500"
+              />
+              <StatCard
+                label="الذمم المدينة المستحقة للطلاب"
+                value={formatMoney(stats.outstandingStudentBalances ?? 0)}
+                icon={Landmark}
+                className="border-r-4 border-r-amber-500"
+              />
+              <StatCard
+                label="التزامات المعلمين غير المدفوعة"
+                value={formatMoney(stats.outstandingTeacherDues ?? 0)}
+                icon={Landmark}
+                className="border-r-4 border-r-rose-500"
+              />
+            </div>
+          </div>
+
+          {/* Operational & Compliance Sector */}
+          <div className="space-y-3 pt-2">
+            <h3 className="text-md font-bold text-slate-700 border-r-2 border-r-secondary pr-2">
+              العمليات التشغيلية والحضور (Operational Compliance KPIs)
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              <StatCard
+                label="إجمالي الطلاب النشطين"
+                value={stats.activeStudents ?? 0}
+                icon={Users}
+                className="border-r-4 border-r-blue-500"
+              />
+              <StatCard
+                label="المعلمون النشطون بالأكاديمية"
+                value={stats.activeTeachers ?? 0}
+                icon={GraduationCap}
+                className="border-r-4 border-r-indigo-500"
+              />
+              <StatCard
+                label="تكلفة رواتب المعلمين (Accrued)"
+                value={formatMoney(stats.teacherCost ?? 0)}
+                icon={Coins}
+                className="border-r-4 border-r-orange-500"
+              />
+              <StatCard
+                label="معدل الحضور والغياب"
+                value={`${stats.attendanceRate ?? 100}%`}
+                icon={Calendar}
+                className="border-r-4 border-r-emerald-500"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
