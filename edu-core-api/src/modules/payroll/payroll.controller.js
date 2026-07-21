@@ -29,7 +29,10 @@ export const updatePayrollAdjustments = asyncHandler(async (req, res) => {
 });
 
 export const getApprovalDetails = asyncHandler(async (req, res) => {
-  const approvalData = await payrollService.getApprovalDetails(req.params.id);
+  const approvalData = await payrollService.getApprovalDetails(
+    req.params.id,
+    req.user?.role
+  );
   res.status(200).json({
     success: true,
     data: approvalData,

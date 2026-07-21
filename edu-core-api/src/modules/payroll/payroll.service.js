@@ -101,6 +101,12 @@ export const recalculateForTeacher = async (teacherId, month, year, userId) => {
       { upsert: true, new: true, session }
     );
 
+    // Lock completed lessons for this period by linking them to this payroll record
+    for (const l of lessons) {
+      l.payrollRecordId = payrollRecord._id;
+      await l.save({ session });
+    }
+
     // 6. Write Audit Transaction
     await PayrollTransaction.create(
       [
@@ -209,7 +215,7 @@ export const submitForApproval = async (id, userId) => {
  * Approve payroll (PENDING_APPROVAL ➔ APPROVED)
  * Sequentially approves active level signatures of the request
  */
-export const approvePayroll = async (id, userId, userRole = 'ADMIN') => {
+export const approvePayroll = async (id, userId, userRole = 'ACCOUNTANT') => {
   return withTransaction(async (session) => {
     const record = await PayrollRecord.findById(id).session(session);
     if (!record) {
@@ -390,16 +396,24 @@ export const markPaid = async (id, userId) => {
 /**
  * Get active approval request and signature details for a payroll record
  */
-export const getApprovalDetails = async (id) => {
+export const getApprovalDetails = async (id, userRole = null) => {
   const request = await ApprovalRequest.findOne({ referenceId: id })
     .sort({ createdAt: -1 })
     .populate('signatures.userId', 'firstName lastName email');
 
   const chain = await ApprovalChain.findOne({ workflowType: 'PAYROLL_APPROVAL' });
+  const levels = chain ? chain.levels : ['ACCOUNTANT', 'ADMIN'];
+
+  let isAuthorizedToSign = false;
+  if (request && request.status === 'PENDING') {
+    const activeLevelRole = levels[request.currentLevel];
+    isAuthorizedToSign = (userRole === 'ADMIN' || userRole === activeLevelRole);
+  }
 
   return {
     request,
-    levels: chain ? chain.levels : ['ACCOUNTANT', 'ADMIN'],
+    levels,
+    isAuthorizedToSign,
   };
 };
 

@@ -328,8 +328,10 @@ const PayrollListPage = () => {
   // Calculate if active logged-in user role is authorized to sign the active pending step
   const activeLevelRole = request && levels[request.currentLevel];
   const isUserAuthorizedToSign =
-    request?.status === 'PENDING' &&
-    (user?.role === 'ADMIN' || user?.role === activeLevelRole);
+    approvalDetails?.data?.isAuthorizedToSign !== undefined
+      ? approvalDetails.data.isAuthorizedToSign
+      : request?.status === 'PENDING' &&
+        (user?.role === 'ADMIN' || user?.role === activeLevelRole);
 
   return (
     <div className="space-y-6 text-right" dir="rtl">

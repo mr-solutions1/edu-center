@@ -1,4 +1,6 @@
 import Payment from './payment.model.js';
+import PaymentAllocation from './paymentAllocation.model.js';
+import StudentRegistration from '../students/registration.model.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
 import * as auditLogger from '../../shared/services/auditLogger.service.js';
 import { notificationService } from '../../shared/services/notification.service.js';
@@ -9,6 +11,72 @@ import {
   removeLedgerEntriesByReference,
 } from '../ledger/ledger.service.js';
 import { recalculateStudentBalances } from '../students/studentBalance.service.js';
+
+/**
+ * Recomputes and heals all FIFO payment allocations for a student
+ */
+export const reallocateAllStudentPayments = async (studentId, session = null) => {
+  const options = session ? { session } : {};
+
+  // 1. Reset all registration paidAmounts to 0
+  await StudentRegistration.updateMany({ studentId }, { $set: { paidAmount: 0 } }, options);
+
+  // 2. Delete all existing allocations for this student
+  await PaymentAllocation.deleteMany({ studentId }, options);
+
+  // 3. Fetch all active payments for this student chronologically
+  const payments = await Payment.find({
+    studentId,
+    status: { $in: ['PAID', 'PARTIALLY_PAID'] },
+    amount: { $gt: 0 },
+  })
+    .sort({ createdAt: 1 })
+    .session(session);
+
+  // 4. Perform chronological FIFO allocations
+  for (const payment of payments) {
+    let remainingAmount = payment.amount;
+
+    const registrations = await StudentRegistration.find({ studentId })
+      .sort({ registrationDate: 1 })
+      .session(session);
+
+    for (const reg of registrations) {
+      const total = reg.totalAmount || 0;
+      const paid = reg.paidAmount || 0;
+      const outstanding = total - paid;
+
+      if (outstanding <= 0) {
+        continue;
+      }
+
+      const allocated = Math.min(remainingAmount, outstanding);
+      if (allocated > 0) {
+        reg.paidAmount = paid + allocated;
+        await reg.save(options);
+
+        await PaymentAllocation.create(
+          [
+            {
+              paymentId: payment._id,
+              registrationId: reg._id,
+              studentId,
+              amount: allocated,
+              allocatedAt: payment.createdAt || new Date(),
+            },
+          ],
+          options
+        );
+
+        remainingAmount -= allocated;
+      }
+
+      if (remainingAmount <= 0) {
+        break;
+      }
+    }
+  }
+};
 
 export const createPayment = async (paymentData, userId) => {
   return withTransaction(async (session) => {
@@ -35,7 +103,12 @@ export const createPayment = async (paymentData, userId) => {
       );
     }
 
-    // 2. Trigger automatic student balance recalculation
+    // 2. Perform FIFO Allocation
+    if (payment.studentId) {
+      await reallocateAllStudentPayments(payment.studentId, session);
+    }
+
+    // 3. Trigger automatic student balance recalculation
     if (payment.studentId) {
       await recalculateStudentBalances(payment.studentId);
     }
@@ -162,6 +235,17 @@ export const updatePayment = async (id, updateData, userId = null) => {
       );
     }
 
+    // Perform FIFO Allocation
+    if (payment.studentId) {
+      await reallocateAllStudentPayments(payment.studentId, session);
+    }
+    if (
+      beforePayment.studentId &&
+      beforePayment.studentId.toString() !== payment.studentId?.toString()
+    ) {
+      await reallocateAllStudentPayments(beforePayment.studentId, session);
+    }
+
     // Recalculate student balance
     if (payment.studentId) {
       await recalculateStudentBalances(payment.studentId);
@@ -188,6 +272,11 @@ export const deletePayment = async (id) => {
 
     // Remove ledger entry
     await removeLedgerEntriesByReference(id, 'STUDENT_PAYMENT', session);
+
+    // Recompute all allocations for this student
+    if (payment.studentId) {
+      await reallocateAllStudentPayments(payment.studentId, session);
+    }
 
     // Recalculate student balance
     if (payment.studentId) {

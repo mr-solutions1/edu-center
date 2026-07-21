@@ -91,10 +91,41 @@ export const createLesson = async (lessonData, userId) => {
       throw new NotFoundError('المعلم غير موجود');
     }
 
+    // Resolve registration and subject at creation time to prevent historical rate drift
+    let registrationId = lessonData.registrationId || null;
+    let subject = lessonData.subject || null;
+    if (!registrationId) {
+      const matchQuery = { studentId };
+      if (teacherId) matchQuery.teacherId = teacherId;
+      if (lessonData.subject) matchQuery.subject = lessonData.subject;
+
+      const reg = await StudentRegistration.findOne({ ...matchQuery, status: 'ACTIVE' })
+        .sort({ registrationDate: -1 })
+        .session(session);
+
+      const matchedReg = reg || await StudentRegistration.findOne(matchQuery)
+        .sort({ registrationDate: -1 })
+        .session(session);
+
+      if (matchedReg) {
+        registrationId = matchedReg._id;
+        subject = matchedReg.subject;
+      }
+    } else {
+      const matchedReg = await StudentRegistration.findById(registrationId).session(session);
+      if (matchedReg) {
+        subject = matchedReg.subject;
+      }
+    }
+
     const earningsResult = await calculateLessonEarnings({
+      studentId,
       teacherId,
+      registrationId,
+      subject,
       lessonPrice,
       educationalLevel: lessonData.educationalLevel,
+      durationHours: lessonData.durationHours,
     });
 
     // 4. Create lesson
@@ -102,6 +133,8 @@ export const createLesson = async (lessonData, userId) => {
       {
         ...lessonData,
         lessonPrice,
+        registrationId,
+        subject,
         teacherPercentage: teacher.teacherPercentage,
         institutePercentage: teacher.institutePercentage,
         teacherEarnings: earningsResult.teacherEarnings,
@@ -199,6 +232,26 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
       lesson.notes = notes;
     }
 
+    // Ensure lesson has registrationId resolved if not already present
+    if (!lesson.registrationId) {
+      const matchQuery = { studentId: lesson.studentId };
+      if (lesson.teacherId) matchQuery.teacherId = lesson.teacherId;
+      if (lesson.subject) matchQuery.subject = lesson.subject;
+
+      const reg = await StudentRegistration.findOne({ ...matchQuery, status: 'ACTIVE' })
+        .sort({ registrationDate: -1 })
+        .session(session);
+
+      const matchedReg = reg || await StudentRegistration.findOne(matchQuery)
+        .sort({ registrationDate: -1 })
+        .session(session);
+
+      if (matchedReg) {
+        lesson.registrationId = matchedReg._id;
+        lesson.subject = matchedReg.subject;
+      }
+    }
+
     // Recalculate lesson earnings dynamically when status is updated (specifically for completion)
     const earningsResult = await calculateLessonEarnings(lesson);
     lesson.teacherEarnings = earningsResult.teacherEarnings;
@@ -208,10 +261,17 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
 
     // Record or clear Hour Ledger transaction based on the new status
     if (status === 'COMPLETED') {
-      let targetReg = await StudentRegistration.findOne({
-        studentId: lesson.studentId,
-        status: 'ACTIVE',
-      }).sort({ registrationDate: 1 }).session(session);
+      let targetReg = null;
+      if (lesson.registrationId) {
+        targetReg = await StudentRegistration.findById(lesson.registrationId).session(session);
+      }
+
+      if (!targetReg) {
+        targetReg = await StudentRegistration.findOne({
+          studentId: lesson.studentId,
+          status: 'ACTIVE',
+        }).sort({ registrationDate: 1 }).session(session);
+      }
 
       if (!targetReg) {
         targetReg = await StudentRegistration.findOne({
@@ -220,6 +280,13 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
       }
 
       if (targetReg) {
+        // Double-check: ensure we link to the actual matched registration
+        if (!lesson.registrationId) {
+          lesson.registrationId = targetReg._id;
+          lesson.subject = targetReg.subject;
+          await lesson.save({ session });
+        }
+
         const existingTx = await HourTransaction.findOne({
           lessonId: lesson._id,
         }).session(session);
@@ -232,7 +299,7 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
               lessonId: lesson._id,
               amount: -lesson.durationHours,
               type: 'CONSUMED',
-              description: `حضور حصة مادة ${lesson.subject}`,
+              description: `حضور حصة مادة ${lesson.subject || targetReg.subject}`,
               performedBy: userId,
               transactionDate: lesson.lessonDate,
             },
@@ -251,6 +318,8 @@ export const updateLessonStatus = async (id, status, notes, userId) => {
         await HourTransaction.deleteOne({ _id: existingTx._id }).session(session);
         await HourLedgerService.updateRegistrationStatus(regId, session);
       }
+
+      lesson.payrollRecordId = null;
     }
 
     // Recalculate student balances when lesson status changes (e.g. COMPLETED affects consumed hours)

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import StudentRegistration from './registration.model.js';
 import Student from './student.model.js';
 import * as studentService from './student.service.js';
@@ -9,6 +10,7 @@ import {
 import { StudentCalculationService } from './StudentCalculationService.js';
 import { SettingsService } from '../tenants/SettingsService.js';
 import { NotFoundError } from '../../shared/errors/NotFoundError.js';
+import { ValidationError } from '../../shared/errors/ValidationError.js';
 import { logAuditTrail } from '../../shared/services/auditLogger.js';
 import { generateCode } from '../../shared/utils/atomicCounter.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
@@ -168,15 +170,29 @@ export const deleteRegistration = asyncHandler(async (req, res) => {
   const { id, regId } = req.params;
 
   await withTransaction(async (session) => {
-    const registration = await StudentRegistration.findOneAndDelete(
-      { _id: regId, studentId: id },
-      session ? { session } : {}
-    );
+    const registration = await StudentRegistration.findOne({ _id: regId, studentId: id }).session(session);
     if (!registration) {
       throw new NotFoundError('التسجيل غير موجود');
     }
 
-    // Rather than hard-deleting financial/hour history (Finding A3), we record immutable reversing entries
+    // Prevent deletion/cancellation once financial or study activity exists
+    if (registration.consumedHours > 0) {
+      throw new ValidationError('لا يمكن حذف أو إلغاء التسجيل بعد بدء استهلاك الحصص وحضور الطالب');
+    }
+
+    const Lesson = mongoose.model('Lesson');
+    const hasCompletedLessons = await Lesson.exists({ registrationId: regId, status: 'COMPLETED' }).session(session);
+    if (hasCompletedLessons) {
+      throw new ValidationError('لا يمكن حذف أو إلغاء التسجيل لوجود حصص مكتملة مرتبطة به');
+    }
+
+    // Business cancellation & Soft Delete instead of hard-deleting financial history
+    registration.status = 'CANCELLED';
+    registration.deletedAt = new Date();
+    registration.isDeleted = true;
+    registration.deletedBy = req.user._id;
+    await registration.save({ session });
+
     // 1. Record reversing financial ledger entry
     await recordLedgerEntry(
       {

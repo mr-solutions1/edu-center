@@ -8,6 +8,9 @@ import { recalculateStudentBalances } from '../students/studentBalance.service.j
 import { FinancialCalculationService } from './FinancialCalculationService.js';
 import AccountingService from './accounting.service.js';
 import GeneralLedger from './generalLedger.model.js';
+import { calculateTeacherMetrics } from '../teachers/teacher.service.js';
+import Teacher from '../teachers/teacher.model.js';
+import logger from '../../shared/services/logger.js';
 
 /**
  * Recalculates remaining cash balances chronologically across all transactions
@@ -77,12 +80,8 @@ export const createTransaction = async (txnData, performedBy) => {
       );
 
       // 2. Recalculate Teacher metrics
-      const { calculateTeacherMetrics } =
-        await import('../teachers/teacher.service.js');
       if (txnData.teacherId) {
-        const teacher = await import('../teachers/teacher.model.js').then((m) =>
-          m.default.findById(txnData.teacherId)
-        );
+        const teacher = await Teacher.findById(txnData.teacherId).session(session);
         if (teacher) {
           await calculateTeacherMetrics(teacher);
         }
@@ -156,10 +155,8 @@ export const recordLedgerEntry = async (data, session = null) => {
     await AccountingService.pipeLedgerToDoubleEntry(entry, session);
   } catch (err) {
     // Log accounting failure but prevent breaking critical operations
-    import('../../shared/services/logger.js').then((m) =>
-      m.default.error(
-        `[LedgerService] Failed to record balanced double-entry: ${err.message}`
-      )
+    logger.error(
+      `[LedgerService] Failed to record balanced double-entry: ${err.message}`
     );
   }
 
@@ -197,10 +194,8 @@ export const removeLedgerEntriesByReference = async (
       );
     }
   } catch (err) {
-    import('../../shared/services/logger.js').then((m) =>
-      m.default.error(
-        `[LedgerService] Failed to clear balanced general ledger entries: ${err.message}`
-      )
+    logger.error(
+      `[LedgerService] Failed to clear balanced general ledger entries: ${err.message}`
     );
   }
 
@@ -238,7 +233,18 @@ export const getLedgerStats = async (
       $group: {
         _id: null,
         totalIncome: {
-          $sum: { $cond: [{ $eq: ['$direction', 'IN'] }, '$amount', 0] },
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ['$direction', 'IN'] },
+                  { $ne: ['$type', 'STUDENT_PAYMENT'] },
+                ],
+              },
+              '$amount',
+              0,
+            ],
+          },
         },
         totalExpense: {
           $sum: { $cond: [{ $eq: ['$direction', 'OUT'] }, '$amount', 0] },

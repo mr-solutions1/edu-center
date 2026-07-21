@@ -27,6 +27,36 @@ export const FinancialCalculationService = {
   },
 
   /**
+   * Calculates total car recovery revenue for a list of lessons, resolving settings lookups efficiently (No N+1)
+   */
+  calculateCarRecoveryForLessons: async (lessons) => {
+    if (!lessons || lessons.length === 0) {
+      return 0;
+    }
+
+    let carRecovery = 0;
+    const tenantRates = new Map();
+
+    for (const l of lessons) {
+      if (l.teacherId?.usesInstituteCar) {
+        const tenantId = l.teacherId.tenantId?.toString() || 'default';
+        let rate = tenantRates.get(tenantId);
+
+        if (rate === undefined) {
+          rate = await SettingsService.getTransportationDeductionRate(
+            l.teacherId.tenantId || null
+          );
+          tenantRates.set(tenantId, rate);
+        }
+
+        carRecovery += rate;
+      }
+    }
+
+    return carRecovery;
+  },
+
+  /**
    * Calculates teacher earnings and institute revenue for a given lesson (scheduled or completed)
    */
   calculateLessonEarnings: async (lesson) => {
@@ -54,37 +84,54 @@ export const FinancialCalculationService = {
 
     if (isDbConnected || isMocked) {
       try {
-        reg = await StudentRegistration.findOne({
-          studentId: lesson.studentId,
-          teacherId: lesson.teacherId,
-        });
+        if (lesson.registrationId) {
+          reg = await StudentRegistration.findById(lesson.registrationId);
+        } else {
+          // Locate registration through relationships (studentId, teacherId, and subject)
+          const matchQuery = { studentId: lesson.studentId };
+          if (lesson.teacherId) matchQuery.teacherId = lesson.teacherId;
+          if (lesson.subject) matchQuery.subject = lesson.subject;
+
+          // Attempt to locate an active registration matching the criteria first
+          reg = await StudentRegistration.findOne({ ...matchQuery, status: 'ACTIVE' }).sort({ registrationDate: -1 });
+          if (!reg) {
+            // Fallback to any registration matching the criteria sorted by date
+            reg = await StudentRegistration.findOne(matchQuery).sort({ registrationDate: -1 });
+          }
+        }
       } catch (err) {
         // Safe fallback for unseeded database tests
       }
     }
 
+    let hasSnapshot = false;
     if (reg) {
       if (typeof reg.pricePerHour === 'number' && reg.pricePerHour > 0) {
         stageHourlyRate = reg.pricePerHour;
+        hasSnapshot = true;
       }
       if (typeof reg.teacherPercentageSnapshot === 'number') {
         teacherPercentage = reg.teacherPercentageSnapshot;
+        hasSnapshot = true;
       }
     }
 
-    // Fallback to live setting stage rates only if frozen snap is missing
-    if (!reg || typeof reg.pricePerHour !== 'number' || reg.pricePerHour <= 0) {
+    // 2. CLEARLY ISOLATED AND DOCUMENTED FALLBACK PATH FOR LEGACY DATA
+    // Fall back to dynanic stage rates / live settings only if absolutely no historical registration snapshot is found.
+    if (!hasSnapshot) {
       if (lesson.educationalLevel) {
         stageHourlyRate = await SettingsService.getStageHourlyRate(
           tenantId,
           lesson.educationalLevel
         );
+      } else {
+        stageHourlyRate = teacher.hourlyRate || 0;
       }
     }
 
     // Determine Teacher Percentage: Snapshot takes priority, then teacher-specific, then default settings percentage
     let teacherPct = 0.75;
-    if (typeof teacherPercentage === 'number') {
+    if (hasSnapshot && typeof teacherPercentage === 'number') {
       teacherPct = teacherPercentage / 100;
     } else if (typeof teacher.teacherPercentage === 'number' && teacher.teacherPercentage > 0) {
       teacherPct = teacher.teacherPercentage; // teacher.teacherPercentage is already stored as a decimal (e.g. 0.85)

@@ -11,6 +11,7 @@ import Student from '../students/student.model.js';
 import Teacher from '../teachers/teacher.model.js';
 import { SettingsService } from '../tenants/SettingsService.js';
 import AccountingService from '../ledger/accounting.service.js';
+import { FinancialCalculationService } from '../ledger/FinancialCalculationService.js';
 
 /**
  * @desc    Get enterprise double-entry financial statements (Balance Sheet, Income Statement, Cash Flow)
@@ -100,8 +101,19 @@ export const getOverview = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: null,
-        totalIncome: {
-          $sum: { $cond: [{ $eq: ['$direction', 'IN'] }, '$amount', 0] },
+        totalRevenue: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ['$direction', 'IN'] },
+                  { $ne: ['$type', 'STUDENT_PAYMENT'] },
+                ],
+              },
+              '$amount',
+              0,
+            ],
+          },
         },
         totalExpense: {
           $sum: { $cond: [{ $eq: ['$direction', 'OUT'] }, '$amount', 0] },
@@ -115,25 +127,17 @@ export const getOverview = asyncHandler(async (req, res) => {
     },
   ]);
 
-  const monthlyRevenue = currentMonthLedger[0]?.totalIncome || 0;
+  const monthlyRevenue = currentMonthLedger[0]?.totalRevenue || 0;
   const monthlyExpenses = currentMonthLedger[0]?.totalExpense || 0;
   const teacherCost = currentMonthLedger[0]?.teacherPayments || 0;
 
-  // Calculate Car Recovery from completed lessons of teachers using institute car this month
+  // Calculate Car Recovery from completed lessons of teachers using institute car this month (delegated to Domain Service - No N+1 queries)
   const completedLessonsThisMonth = await Lesson.find({
     lessonDate: { $gte: startOfMonth, $lte: endOfMonth },
     status: 'COMPLETED',
   }).populate('teacherId');
 
-  let carRecovery = 0;
-  for (const l of completedLessonsThisMonth) {
-    if (l.teacherId?.usesInstituteCar) {
-      const rate = await SettingsService.getTransportationDeductionRate(
-        l.teacherId.tenantId
-      );
-      carRecovery += rate;
-    }
-  }
+  const carRecovery = await FinancialCalculationService.calculateCarRecoveryForLessons(completedLessonsThisMonth);
 
   const instituteProfit = monthlyRevenue - monthlyExpenses;
 
@@ -147,8 +151,19 @@ export const getOverview = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: null,
-        totalIncome: {
-          $sum: { $cond: [{ $eq: ['$direction', 'IN'] }, '$amount', 0] },
+        totalRevenue: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ['$direction', 'IN'] },
+                  { $ne: ['$type', 'STUDENT_PAYMENT'] },
+                ],
+              },
+              '$amount',
+              0,
+            ],
+          },
         },
         totalExpense: {
           $sum: { $cond: [{ $eq: ['$direction', 'OUT'] }, '$amount', 0] },
@@ -156,7 +171,7 @@ export const getOverview = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  const prevRevenue = prevMonthLedger[0]?.totalIncome || 0;
+  const prevRevenue = prevMonthLedger[0]?.totalRevenue || 0;
   const prevExpenses = prevMonthLedger[0]?.totalExpense || 0;
   const prevProfit = prevRevenue - prevExpenses;
 

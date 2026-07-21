@@ -124,14 +124,14 @@ export const ApprovalService = {
         );
       }
 
-      // Append signature
+      // Append signature for the current level only
       request.signatures.push({
         userId,
         role: userRole,
         signedAt: new Date(),
       });
 
-      // Increment level
+      // Increment level by exactly 1
       request.currentLevel += 1;
 
       // Check if all levels are signed

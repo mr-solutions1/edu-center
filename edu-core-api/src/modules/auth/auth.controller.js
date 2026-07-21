@@ -55,11 +55,6 @@ export const login = asyncHandler(async (req, res) => {
   const ipAddress = req.ip;
   const userAgent = req.get('user-agent');
 
-  console.log(
-    '[Forensic Login Audit] Initiating login attempt for email:',
-    email
-  );
-
   const result = await authService.login(email, password, ipAddress, userAgent);
 
   const { user, accessToken, refreshToken, mfaRequired, mfaToken } = result;
@@ -78,21 +73,6 @@ export const login = asyncHandler(async (req, res) => {
     });
     return;
   }
-
-  console.log(
-    '[Forensic Login Audit] Authentication successful for user ID:',
-    user._id
-  );
-  console.log(
-    '[Forensic Login Audit] Setting refresh token cookie with options:',
-    {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: (parseInt(env.JWT_REFRESH_EXPIRES_IN) || 7) * 24 * 60 * 60 * 1000,
-      domain: env.COOKIE_DOMAIN || undefined,
-    }
-  );
 
   setRefreshCookie(res, refreshToken);
 

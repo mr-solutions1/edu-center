@@ -20,6 +20,8 @@ export const lessonSchema = z.object({
   lessonPrice: z.number({ required_error: 'السعر مطلوب' }).min(0),
   educationalLevel: z.string().optional(),
   notes: z.string().optional(),
+  registrationId: z.string().optional(),
+  subject: z.string().optional(),
 });
 
 export const updateStatusSchema = z.object({

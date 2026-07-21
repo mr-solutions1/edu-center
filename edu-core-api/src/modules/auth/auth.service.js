@@ -20,26 +20,6 @@ export const login = async (email, password, ipAddress, userAgent) => {
     '+passwordHash loginAttempts lockUntil isActive deletedAt tokenVersion tenantId role mfaEnabled'
   );
 
-  // Forensic debugging logs for authentication troubleshooting
-  console.log('[Forensic Auth Audit] Login details:', {
-    email,
-    userFound: !!user,
-  });
-
-  if (user) {
-    console.log('[Forensic Auth Audit] User document state:', {
-      userId: user._id,
-      isActive: user.isActive,
-      deletedAt: user.deletedAt,
-      passwordHashExists: !!user.passwordHash,
-      tokenVersion: user.tokenVersion,
-      tenantId: user.tenantId,
-      role: user.role,
-      loginAttempts: user.loginAttempts,
-      isLocked: user.isLocked,
-    });
-  }
-
   const genericErrorMsg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
 
   if (!user) {
@@ -58,9 +38,6 @@ export const login = async (email, password, ipAddress, userAgent) => {
   }
 
   const isPasswordValid = await user.comparePassword(password);
-  console.log('[Forensic Auth Audit] Password comparison result:', {
-    isPasswordValid,
-  });
 
   if (!isPasswordValid) {
     // Increment login attempts with exponential backoff for lock duration
