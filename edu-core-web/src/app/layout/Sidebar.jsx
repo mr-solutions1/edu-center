@@ -16,6 +16,8 @@ import {
   ChevronLeft,
   ChevronDown,
   X,
+  Shield,
+  Home,
 } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import { NavLink, Link } from 'react-router-dom';
