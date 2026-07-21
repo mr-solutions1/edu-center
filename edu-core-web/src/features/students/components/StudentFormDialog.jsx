@@ -298,11 +298,11 @@ const StudentFormDialog = ({
       saveText={initialData ? 'تحديث' : 'إضافة وتفعيل الحساب'}
       isSubmitting={isSubmitting}
       formId="student-form"
-      className="max-w-5xl md:max-w-6xl w-[95vw] min-h-[80vh] flex flex-col justify-between"
+      className="max-w-[85vw] xl:max-w-[75vw] min-h-[82vh] flex flex-col justify-between"
     >
       {/* Dynamic Form Alert banner if any errors exist */}
       {Object.keys(errors).length > 0 && (
-        <div className="bg-red-50 border border-red-200 text-red-800 text-xs p-4 rounded-xl flex items-start gap-2 mb-4 mx-4" dir="rtl">
+        <div className="bg-red-50 border border-red-200 text-red-800 text-xs p-4 rounded-xl flex items-start gap-2 mb-4 mx-6" dir="rtl">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
           <div>
             <p className="font-bold mb-1">يرجى تصحيح الأخطاء التالية قبل المتابعة:</p>
@@ -317,63 +317,63 @@ const StudentFormDialog = ({
         </div>
       )}
 
-      {/* Visual Navigation Tabs - Wider and More Elegant */}
-      <div className="flex border-b mb-6 justify-around text-sm font-semibold mx-4 bg-slate-50/50 p-2 rounded-xl" dir="rtl">
+      {/* Visual Navigation Tabs - Spacious Widescreen Row tabs */}
+      <div className="flex border-b mb-6 justify-around text-sm font-semibold mx-6 bg-slate-50/70 p-1.5 rounded-2xl" dir="rtl">
         <button
           type="button"
           onClick={() => setActiveTab('personal')}
-          className={`flex items-center justify-center gap-2 pb-3 pt-3 border-b-2 px-6 transition-all duration-300 w-full rounded-lg ${
+          className={`flex items-center justify-center gap-2 pb-3.5 pt-3.5 border-b-2 px-8 transition-all duration-300 w-full rounded-xl ${
             activeTab === 'personal'
               ? 'border-primary text-primary font-bold bg-white shadow-sm'
               : 'border-transparent text-muted-foreground hover:text-slate-700'
           }`}
         >
           <User className="h-5 w-5" />
-          <span>١. ملف الطالب وعنوانه</span>
+          <span className="text-sm">١. ملف الطالب وعنوانه السكني</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('academic')}
-          className={`flex items-center justify-center gap-2 pb-3 pt-3 border-b-2 px-6 transition-all duration-300 w-full rounded-lg ${
+          className={`flex items-center justify-center gap-2 pb-3.5 pt-3.5 border-b-2 px-8 transition-all duration-300 w-full rounded-xl ${
             activeTab === 'academic'
               ? 'border-primary text-primary font-bold bg-white shadow-sm'
               : 'border-transparent text-muted-foreground hover:text-slate-700'
           }`}
         >
           <BookOpen className="h-5 w-5" />
-          <span>٢. تسجيل المادة والمعلم (اختياري)</span>
+          <span className="text-sm">٢. تسجيل المادة والمعلم والدورة (اختياري)</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('financial')}
-          className={`flex items-center justify-center gap-2 pb-3 pt-3 border-b-2 px-6 transition-all duration-300 w-full rounded-lg ${
+          className={`flex items-center justify-center gap-2 pb-3.5 pt-3.5 border-b-2 px-8 transition-all duration-300 w-full rounded-xl ${
             activeTab === 'financial'
               ? 'border-primary text-primary font-bold bg-white shadow-sm'
               : 'border-transparent text-muted-foreground hover:text-slate-700'
           }`}
         >
           <CreditCard className="h-5 w-5" />
-          <span>٣. الرسوم والمدفوعات (اختياري)</span>
+          <span className="text-sm">٣. الرسوم الشهرية والشحن المالي (اختياري)</span>
         </button>
       </div>
 
       <form
         id="student-form"
         onSubmit={handleSubmit(onFormSubmit)}
-        className="space-y-6 max-h-[65vh] overflow-y-auto px-6 text-right flex-1"
+        className="space-y-6 max-h-[66vh] overflow-y-auto px-8 text-right flex-1"
         dir="rtl"
       >
         {/* Step 1: Personal and Contact */}
         {activeTab === 'personal' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Core Personal Details */}
+            {/* Core Personal Details - Broad 3 columns */}
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm">
               <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4">
                 <User className="h-5 w-5 text-primary" />
                 <span>البيانات الأساسية والشخصية للطالب</span>
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="studentName" className="font-semibold text-slate-700 text-sm">اسم الطالب (ثنائي/ثلاثي) <span className="text-red-500">*</span></Label>
                   <Input
@@ -401,9 +401,7 @@ const StudentFormDialog = ({
                     <p className="text-xs text-red-500">{errors.parentName.message}</p>
                   )}
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Consolidated Unified Phone Input */}
                 <div className="space-y-2">
                   <Label htmlFor="unifiedPhone" className="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
@@ -419,16 +417,16 @@ const StudentFormDialog = ({
                   {errors.parentPhone && (
                     <p className="text-xs text-red-500">{errors.parentPhone.message}</p>
                   )}
-                  <p className="text-[11px] text-muted-foreground">سيتم تطبيق هذا الرقم كـ (رقم الطالب، هاتف ولي الأمر، والواتساب تلقائياً).</p>
+                  <p className="text-[10px] text-muted-foreground">يطبق تلقائياً كـ (رقم الطالب، هاتف ولي الأمر، والواتساب).</p>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="siblingGroup" className="font-semibold text-slate-700 text-sm">كود مجموعة الأشقاء (اختياري)</Label>
                   <Input id="siblingGroup" {...register('siblingGroup')} placeholder="مثال: FAM-01" className="bg-white h-11 text-sm rounded-lg" />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="dateOfBirth" className="font-semibold text-slate-700 text-sm">تاريخ الميلاد</Label>
                   <Input id="dateOfBirth" type="date" {...register('dateOfBirth')} className="bg-white h-11 text-sm rounded-lg" />
@@ -454,14 +452,14 @@ const StudentFormDialog = ({
               </div>
             </div>
 
-            {/* Academic Information */}
+            {/* Academic Information - Broad Horizontal layout */}
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm">
               <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4">
                 <School className="h-5 w-5 text-primary" />
                 <span>البيانات الأكاديمية والمدرسية</span>
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="grade" className="font-semibold text-slate-700 text-sm">المرحلة الدراسية <span className="text-red-500">*</span></Label>
                   <select
@@ -519,7 +517,7 @@ const StudentFormDialog = ({
                 <div className="space-y-2">
                   <Label htmlFor="studentSpecialization" className="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
                     <Award className="h-4 w-4 text-primary" />
-                    <span>التخصص الدراسي للطالب</span>
+                    <span>التخصص الدراسي للطالب (علمي / أدبي)</span>
                   </Label>
                   <Input
                     id="studentSpecialization"
@@ -543,14 +541,14 @@ const StudentFormDialog = ({
               </div>
             </div>
 
-            {/* Address Details */}
+            {/* Address Details - Spacious horizontally */}
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-6 shadow-sm">
               <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 border-b pb-3 mb-4">
                 <MapPin className="h-5 w-5 text-primary" />
-                <span>العنوان الجغرافي والسكن داخل الكويت</span>
+                <span>العنوان الجغرافي والسكن داخل دولة الكويت</span>
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="governorate" className="font-semibold text-slate-700 text-sm">المحافظة <span className="text-red-500">*</span></Label>
                   <select
@@ -580,19 +578,19 @@ const StudentFormDialog = ({
                     ))}
                   </select>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+                <div className="space-y-2 lg:col-span-2">
                   <Label htmlFor="address" className="font-semibold text-slate-700 text-sm">العنوان بالتفصيل (القطعة، الشارع، المنزل) <span className="text-red-500">*</span></Label>
                   <Input id="address" {...register('address')} placeholder="القطعة 3، الشارع 5، المنزل 12" className="bg-white h-11 text-sm rounded-lg" />
                   {errors.address && (
                     <p className="text-xs text-red-500">{errors.address.message}</p>
                   )}
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="googleMapsUrl" className="font-semibold text-slate-700 text-sm">رابط الموقع (Google Maps)</Label>
+                  <Label htmlFor="googleMapsUrl" className="font-semibold text-slate-700 text-sm">رابط الموقع الجغرافي على الخرائط (Google Maps)</Label>
                   <Input
                     id="googleMapsUrl"
                     {...register('googleMapsUrl')}
@@ -628,7 +626,7 @@ const StudentFormDialog = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('academic')}
-                className="bg-primary text-white hover:bg-primary/90 px-10 py-3 rounded-xl font-bold shadow-md transition-all text-sm flex items-center gap-2"
+                className="bg-primary text-white hover:bg-primary/90 px-10 py-3.5 rounded-xl font-bold shadow-md transition-all text-sm flex items-center gap-2"
               >
                 <span>متابعة للتسجيل الأكاديمي وحجز الحصص</span>
                 <span>⟵</span>
@@ -661,7 +659,7 @@ const StudentFormDialog = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="teacherId" className="font-semibold text-slate-700 text-sm">المعلم المخصص للمادة <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="teacherId" className="font-semibold text-slate-700 text-sm">المعلم المخصص لتدريس المادة للطالب <span className="text-red-500">*</span></Label>
                   <select
                     id="teacherId"
                     {...register('teacherId')}
@@ -683,15 +681,15 @@ const StudentFormDialog = ({
 
               {/* Dynamic Portfolios info */}
               {selectedTeacherObj && (
-                <div className="bg-white p-4 rounded-xl border border-slate-200 mt-2 space-y-2 text-sm text-slate-700 shadow-sm animate-in slide-in-from-top-2">
-                  <p className="font-bold text-primary flex items-center gap-1.5 border-b pb-1.5 text-xs">
-                    <User className="h-4 w-4" />
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 mt-2 space-y-3 text-sm text-slate-700 shadow-sm animate-in slide-in-from-top-2">
+                  <p className="font-bold text-primary flex items-center gap-2 border-b pb-2 text-sm">
+                    <User className="h-5 w-5" />
                     <span>الملف التعريفي والمهني للمعلم المختار:</span>
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs pt-1">
-                    <p>🎓 التخصص الدراسي: <span className="font-bold text-slate-900">{selectedTeacherObj.department || 'عام'}</span></p>
-                    <p>📚 المواد المسجلة: <span className="font-bold text-slate-900">{selectedTeacherObj.subjects?.join('، ') || 'غير محدد'}</span></p>
-                    <p>🚗 مواصلات المعهد: <span className={`font-bold ${selectedTeacherObj.usesInstituteCar ? 'text-amber-600' : 'text-slate-500'}`}>{selectedTeacherObj.usesInstituteCar ? 'نعم (يستخدم سيارة الأكاديمية)' : 'لا'}</span></p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-1 text-sm">
+                    <p className="bg-slate-50 p-2.5 rounded-lg">🎓 التخصص الدراسي: <span className="font-bold text-slate-900">{selectedTeacherObj.department || 'عام'}</span></p>
+                    <p className="bg-slate-50 p-2.5 rounded-lg">📚 المواد المسجلة: <span className="font-bold text-slate-900">{selectedTeacherObj.subjects?.join('، ') || 'غير محدد'}</span></p>
+                    <p className="bg-slate-50 p-2.5 rounded-lg">🚗 مواصلات المعهد: <span className={`font-bold ${selectedTeacherObj.usesInstituteCar ? 'text-amber-600' : 'text-slate-500'}`}>{selectedTeacherObj.usesInstituteCar ? 'نعم (يستخدم سيارة الأكاديمية)' : 'لا'}</span></p>
                   </div>
                 </div>
               )}
@@ -844,7 +842,7 @@ const StudentFormDialog = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('financial')}
-                className="bg-primary text-white hover:bg-primary/90 px-10 py-3 rounded-xl font-bold shadow-md transition-all text-sm flex items-center gap-2"
+                className="bg-primary text-white hover:bg-primary/90 px-10 py-3.5 rounded-xl font-bold shadow-md transition-all text-sm flex items-center gap-2"
               >
                 <span>متابعة للمدفوعات والشحن المالي</span>
                 <span>⟵</span>
