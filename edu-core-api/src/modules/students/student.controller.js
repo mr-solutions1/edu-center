@@ -236,18 +236,253 @@ export const deleteRegistration = asyncHandler(async (req, res) => {
 });
 
 export const createStudent = asyncHandler(async (req, res) => {
-  const student = await studentService.createStudent(req.body);
+  const {
+    // Student basic fields
+    studentName,
+    studentPhone,
+    parentName,
+    parentPhone,
+    whatsapp,
+    governorate,
+    area,
+    address,
+    googleMapsUrl,
+    school,
+    grade,
+    classYear,
+    curriculum,
+    subjects,
+    preferredTeacherGender,
+    preferredSchedule,
+    notes,
+    dateOfBirth,
+    enrollmentDate,
+    status,
+    monthlyFee,
+    userId,
+    siblingGroup,
+
+    // Optional Registration Fields
+    subject,
+    purchasedHours,
+    pricePerHour,
+    teacherId,
+    day1,
+    from1,
+    to1,
+    day2,
+    from2,
+    to2,
+
+    // Optional Initial Payment Fields
+    initialPaidAmount,
+    paymentMethod,
+  } = req.body;
+
+  const result = await withTransaction(async (session) => {
+    // 1. Create Student
+    const studentCode = await generateCode('studentCode', 'STD', session);
+    const convertedMonthlyFee = mongoose.model('Student').schema.path('monthlyFee')
+      ? (monthlyFee !== undefined ? (parseFloat(monthlyFee) * 1000) : 0) // convert to fils (or use helper)
+      : 0;
+
+    const studentData = {
+      studentName,
+      studentPhone,
+      parentName,
+      parentPhone,
+      whatsapp,
+      governorate,
+      area,
+      address,
+      googleMapsUrl,
+      school,
+      grade,
+      classYear,
+      curriculum,
+      subjects: subjects || [],
+      preferredTeacherGender,
+      preferredSchedule,
+      notes,
+      dateOfBirth,
+      enrollmentDate,
+      status,
+      monthlyFee: convertedMonthlyFee,
+      userId,
+      siblingGroup,
+      studentCode,
+    };
+
+    const [student] = await mongoose.model('Student').create(
+      [studentData],
+      session ? { session } : {}
+    );
+
+    // Sync Guardian immediately (since it matches on phone numbers)
+    const { GuardianService } = await import('../guardians/guardian.service.js');
+    await GuardianService.syncStudentWithGuardian(student);
+
+    let registration = null;
+    let payment = null;
+
+    // 2. Optional Registration creation inside transaction
+    if (subject && purchasedHours && pricePerHour) {
+      const { priceInFils, discountPct, discountAmount, totalAmount } =
+        await StudentCalculationService.calculateRegistrationTotals(
+          student._id,
+          pricePerHour,
+          purchasedHours,
+          session
+        );
+
+      const tenantId = req.user?.tenantId || null;
+      const teacherPercentageSnapshot = await SettingsService.getTeacherPercentage(tenantId);
+
+      const registrationId = await generateCode('registrationId', 'REG', session);
+
+      const [reg] = await StudentRegistration.create(
+        [
+          {
+            studentId: student._id,
+            registrationId,
+            subject,
+            purchasedHours,
+            pricePerHour: priceInFils,
+            teacherPercentageSnapshot,
+            discountPercentage: discountPct,
+            discountAmount,
+            totalAmount,
+            teacherId: teacherId || null,
+            day1: day1 || null,
+            from1: from1 || null,
+            to1: to1 || null,
+            day2: day2 || null,
+            from2: from2 || null,
+            to2: to2 || null,
+            notes,
+          },
+        ],
+        session ? { session } : {}
+      );
+
+      registration = reg;
+
+      // Record ledger entry for package purchase
+      await recordLedgerEntry(
+        {
+          studentId: student._id,
+          amount: totalAmount,
+          type: 'PACKAGE_PURCHASE',
+          direction: 'IN',
+          referenceId: reg._id,
+          referenceModel: 'StudentRegistration',
+          description: `شراء حزمة ساعات جديدة - ${subject} - ${purchasedHours} ساعة`,
+          performedBy: req.user._id,
+        },
+        session
+      );
+
+      // Record hour transaction in ledger
+      await HourLedgerService.recordHourEntry(
+        {
+          studentId: student._id,
+          registrationId: reg._id,
+          amount: purchasedHours,
+          type: 'PURCHASE',
+          description: `شراء باقة ساعات - مادة ${subject}`,
+          performedBy: req.user._id,
+        },
+        session
+      );
+    }
+
+    // 3. Optional Initial Payment creation inside transaction
+    if (initialPaidAmount && parseFloat(initialPaidAmount) > 0) {
+      const filsAmount = Math.round(parseFloat(initialPaidAmount) * 1000);
+      const PaymentModel = mongoose.model('Payment');
+
+      const [p] = await PaymentModel.create(
+        [
+          {
+            studentId: student._id,
+            amount: filsAmount,
+            status: 'PAID',
+            paymentMethod: paymentMethod || 'CASH',
+            notes: 'دفعة أولى عند التسجيل الجديد',
+            paidDate: new Date(),
+          },
+        ],
+        session ? { session } : {}
+      );
+
+      payment = p;
+
+      // Record Ledger Entry
+      await recordLedgerEntry(
+        {
+          studentId: student._id,
+          amount: filsAmount,
+          type: 'STUDENT_PAYMENT',
+          direction: 'IN',
+          referenceId: p._id,
+          referenceModel: 'Payment',
+          description: `دفعة مالية أولى عند التسجيل - ${p.notes || ''}`,
+          transactionDate: p.paidDate || p.createdAt || new Date(),
+          performedBy: req.user._id,
+        },
+        session
+      );
+    }
+
+    // 4. Run chronological allocation FIFO if we have both registration and payment
+    if (registration && payment) {
+      const PaymentAllocation = mongoose.model('PaymentAllocation');
+      const allocated = Math.min(payment.amount, registration.totalAmount);
+      if (allocated > 0) {
+        registration.paidAmount = allocated;
+        await registration.save({ session });
+
+        await PaymentAllocation.create(
+          [
+            {
+              paymentId: payment._id,
+              registrationId: registration._id,
+              studentId: student._id,
+              amount: allocated,
+              allocatedAt: payment.createdAt || new Date(),
+            },
+          ],
+          session ? { session } : {}
+        );
+      }
+    }
+
+    // Return created entities
+    return { student, registration, payment };
+  });
+
+  // 5. Trigger final recalculation for student aggregates
+  await recalculateStudentBalances(result.student._id, true);
 
   await logAuditTrail(req, {
     action: 'STUDENT_CREATED',
     entityType: 'Student',
-    entityId: student._id,
-    afterState: student.toObject ? student.toObject() : student,
+    entityId: result.student._id,
+    afterState: result.student.toObject ? result.student.toObject() : result.student,
   });
+
+  if (result.registration) {
+    await logAuditTrail(req, {
+      action: 'STUDENT_REGISTRATION_CREATED',
+      entityType: 'StudentRegistration',
+      entityId: result.registration._id,
+      afterState: result.registration.toObject(),
+    });
+  }
 
   res.status(201).json({
     success: true,
-    data: student,
+    data: result.student,
   });
 });
 
