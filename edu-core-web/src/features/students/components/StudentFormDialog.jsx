@@ -14,8 +14,11 @@ import {
   Calendar,
   Settings,
   FileText,
-  Clock
+  Clock,
+  Percent,
+  Car
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { studentSchema } from '../validations/studentSchema';
 import { teacherApi } from '../../teachers/services/teacherApi';
@@ -74,6 +77,7 @@ const StudentFormDialog = ({
   isSubmitting,
 }) => {
   const [activeTab, setActiveTab] = useState('personal');
+  const [percentagePreset, setPercentagePreset] = useState('75');
 
   const {
     register,
@@ -114,6 +118,7 @@ const StudentFormDialog = ({
       subject: '',
       purchasedHours: 10,
       pricePerHour: 10,
+      teacherPercentageSnapshot: 75,
       teacherId: '',
       day1: '',
       from1: '',
@@ -123,6 +128,8 @@ const StudentFormDialog = ({
       to2: '',
       initialPaidAmount: 0,
       paymentMethod: 'CASH',
+      // Additional teacher specific detail overridden at enrollment
+      teacherOwnsCar: 'no',
     },
   });
 
@@ -130,6 +137,7 @@ const StudentFormDialog = ({
   const selectedGovernorate = watch('governorate');
   const unifiedPhoneWatch = watch('unifiedPhone');
   const selectedTeacherId = watch('teacherId');
+  const watchCustomPercentage = watch('teacherPercentageSnapshot');
 
   // Load teachers for the academic assignment section
   const { data: teachersRes } = useQuery({
@@ -149,6 +157,13 @@ const StudentFormDialog = ({
       setValue('whatsapp', unifiedPhoneWatch);
     }
   }, [unifiedPhoneWatch, setValue]);
+
+  // Handle preset change to sync into react-hook-form value
+  useEffect(() => {
+    if (percentagePreset !== 'custom') {
+      setValue('teacherPercentageSnapshot', parseInt(percentagePreset, 10));
+    }
+  }, [percentagePreset, setValue]);
 
   // Handle grade change to auto-set first available classYear
   useEffect(() => {
@@ -211,6 +226,7 @@ const StudentFormDialog = ({
         subject: '',
         purchasedHours: 10,
         pricePerHour: 10,
+        teacherPercentageSnapshot: 75,
         teacherId: '',
         day1: '',
         from1: '',
@@ -220,10 +236,22 @@ const StudentFormDialog = ({
         to2: '',
         initialPaidAmount: 0,
         paymentMethod: 'CASH',
+        teacherOwnsCar: 'no',
       });
+      setPercentagePreset('75');
       setActiveTab('personal');
     }
   }, [open, reset, initialData]);
+
+  // Show a comprehensive validation error alert box if submission is attempted with errors
+  useEffect(() => {
+    const errorKeys = Object.keys(errors);
+    if (errorKeys.length > 0) {
+      toast.error(`هناك أخطاء في النموذج: ${errorKeys.map(k => errors[k]?.message).filter(Boolean).join(', ')}`, {
+        duration: 5000,
+      });
+    }
+  }, [errors]);
 
   const onFormSubmit = (data) => {
     // Sanitize optional registrations / payments values
@@ -263,6 +291,23 @@ const StudentFormDialog = ({
       formId="student-form"
       className="max-w-4xl"
     >
+      {/* Dynamic Form Alert banner if any errors exist */}
+      {Object.keys(errors).length > 0 && (
+        <div className="bg-red-50 border border-red-200 text-red-800 text-xs p-3 rounded-lg flex items-start gap-2 mb-4" dir="rtl">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
+          <div>
+            <p className="font-bold mb-1">يرجى تصحيح الأخطاء التالية قبل المتابعة:</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              {Object.keys(errors).map((key) => (
+                <li key={key}>
+                  {errors[key]?.message || `${key} غير صالح`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {/* Visual Navigation Tabs */}
       <div className="flex border-b mb-6 justify-around text-sm font-semibold" dir="rtl">
         <button
@@ -321,7 +366,7 @@ const StudentFormDialog = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="studentName" className="font-semibold text-slate-700">اسم الطالب (ثنائي/ثلاثي)</Label>
+                  <Label htmlFor="studentName" className="font-semibold text-slate-700">اسم الطالب (ثنائي/ثلاثي) <span className="text-red-500">*</span></Label>
                   <Input
                     id="studentName"
                     {...register('studentName')}
@@ -335,7 +380,7 @@ const StudentFormDialog = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="parentName" className="font-semibold text-slate-700">اسم ولي الأمر</Label>
+                  <Label htmlFor="parentName" className="font-semibold text-slate-700">اسم ولي الأمر <span className="text-red-500">*</span></Label>
                   <Input
                     id="parentName"
                     {...register('parentName')}
@@ -354,7 +399,7 @@ const StudentFormDialog = ({
                 <div className="space-y-2">
                   <Label htmlFor="unifiedPhone" className="font-semibold text-slate-700 flex items-center gap-1">
                     <Phone className="h-3.5 w-3.5 text-primary" />
-                    <span>رقم هاتف التواصل والواتساب الموحد</span>
+                    <span>رقم هاتف التواصل والواتساب الموحد <span className="text-red-500">*</span></span>
                   </Label>
                   <Input
                     id="unifiedPhone"
@@ -362,6 +407,9 @@ const StudentFormDialog = ({
                     placeholder="مثال: 55667788"
                     className="bg-white font-semibold tracking-wide"
                   />
+                  {errors.parentPhone && (
+                    <p className="text-xs text-red-500">{errors.parentPhone.message}</p>
+                  )}
                   <p className="text-[10px] text-muted-foreground">سيتم تطبيق هذا الرقم كـ (رقم الطالب، هاتف ولي الأمر، والواتساب تلقائياً).</p>
                 </div>
 
@@ -406,7 +454,7 @@ const StudentFormDialog = ({
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="grade" className="font-semibold text-slate-700">المرحلة الدراسية</Label>
+                  <Label htmlFor="grade" className="font-semibold text-slate-700">المرحلة الدراسية <span className="text-red-500">*</span></Label>
                   <select
                     id="grade"
                     {...register('grade')}
@@ -423,7 +471,7 @@ const StudentFormDialog = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="classYear" className="font-semibold text-slate-700">الصف الدراسي</Label>
+                  <Label htmlFor="classYear" className="font-semibold text-slate-700">الصف الدراسي <span className="text-red-500">*</span></Label>
                   <select
                     id="classYear"
                     {...register('classYear')}
@@ -438,7 +486,7 @@ const StudentFormDialog = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="curriculum" className="font-semibold text-slate-700">المنهج الدراسي</Label>
+                  <Label htmlFor="curriculum" className="font-semibold text-slate-700">المنهج الدراسي <span className="text-red-500">*</span></Label>
                   <select
                     id="curriculum"
                     {...register('curriculum')}
@@ -482,7 +530,7 @@ const StudentFormDialog = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="governorate" className="font-semibold text-slate-700">المحافظة</Label>
+                  <Label htmlFor="governorate" className="font-semibold text-slate-700">المحافظة <span className="text-red-500">*</span></Label>
                   <select
                     id="governorate"
                     {...register('governorate')}
@@ -497,7 +545,7 @@ const StudentFormDialog = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="area" className="font-semibold text-slate-700">المنطقة</Label>
+                  <Label htmlFor="area" className="font-semibold text-slate-700">المنطقة <span className="text-red-500">*</span></Label>
                   <select
                     id="area"
                     {...register('area')}
@@ -514,7 +562,7 @@ const StudentFormDialog = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="address" className="font-semibold text-slate-700">العنوان بالتفصيل (القطعة، الشارع، المنزل)</Label>
+                  <Label htmlFor="address" className="font-semibold text-slate-700">العنوان بالتفصيل (القطعة، الشارع، المنزل) <span className="text-red-500">*</span></Label>
                   <Input id="address" {...register('address')} placeholder="القطعة 3، الشارع 5، المنزل 12" className="bg-white" />
                   {errors.address && (
                     <p className="text-xs text-red-500">{errors.address.message}</p>
@@ -603,15 +651,62 @@ const StudentFormDialog = ({
                       </option>
                     ))}
                   </select>
-                  {selectedTeacherObj && (
-                    <div className="flex gap-2 mt-1 items-center">
-                      <span className="text-xs bg-slate-100 text-slate-800 px-3 py-1 rounded-full flex items-center gap-1 border border-slate-200">
-                        {selectedTeacherObj.usesInstituteCar ? '🚗 يستخدم سيارة الأكاديمية' : '🚗 لا يستخدم سيارة الأكاديمية'}
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
+
+              {/* Dynamic Car Ownership option for the selected teacher */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="teacherOwnsCar" className="font-semibold text-slate-700 flex items-center gap-1">
+                    <Car className="h-4 w-4 text-primary" />
+                    <span>هل المعلم لديه سيارة؟ (مواصلات المعلم)</span>
+                  </Label>
+                  <select
+                    id="teacherOwnsCar"
+                    {...register('teacherOwnsCar')}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="yes">نعم (يسير بسيارته الخاصة)</option>
+                    <option value="no">لا (يستخدم مواصلات عامة أو سيارة المركز)</option>
+                  </select>
+                </div>
+
+                {/* Dropdown for Commission percentages + custom inputs */}
+                <div className="space-y-2">
+                  <Label htmlFor="percentagePreset" className="font-semibold text-slate-700 flex items-center gap-1">
+                    <Percent className="h-4 w-4 text-primary" />
+                    <span>نسبة المعلم مقابل المعهد (عمولة الباقة)</span>
+                  </Label>
+                  <select
+                    id="percentagePreset"
+                    value={percentagePreset}
+                    onChange={(e) => setPercentagePreset(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="75">٧٥٪ للمعلم مقابل ٢٥٪ للمعهد</option>
+                    <option value="80">٨٠٪ للمعلم مقابل ٢٠٪ للمعهد</option>
+                    <option value="custom">نسبة مخصصة يدوياً (Custom)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Custom manual Percentage input display conditionally */}
+              {percentagePreset === 'custom' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-primary/5 p-3 rounded-lg border border-primary/20 animate-in fade-in">
+                  <div className="space-y-2">
+                    <Label htmlFor="teacherPercentageSnapshot" className="font-bold text-primary">أدخل نسبة المعلم المخصصة يدويًا (٪)</Label>
+                    <Input
+                      id="teacherPercentageSnapshot"
+                      type="number"
+                      min="0"
+                      max="100"
+                      {...register('teacherPercentageSnapshot')}
+                      className="bg-white"
+                    />
+                    <p className="text-[10px] text-muted-foreground">سيحصل المعهد على النسبة المتبقية تلقائياً ({100 - (watchCustomPercentage || 0)}٪).</p>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
