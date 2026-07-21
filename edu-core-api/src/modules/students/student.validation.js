@@ -48,6 +48,41 @@ export const studentSchema = z.object({
   monthlyFee: z.number().min(0).optional(),
   userId: z.string().optional(),
   siblingGroup: z.string().optional().nullable(),
+  // Combined Optional Registration Fields
+  subject: z.string().optional().or(z.literal('')),
+  purchasedHours: z.coerce.number().min(0).optional(),
+  pricePerHour: z.coerce.number().min(0).optional(),
+  teacherPercentageSnapshot: z.coerce.number().min(0).max(100).optional(),
+  teacherId: z.string().nullable().optional().or(z.literal('')),
+  day1: z.string().nullable().optional().or(z.literal('')),
+  from1: z
+    .string()
+    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'توقيت البداية 1 غير صالح')
+    .nullable()
+    .optional()
+    .or(z.literal('')),
+  to1: z
+    .string()
+    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'توقيت النهاية 1 غير صالح')
+    .nullable()
+    .optional()
+    .or(z.literal('')),
+  day2: z.string().nullable().optional().or(z.literal('')),
+  from2: z
+    .string()
+    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'توقيت البداية 2 غير صالح')
+    .nullable()
+    .optional()
+    .or(z.literal('')),
+  to2: z
+    .string()
+    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'توقيت النهاية 2 غير صالح')
+    .nullable()
+    .optional()
+    .or(z.literal('')),
+  // Combined Optional Initial Payment Fields
+  initialPaidAmount: z.coerce.number().min(0).optional(),
+  paymentMethod: z.string().optional().or(z.literal('')),
 });
 
 export const updateStudentSchema = studentSchema.partial();
