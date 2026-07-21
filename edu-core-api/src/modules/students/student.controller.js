@@ -325,75 +325,105 @@ export const createStudent = asyncHandler(async (req, res) => {
     let registration = null;
     let payment = null;
 
-    // 2. Optional Registration creation inside transaction
+    // 2. Optional Registration creation inside transaction (Handles both single subject & dynamic array lists)
+    const academicRegistrations = req.body.academicRegistrations || [];
     if (subject && purchasedHours && pricePerHour) {
-      const { priceInFils, discountPct, discountAmount, totalAmount } =
-        await StudentCalculationService.calculateRegistrationTotals(
-          student._id,
-          pricePerHour,
-          purchasedHours,
+      academicRegistrations.push({
+        subject,
+        purchasedHours,
+        pricePerHour,
+        teacherPercentageSnapshot: req.body.teacherPercentageSnapshot || 75,
+        teacherId: teacherId || null,
+        day1: day1 || null,
+        from1: from1 || null,
+        to1: to1 || null,
+        day2: day2 || null,
+        from2: from2 || null,
+        to2: to2 || null,
+      });
+    }
+
+    const createdRegistrations = [];
+
+    for (const academicReg of academicRegistrations) {
+      if (academicReg.subject && academicReg.purchasedHours && academicReg.pricePerHour) {
+        const { priceInFils, discountPct, discountAmount, totalAmount } =
+          await StudentCalculationService.calculateRegistrationTotals(
+            student._id,
+            academicReg.pricePerHour,
+            academicReg.purchasedHours,
+            session
+          );
+
+        const tenantId = req.user?.tenantId || null;
+        const defaultPercentage = await SettingsService.getTeacherPercentage(tenantId);
+        const currentPercentageSnapshot = academicReg.teacherPercentageSnapshot !== undefined
+          ? academicReg.teacherPercentageSnapshot
+          : defaultPercentage;
+
+        const registrationId = await generateCode('registrationId', 'REG', session);
+
+        const [reg] = await StudentRegistration.create(
+          [
+            {
+              studentId: student._id,
+              registrationId,
+              subject: academicReg.subject,
+              purchasedHours: academicReg.purchasedHours,
+              pricePerHour: priceInFils,
+              teacherPercentageSnapshot: currentPercentageSnapshot,
+              discountPercentage: discountPct,
+              discountAmount,
+              totalAmount,
+              teacherId: academicReg.teacherId || null,
+              day1: academicReg.day1 || null,
+              from1: academicReg.from1 || null,
+              to1: academicReg.to1 || null,
+              day2: academicReg.day2 || null,
+              from2: academicReg.from2 || null,
+              to2: academicReg.to2 || null,
+              day3: academicReg.day3 || null,
+              from3: academicReg.from3 || null,
+              to3: academicReg.to3 || null,
+              notes,
+            },
+          ],
+          session ? { session } : {}
+        );
+
+        createdRegistrations.push(reg);
+        if (!registration) {
+          registration = reg; // reference first created registration for payment allocation fallback
+        }
+
+        // Record ledger entry for package purchase
+        await recordLedgerEntry(
+          {
+            studentId: student._id,
+            amount: totalAmount,
+            type: 'PACKAGE_PURCHASE',
+            direction: 'IN',
+            referenceId: reg._id,
+            referenceModel: 'StudentRegistration',
+            description: `شراء حزمة ساعات جديدة - ${academicReg.subject} - ${academicReg.purchasedHours} ساعة`,
+            performedBy: req.user._id,
+          },
           session
         );
 
-      const tenantId = req.user?.tenantId || null;
-      const teacherPercentageSnapshot = await SettingsService.getTeacherPercentage(tenantId);
-
-      const registrationId = await generateCode('registrationId', 'REG', session);
-
-      const [reg] = await StudentRegistration.create(
-        [
+        // Record hour transaction in ledger
+        await HourLedgerService.recordHourEntry(
           {
             studentId: student._id,
-            registrationId,
-            subject,
-            purchasedHours,
-            pricePerHour: priceInFils,
-            teacherPercentageSnapshot,
-            discountPercentage: discountPct,
-            discountAmount,
-            totalAmount,
-            teacherId: teacherId || null,
-            day1: day1 || null,
-            from1: from1 || null,
-            to1: to1 || null,
-            day2: day2 || null,
-            from2: from2 || null,
-            to2: to2 || null,
-            notes,
+            registrationId: reg._id,
+            amount: academicReg.purchasedHours,
+            type: 'PURCHASE',
+            description: `شراء باقة ساعات - مادة ${academicReg.subject}`,
+            performedBy: req.user._id,
           },
-        ],
-        session ? { session } : {}
-      );
-
-      registration = reg;
-
-      // Record ledger entry for package purchase
-      await recordLedgerEntry(
-        {
-          studentId: student._id,
-          amount: totalAmount,
-          type: 'PACKAGE_PURCHASE',
-          direction: 'IN',
-          referenceId: reg._id,
-          referenceModel: 'StudentRegistration',
-          description: `شراء حزمة ساعات جديدة - ${subject} - ${purchasedHours} ساعة`,
-          performedBy: req.user._id,
-        },
-        session
-      );
-
-      // Record hour transaction in ledger
-      await HourLedgerService.recordHourEntry(
-        {
-          studentId: student._id,
-          registrationId: reg._id,
-          amount: purchasedHours,
-          type: 'PURCHASE',
-          description: `شراء باقة ساعات - مادة ${subject}`,
-          performedBy: req.user._id,
-        },
-        session
-      );
+          session
+        );
+      }
     }
 
     // 3. Optional Initial Payment creation inside transaction
