@@ -7,6 +7,10 @@ import {
 } from '../../shared/constants/enums.js';
 
 export const studentSchema = z.object({
+  studentName: z
+    .string({ required_error: 'اسم الطالب مطلوب' })
+    .min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
+  studentPhone: z.string().optional().or(z.literal('')),
   parentName: z
     .string({ required_error: 'اسم ولي الأمر مطلوب' })
     .min(3, 'الاسم يجب أن يكون 3 أحرف على الأقل'),
@@ -14,7 +18,8 @@ export const studentSchema = z.object({
     .string({ required_error: 'رقم الهاتف مطلوب' })
     .regex(/^[0-9+]{8,15}$/, 'رقم الهاتف غير صالح'),
   whatsapp: z.string().optional(),
-  area: z.string().optional(),
+  governorate: z.string({ required_error: 'المحافظة مطلوبة' }),
+  area: z.string({ required_error: 'المنطقة مطلوبة' }),
   address: z.string({ required_error: 'العنوان مطلوب' }),
   googleMapsUrl: z
     .string()
@@ -25,6 +30,8 @@ export const studentSchema = z.object({
   grade: z.enum(EducationalLevels, {
     required_error: 'المرحلة الدراسية مطلوبة',
   }),
+  classYear: z.string({ required_error: 'الصف مطلوب' }),
+  curriculum: z.string({ required_error: 'المنهج مطلوب' }),
   subjects: z.array(z.string()).optional(),
   preferredTeacherGender: z.nativeEnum(Gender).optional(),
   preferredSchedule: z.string().optional(),

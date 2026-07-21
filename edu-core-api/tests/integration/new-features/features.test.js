@@ -169,10 +169,15 @@ describe('Integration: New Features (Upload & PDF)', () => {
         .post('/api/v1/students')
         .set('Authorization', `Bearer ${manualToken}`)
         .send({
+          studentName: 'أحمد الفارابي',
           parentName: 'Al-Farabi Parent',
           parentPhone: '96512345',
+          governorate: 'العاصمة',
+          area: 'الروضة',
           address: 'Kuwait City',
           grade: 'ابتدائي',
+          classYear: 'الصف الأول',
+          curriculum: 'مخرجات حكومي',
         });
 
       expect(studentRes.status).toBe(201);

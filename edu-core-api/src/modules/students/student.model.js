@@ -17,6 +17,17 @@ const studentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    studentName: {
+      type: String,
+      required: [true, 'اسم الطالب مطلوب'],
+      trim: true,
+      default: 'طالب افتراضي',
+    },
+    studentPhone: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     parentName: {
       type: String,
       required: [true, 'اسم ولي الأمر مطلوب'],
@@ -31,9 +42,17 @@ const studentSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    governorate: {
+      type: String,
+      required: [true, 'المحافظة مطلوبة'],
+      trim: true,
+      default: 'حولي',
+    },
     area: {
       type: String,
+      required: [true, 'المنطقة مطلوبة'],
       trim: true,
+      default: 'السالمية',
     },
     address: {
       type: String,
@@ -52,6 +71,18 @@ const studentSchema = new mongoose.Schema(
       type: String,
       enum: EducationalLevels,
       required: [true, 'المرحلة الدراسية مطلوبة'],
+    },
+    classYear: {
+      type: String,
+      required: [true, 'الصف مطلوب'],
+      trim: true,
+      default: 'الصف الأول',
+    },
+    curriculum: {
+      type: String,
+      required: [true, 'المنهج مطلوب'],
+      trim: true,
+      default: 'مخرجات حكومي',
     },
     siblingGroup: {
       type: String,
@@ -112,7 +143,7 @@ studentSchema.index({ searchBlob: 'text' });
 // Middleware to maintain searchBlob
 studentSchema.pre('save', function (next) {
   this.searchBlob =
-    `${this.parentName} ${this.parentPhone} ${this.school || ''} ${this.area || ''}`.trim();
+    `${this.studentName || ''} ${this.parentName || ''} ${this.parentPhone || ''} ${this.studentPhone || ''} ${this.school || ''} ${this.governorate || ''} ${this.area || ''} ${this.curriculum || ''}`.trim();
   next();
 });
 

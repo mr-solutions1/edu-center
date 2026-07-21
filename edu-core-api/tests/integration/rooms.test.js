@@ -55,9 +55,14 @@ describe('Classroom & Room Management Module Integration', () => {
     });
 
     studentDoc = await Student.create({
+      studentName: 'عبدالرحمن العتيبي',
       parentName: 'والد عبدالرحمن',
       parentPhone: '96590000111',
+      governorate: 'حولي',
+      area: 'السالمية',
       grade: 'متوسط',
+      classYear: 'الصف السادس',
+      curriculum: 'مخرجات حكومي',
       address: 'الكويت، السالمية',
       status: 'ACTIVE',
       studentCode: 'STD-1001',
@@ -146,9 +151,14 @@ describe('Classroom & Room Management Module Integration', () => {
     // Overlaps from 15:00 to 15:30!
     // We will use another student and teacher to isolate to just Room-level conflict!
     const secondStudent = await Student.create({
+      studentName: 'فاطمة العتيبي',
       parentName: 'والد فاطمة',
       parentPhone: '96590000222',
+      governorate: 'حولي',
+      area: 'حولي',
       grade: 'متوسط',
+      classYear: 'الصف السادس',
+      curriculum: 'مخرجات حكومي',
       address: 'الكويت، حولي',
       status: 'ACTIVE',
       studentCode: 'STD-1002',

@@ -10,7 +10,6 @@ import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog';
 import DataTable from '@/shared/components/DataTable/DataTable';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import SearchFilterBar from '@/shared/components/SearchFilterBar/SearchFilterBar';
-import StatusBadge from '@/shared/components/StatusBadge/StatusBadge';
 import { Button } from '@/shared/components/ui/button';
 import { formatMoney } from '@/shared/utils/money';
 
@@ -73,9 +72,34 @@ const StudentsListPage = () => {
         </Link>
       ),
     },
+    {
+      header: 'اسم الطالب',
+      cell: (row) => (
+        <Link to={`/students/${row._id}`} className="hover:underline font-bold text-slate-900">
+          {row.studentName || 'غير محدد'}
+        </Link>
+      ),
+    },
     { header: 'ولي الأمر', accessor: 'parentName' },
-    { header: 'المرحلة', accessor: 'grade' },
-    { header: 'الساعات الأسبوعية', accessor: 'weeklyHours' },
+    {
+      header: 'المرحلة والصف',
+      cell: (row) => (
+        <div className="text-xs">
+          <span className="font-semibold block text-slate-700">{row.grade}</span>
+          <span className="text-slate-500 block">{row.classYear || 'غير محدد'}</span>
+        </div>
+      ),
+    },
+    { header: 'المنهج', accessor: 'curriculum' },
+    {
+      header: 'العنوان',
+      cell: (row) => (
+        <div className="text-xs">
+          <span className="font-semibold block text-slate-700">{row.governorate}</span>
+          <span className="text-slate-500 block">{row.area}</span>
+        </div>
+      ),
+    },
     { header: 'المتبقي (ساعات)', accessor: 'remainingHours' },
     {
       header: 'المتبقي (دينار)',
@@ -90,17 +114,6 @@ const StudentsListPage = () => {
           row.paymentStatus === 'No Dues' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'
         }`}>
           {row.paymentStatus}
-        </span>
-      ),
-    },
-    {
-      header: 'تنبيه الرصيد',
-      cell: (row) => (
-        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-          row.balanceAlert === 'OK' ? 'bg-green-100 text-green-800' :
-          row.balanceAlert === 'Hours Exceeded' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-        }`}>
-          {row.balanceAlert}
         </span>
       ),
     },
@@ -130,8 +143,8 @@ const StudentsListPage = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="الطلاب" description="إدارة سجلات الطلاب والاشتراكات">
+    <div className="space-y-6 text-right" dir="rtl">
+      <PageHeader title="الطلاب" description="إدارة سجلات الطلاب والاشتراكات لدولة الكويت">
         <Button
           onClick={() => {
             setEditingStudent(null);
@@ -148,9 +161,8 @@ const StudentsListPage = () => {
         <div className="flex items-center justify-between">
           <SearchFilterBar
             onSearch={setSearch}
-            placeholder="بحث بالاسم، الهاتف أو المنطقة..."
+            placeholder="بحث بالاسم، هاتف ولي الأمر، المنطقة أو المنهج..."
           />
-          <div className="flex gap-2">{/* Filters could go here */}</div>
         </div>
 
         <DataTable

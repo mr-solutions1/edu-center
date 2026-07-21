@@ -87,7 +87,7 @@ const StudentDetailsPage = () => {
     <div className="space-y-6 text-right" dir="rtl">
       <div className="flex items-center justify-between">
         <PageHeader
-          title={student?.parentName || 'تفاصيل الطالب'}
+          title={student?.studentName || 'تفاصيل الطالب'}
           description={`كود الطالب: ${student?.studentCode}`}
         >
           <div className="flex gap-2">
@@ -193,26 +193,48 @@ const StudentDetailsPage = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between border-b pb-2">
+              <span className="text-muted-foreground">اسم الطالب:</span>
+              <span className="font-bold text-primary">{student?.studentName || 'غير محدد'}</span>
+            </div>
+            {student?.studentPhone && (
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">هاتف الطالب:</span>
+                <span className="font-semibold" dir="ltr">{student?.studentPhone}</span>
+              </div>
+            )}
+            <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">اسم ولي الأمر:</span>
               <span className="font-semibold">{student?.parentName}</span>
             </div>
             <div className="flex justify-between border-b pb-2">
-              <span className="text-muted-foreground">رقم الهاتف:</span>
+              <span className="text-muted-foreground">رقم هاتف ولي الأمر:</span>
               <span className="font-semibold" dir="ltr">
                 {student?.parentPhone}
               </span>
             </div>
             {student?.whatsapp && (
               <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">واتساب:</span>
+                <span className="text-muted-foreground">رقم الواتساب:</span>
                 <span className="font-semibold" dir="ltr">
                   {student?.whatsapp}
                 </span>
               </div>
             )}
             <div className="flex justify-between border-b pb-2">
-              <span className="text-muted-foreground">المرحلة الدراسية:</span>
-              <span className="font-semibold">{student?.grade}</span>
+              <span className="text-muted-foreground">المرحلة والصف:</span>
+              <span className="font-semibold">
+                {student?.grade} - {student?.classYear || 'غير محدد'}
+              </span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-muted-foreground">المنهج الدراسي:</span>
+              <span className="font-semibold">{student?.curriculum || 'غير محدد'}</span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-muted-foreground">الموقع (دولة الكويت):</span>
+              <span className="font-semibold">
+                {student?.governorate} ، {student?.area}
+              </span>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">الرسوم الشهرية:</span>
@@ -232,7 +254,7 @@ const StudentDetailsPage = () => {
             )}
             {student?.address && (
               <div className="flex justify-between">
-                <span className="text-muted-foreground">العنوان:</span>
+                <span className="text-muted-foreground">العنوان بالتفصيل:</span>
                 <span className="font-semibold">{student?.address}</span>
               </div>
             )}

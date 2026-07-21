@@ -41,11 +41,17 @@ describe('Guardian Domain & Automated Synchronization Integration', () => {
       .post('/api/v1/students')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        studentName: 'عبدالرحمن محمد العتيبي',
+        studentPhone: '965112233',
         parentName: 'عبدالرحمن العتيبي',
         parentPhone: '96590001122',
         whatsapp: '96590001122',
+        governorate: 'حولي',
+        area: 'الجابرية',
         address: 'الكويت، الجابرية',
         grade: 'متوسط',
+        classYear: 'الصف السادس',
+        curriculum: 'مخرجات حكومي',
         status: 'ACTIVE',
       });
 
@@ -76,10 +82,15 @@ describe('Guardian Domain & Automated Synchronization Integration', () => {
       .post('/api/v1/students')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        studentName: 'عبدالعزيز العتيبي',
         parentName: 'عبدالعزيز العتيبي',
         parentPhone: '96590003344',
+        governorate: 'حولي',
+        area: 'سلوى',
         address: 'الكويت، سلوى',
         grade: 'متوسط',
+        classYear: 'الصف السابع',
+        curriculum: 'مخرجات حكومي',
         status: 'ACTIVE',
       });
 
@@ -91,10 +102,15 @@ describe('Guardian Domain & Automated Synchronization Integration', () => {
       .post('/api/v1/students')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        studentName: 'فاطمة العتيبي',
         parentName: 'فاطمة العتيبي',
         parentPhone: '96590003344',
+        governorate: 'حولي',
+        area: 'سلوى',
         address: 'الكويت، سلوى',
         grade: 'ابتدائي',
+        classYear: 'الصف الأول',
+        curriculum: 'مخرجات حكومي',
         status: 'ACTIVE',
       });
 
