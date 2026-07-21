@@ -26,7 +26,7 @@ describe('Chart of Accounts & Double-Entry General Ledger Suite', () => {
       const accounts = await Account.find({
         accountNumber: { $regex: tenantId.toString() },
       });
-      expect(accounts).toHaveLength(7);
+      expect(accounts).toHaveLength(8);
 
       const cashAccount = accounts.find((a) =>
         a.accountNumber.endsWith('1010')
@@ -208,7 +208,19 @@ describe('Chart of Accounts & Double-Entry General Ledger Suite', () => {
     const tenantId = new mongoose.Types.ObjectId();
 
     await runWithTenant(tenantId, null, async () => {
-      // 1. Record student income entry
+      // 1. Record student package registration ( Tuition Revenue & Accounts Receivable )
+      await recordLedgerEntry({
+        amount: 150000, // 150 KWD
+        type: 'PACKAGE_PURCHASE',
+        direction: 'IN',
+        referenceId: new mongoose.Types.ObjectId(),
+        referenceModel: 'StudentRegistration',
+        description: 'شراء حزمة ساعات',
+        tenantId,
+        performedBy: new mongoose.Types.ObjectId(),
+      });
+
+      // 2. Record student payment (Settle Receivable with Cash)
       await recordLedgerEntry({
         amount: 150000, // 150 KWD
         type: 'STUDENT_PAYMENT',
@@ -220,7 +232,7 @@ describe('Chart of Accounts & Double-Entry General Ledger Suite', () => {
         performedBy: new mongoose.Types.ObjectId(),
       });
 
-      // 2. Record academy expenses entry
+      // 3. Record academy expenses entry
       await recordLedgerEntry({
         amount: 40000, // 40 KWD
         type: 'EXPENSE',

@@ -72,7 +72,8 @@ export const submitForApproval = asyncHandler(async (req, res) => {
 export const approvePayroll = asyncHandler(async (req, res) => {
   const record = await payrollService.approvePayroll(
     req.params.id,
-    req.user.id
+    req.user.id,
+    req.user.role
   );
   res.status(200).json({
     success: true,

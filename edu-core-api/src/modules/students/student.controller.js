@@ -176,11 +176,34 @@ export const deleteRegistration = asyncHandler(async (req, res) => {
       throw new NotFoundError('التسجيل غير موجود');
     }
 
-    // Remove ledger entry
-    await removeLedgerEntriesByReference(regId, 'PACKAGE_PURCHASE', session);
+    // Rather than hard-deleting financial/hour history (Finding A3), we record immutable reversing entries
+    // 1. Record reversing financial ledger entry
+    await recordLedgerEntry(
+      {
+        studentId: id,
+        amount: registration.totalAmount,
+        type: 'REFUND',
+        direction: 'OUT',
+        referenceId: registration._id,
+        referenceModel: 'StudentRegistration',
+        description: `عكس قيد شراء الباقة بسبب حذف التسجيل - مادة ${registration.subject}`,
+        performedBy: req.user._id,
+      },
+      session
+    );
 
-    // Remove matching hour transaction entries
-    await HourTransaction.deleteMany({ registrationId: regId }, { session });
+    // 2. Record reversing Hour transaction entry
+    await HourLedgerService.recordHourEntry(
+      {
+        studentId: id,
+        registrationId: registration._id,
+        amount: -registration.purchasedHours,
+        type: 'REFUND',
+        description: `عكس باقة ساعات بسبب حذف التسجيل - مادة ${registration.subject}`,
+        performedBy: req.user._id,
+      },
+      session
+    );
 
     await logAuditTrail(req, {
       action: 'STUDENT_REGISTRATION_DELETED',

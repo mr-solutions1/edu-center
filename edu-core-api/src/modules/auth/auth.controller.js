@@ -123,25 +123,6 @@ export const login = asyncHandler(async (req, res) => {
  * @route   POST /api/v1/auth/refresh
  */
 export const refresh = asyncHandler(async (req, res) => {
-  // Production forensic audit logs to trace cookies transmission
-  console.log(
-    '[Forensic Audit] Raw Request Cookies Header:',
-    req.headers.cookie
-  );
-  console.log('[Forensic Audit] Parsed Request Cookies Object:', req.cookies);
-  console.log(
-    '[Forensic Audit] Request Origin:',
-    req.get('origin') || req.headers.origin
-  );
-  console.log(
-    '[Forensic Audit] Request Host:',
-    req.get('host') || req.headers.host
-  );
-  console.log(
-    '[Forensic Audit] Request Referer:',
-    req.get('referer') || req.headers.referer
-  );
-
   const { refreshToken } = req.cookies;
   const ipAddress = req.ip;
   const userAgent = req.get('user-agent');

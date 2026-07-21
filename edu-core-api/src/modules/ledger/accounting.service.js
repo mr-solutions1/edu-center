@@ -20,6 +20,12 @@ const STANDARD_ACCOUNTS = [
     description: 'الحساب البنكي الرئيسي للمعهد للتحويلات وبوابات الدفع',
   },
   {
+    accountNumber: '1210',
+    name: 'حساب ذمم الطلاب المدينين (Accounts Receivable)',
+    type: 'ASSET',
+    description: 'الأرصدة المستحقة على الطلاب مقابل الباقات المسجلة قبل السداد',
+  },
+  {
     accountNumber: '2010',
     name: 'مستحقات المعلمين (Tutors Salary Payable)',
     type: 'LIABILITY',
@@ -122,6 +128,7 @@ export const AccountingService = {
     };
 
     const cashAccount = await findAccount('1010');
+    const accountsReceivable = await findAccount('1210');
     const tuitionRevenue = await findAccount('4010');
     const tuitionReturns = await findAccount('4020');
     const carRecoveryRevenue = await findAccount('4030');
@@ -130,6 +137,7 @@ export const AccountingService = {
 
     if (
       !cashAccount ||
+      !accountsReceivable ||
       !tuitionRevenue ||
       !tuitionReturns ||
       !carRecoveryRevenue ||
@@ -145,11 +153,30 @@ export const AccountingService = {
     const doubleEntries = [];
     const amount = ledgerEntry.amount;
 
-    if (
-      ledgerEntry.type === 'STUDENT_PAYMENT' ||
-      ledgerEntry.type === 'PACKAGE_PURCHASE'
-    ) {
-      // Debit: Cash on Hand (Asset increases) | Credit: Tuition Revenue (Revenue increases)
+    if (ledgerEntry.type === 'PACKAGE_PURCHASE') {
+      // Debit: Accounts Receivable (1210) | Credit: Tuition Revenue (4010)
+      doubleEntries.push(
+        {
+          accountId: accountsReceivable._id,
+          referenceId: ledgerEntry._id,
+          referenceModel: 'FinancialLedger',
+          debit: amount,
+          credit: 0,
+          description: ledgerEntry.description,
+          entryDate: ledgerEntry.transactionDate,
+        },
+        {
+          accountId: tuitionRevenue._id,
+          referenceId: ledgerEntry._id,
+          referenceModel: 'FinancialLedger',
+          debit: 0,
+          credit: amount,
+          description: ledgerEntry.description,
+          entryDate: ledgerEntry.transactionDate,
+        }
+      );
+    } else if (ledgerEntry.type === 'STUDENT_PAYMENT') {
+      // Debit: Cash on Hand (1010) | Credit: Accounts Receivable (1210)
       doubleEntries.push(
         {
           accountId: cashAccount._id,
@@ -161,7 +188,7 @@ export const AccountingService = {
           entryDate: ledgerEntry.transactionDate,
         },
         {
-          accountId: tuitionRevenue._id,
+          accountId: accountsReceivable._id,
           referenceId: ledgerEntry._id,
           referenceModel: 'FinancialLedger',
           debit: 0,
@@ -347,9 +374,10 @@ export const AccountingService = {
     // 2. Balance Sheet
     const cashOnHand = getBalances('1010');
     const cashAtBank = getBalances('1020');
+    const accountsReceivable = getBalances('1210');
     const salaryPayable = getBalances('2010');
 
-    const totalAssets = cashOnHand.net + cashAtBank.net;
+    const totalAssets = cashOnHand.net + cashAtBank.net + accountsReceivable.net;
     const totalLiabilities = salaryPayable.net;
     const equity = totalAssets - totalLiabilities; // Assets = Liabilities + Equity
 
@@ -357,6 +385,7 @@ export const AccountingService = {
       assets: [
         { name: cashOnHand.name, amount: cashOnHand.net },
         { name: cashAtBank.name, amount: cashAtBank.net },
+        { name: accountsReceivable.name, amount: accountsReceivable.net },
       ],
       totalAssets,
       liabilities: [{ name: salaryPayable.name, amount: salaryPayable.net }],

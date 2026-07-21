@@ -13,6 +13,7 @@ import { withTransaction } from '../../shared/utils/withTransaction.js';
 import {
   recordLedgerEntry,
   removeLedgerEntriesByReference,
+  recalculateRunningBalances,
 } from '../ledger/ledger.service.js';
 import Lesson from '../lessons/lesson.model.js';
 import Teacher from '../teachers/teacher.model.js';
@@ -20,6 +21,9 @@ import { SettingsService } from '../tenants/SettingsService.js';
 import ApprovalService from '../ledger/approval.service.js';
 import ApprovalRequest from '../ledger/approvalRequest.model.js';
 import ApprovalChain from '../ledger/approvalChain.model.js';
+import Transaction from '../ledger/transaction.model.js';
+import User from '../users/user.model.js';
+import { generateCode } from '../../shared/utils/atomicCounter.js';
 
 /**
  * Recalculate payroll for a teacher for a specific month/year
@@ -317,22 +321,12 @@ export const payPayroll = async (id, userId) => {
 
     // Also record as a complete Transaction to update the chronological running balance of the institute (if amount > 0)!
     if (record.finalAmount > 0) {
-      const Transaction = await import('../ledger/transaction.model.js').then(
-        (m) => m.default
-      );
-      const { recalculateRunningBalances } =
-        await import('../ledger/ledger.service.js');
-      const { generateCode } =
-        await import('../../shared/utils/atomicCounter.js');
-
       const transactionId = await generateCode('transactionId', 'MOV', session);
       const actualTeacherId = record.teacherId?._id || record.teacherId;
       const teacher = await Teacher.findById(actualTeacherId).session(session);
       let teacherName = 'معلم';
       if (teacher) {
-        const u = await import('../users/user.model.js').then((m) =>
-          m.default.findById(teacher.userId).session(session)
-        );
+        const u = await User.findById(teacher.userId).session(session);
         if (u) {
           teacherName = `${u.firstName} ${u.lastName}`;
         }
