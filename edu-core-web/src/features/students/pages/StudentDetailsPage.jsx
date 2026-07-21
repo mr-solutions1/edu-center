@@ -296,21 +296,54 @@ const StudentDetailsPage = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4 text-xs border-t pt-2">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-xs border-t pt-3">
                       <div>
                         <span className="text-muted-foreground block">
-                          الساعات المشتراة / المستهلكة:
+                          الساعات المشتراة:
                         </span>
-                        <span className="font-semibold">
-                          {reg.purchasedHours} / {reg.consumedHours} ساعة
+                        <span className="font-bold text-sm">
+                          {reg.purchasedHours} ساعة
                         </span>
                       </div>
                       <div>
                         <span className="text-muted-foreground block">
-                          السعر الإجمالي:
+                          السعر الإجمالي للباقة:
+                        </span>
+                        <span className="font-bold text-sm">
+                          {formatMoney(reg.totalAmount)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-emerald-700">
+                          المدفوع الفعلي (FIFO):
+                        </span>
+                        <span className="font-bold text-sm text-emerald-700">
+                          {formatMoney(reg.paidAmount || 0)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-rose-700">
+                          المتبقي ماليًا:
+                        </span>
+                        <span className="font-bold text-sm text-rose-700">
+                          {formatMoney(Math.max(0, (reg.totalAmount || 0) - (reg.paidAmount || 0)))}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-muted-foreground block">
+                          سعر ساعة العقد المجمد:
                         </span>
                         <span className="font-semibold">
-                          {formatMoney(reg.totalAmount)}
+                          {formatMoney(reg.pricePerHour || 0)}/ساعة
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block">
+                          نسبة المعلم المجمدة:
+                        </span>
+                        <span className="font-semibold">
+                          {reg.teacherPercentageSnapshot || 75}%
                         </span>
                       </div>
                       <div>
@@ -323,11 +356,31 @@ const StudentDetailsPage = () => {
                       </div>
                       <div>
                         <span className="text-muted-foreground block">
-                          مستحقات المعلم:
+                          مستحقات المعلم (المتراكمة):
                         </span>
-                        <span className="font-semibold">
+                        <span className="font-semibold text-primary">
                           {formatMoney(reg.teacherDue || 0)}
                         </span>
+                      </div>
+
+                      {/* Consumed Progress Bar */}
+                      <div className="col-span-2 md:col-span-4 mt-2">
+                        <div className="flex justify-between mb-1 font-semibold text-slate-500">
+                          <span>استهلاك الساعات الدراسية:</span>
+                          <span>{reg.purchasedHours > 0 ? Math.round((reg.consumedHours / reg.purchasedHours) * 100) : 0}% ({reg.consumedHours} من {reg.purchasedHours} ساعة)</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              (reg.purchasedHours > 0 ? (reg.consumedHours / reg.purchasedHours) * 100 : 0) >= 100
+                                ? 'bg-red-500'
+                                : (reg.purchasedHours > 0 ? (reg.consumedHours / reg.purchasedHours) * 100 : 0) >= 75
+                                  ? 'bg-amber-500'
+                                  : 'bg-primary'
+                            }`}
+                            style={{ width: `${Math.min(100, reg.purchasedHours > 0 ? Math.round((reg.consumedHours / reg.purchasedHours) * 100) : 0)}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
 
