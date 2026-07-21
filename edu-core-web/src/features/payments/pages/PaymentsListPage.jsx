@@ -76,6 +76,25 @@ const PaymentsListPage = () => {
       cell: (row) => formatMoney(row.amount),
     },
     {
+      header: 'توزيعات الباقات (FIFO)',
+      cell: (row) => {
+        const allocs = row.allocations || [];
+        if (allocs.length === 0) {
+          return <span className="text-muted-foreground text-[10px]">— لا توجد توزيعات —</span>;
+        }
+        return (
+          <div className="flex flex-col gap-1 text-[11px] select-none">
+            {allocs.map((alloc, idx) => (
+              <div key={alloc._id || idx} className="flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200/50 px-2 py-0.5 rounded-md w-max font-semibold">
+                <span>{alloc.subject}:</span>
+                <span className="font-bold">{formatMoney(alloc.amount)}</span>
+              </div>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
       header: 'التاريخ',
       cell: (row) => formatDate(row.createdAt, 'yyyy/MM/dd'),
     },

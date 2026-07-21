@@ -158,8 +158,29 @@ export const getAllPayments = async (query = {}) => {
     Payment.countDocuments(filter),
   ]);
 
+  // Enrich payments with their chronological allocations down to registrations
+  const PaymentAllocation = (await import('./paymentAllocation.model.js')).default;
+  const paymentIds = payments.map((p) => p._id);
+  const allocations = await PaymentAllocation.find({ paymentId: { $in: paymentIds } })
+    .populate('registrationId', 'subject totalAmount')
+    .sort({ createdAt: 1 });
+
+  const enrichedPayments = payments.map((p) => {
+    const pObj = p.toObject();
+    pObj.allocations = allocations
+      .filter((a) => a.paymentId.toString() === p._id.toString())
+      .map((a) => ({
+        _id: a._id,
+        registrationId: a.registrationId?._id || a.registrationId,
+        subject: a.registrationId?.subject || 'باقة ملغاة /legacy',
+        totalAmount: a.registrationId?.totalAmount || 0,
+        amount: a.amount,
+      }));
+    return pObj;
+  });
+
   return {
-    payments,
+    payments: enrichedPayments,
     pagination: {
       total,
       page: Number(page),
