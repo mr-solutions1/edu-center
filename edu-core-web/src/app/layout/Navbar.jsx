@@ -15,9 +15,10 @@ const Navbar = () => {
     return saved ? parseInt(saved, 10) : 100;
   });
 
-  // Apply zoom to documentElement on load and changes
+  // Apply platform-wide layout scaling using root font-size
   useEffect(() => {
-    document.documentElement.style.zoom = zoom / 100;
+    document.documentElement.style.fontSize = `${zoom}%`;
+    document.documentElement.style.zoom = 'normal'; // Reset any legacy CSS zoom
     localStorage.setItem('edu-platform-zoom', zoom.toString());
   }, [zoom]);
 
