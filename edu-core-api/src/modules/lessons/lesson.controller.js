@@ -9,6 +9,18 @@ export const createLesson = asyncHandler(async (req, res) => {
   });
 });
 
+export const updateLessonTime = asyncHandler(async (req, res) => {
+  const lesson = await lessonService.updateLessonTime(
+    req.params.id,
+    req.body,
+    req.user.id
+  );
+  res.status(200).json({
+    success: true,
+    data: lesson,
+  });
+});
+
 export const getAllLessons = asyncHandler(async (req, res) => {
   const lessons = await lessonService.getAllLessons(req.query);
   res.status(200).json({
