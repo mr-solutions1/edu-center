@@ -35,7 +35,7 @@ const Navbar = () => {
 
   return (
     <header
-      className="h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b px-4 md:px-8 flex items-center justify-between sticky top-0 z-20 shadow-sm select-none"
+      className="h-16 bg-card/80 backdrop-blur-md border-b border-border px-4 md:px-8 flex items-center justify-between sticky top-0 z-20 shadow-premium-sm select-none"
       dir="rtl"
     >
       <div className="flex items-center gap-3">
@@ -43,33 +43,33 @@ const Navbar = () => {
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden h-10 w-10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl"
+          className="lg:hidden h-10 w-10 text-foreground/80 hover:bg-surface rounded-xl"
           onClick={() => setIsMobileOpen((prev) => !prev)}
           aria-label="Open navigation menu"
         >
           <Menu className="h-6 w-6" />
         </Button>
 
-        <div className="text-xs md:text-sm font-bold text-primary dark:text-slate-200 truncate max-w-[200px] sm:max-w-none">
+        <div className="text-xs md:text-sm font-bold text-primary dark:text-primary-400 truncate max-w-[200px] sm:max-w-none">
           أهلاً بك في نظام معهد ألفا العالمي الإداري
         </div>
       </div>
 
       <div className="flex items-center gap-2">
         {/* Professional Platform Zoom Controls */}
-        <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800">
+        <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border">
           <Button
             variant="ghost"
             size="icon"
             onClick={zoomOut}
             disabled={zoom <= 80}
-            className="h-8 w-8 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition-colors"
+            className="h-8 w-8 rounded-lg text-foreground/85 hover:bg-surface-elevated transition-colors"
             title="تصغير الواجهة (-)"
             aria-label="Zoom out"
           >
             <ZoomOut className="h-4 w-4" />
           </Button>
-          <span className="text-xs font-black px-1.5 min-w-[40px] text-center text-slate-700 dark:text-slate-200 select-none">
+          <span className="text-xs font-black px-1.5 min-w-[40px] text-center text-foreground select-none">
             {zoom}%
           </span>
           <Button
@@ -77,7 +77,7 @@ const Navbar = () => {
             size="icon"
             onClick={zoomIn}
             disabled={zoom >= 150}
-            className="h-8 w-8 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition-colors"
+            className="h-8 w-8 rounded-lg text-foreground/85 hover:bg-surface-elevated transition-colors"
             title="تكبير الواجهة (+)"
             aria-label="Zoom in"
           >
@@ -88,7 +88,7 @@ const Navbar = () => {
             size="icon"
             onClick={resetZoom}
             disabled={zoom === 100}
-            className="h-8 w-8 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-colors disabled:opacity-30"
+            className="h-8 w-8 rounded-lg text-foreground/50 hover:bg-surface-elevated transition-colors disabled:opacity-30"
             title="إعادة تعيين (100%)"
             aria-label="Reset zoom"
           >

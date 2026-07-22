@@ -251,9 +251,9 @@ const Sidebar = () => {
   };
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-primary dark:bg-slate-950 text-primary-foreground">
+    <div className="flex flex-col h-full bg-[#0d121f] dark:bg-[#070a13] border-l border-border/30 text-primary-foreground">
       {/* Brand Header */}
-      <div className="p-5 border-b border-primary-foreground/10 flex items-center justify-between bg-black/5">
+      <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/10">
         <Link
           to="/"
           onClick={handleLinkClick}
@@ -262,14 +262,14 @@ const Sidebar = () => {
           <img
             src={logoAlpha}
             alt="Alpha Logo"
-            className="w-11 h-11 rounded-lg object-cover bg-white p-0.5 shadow-sm shrink-0"
+            className="w-11 h-11 rounded-lg object-cover bg-card p-0.5 shadow-premium-sm shrink-0"
           />
           {(!isTabletCollapsed || isMobileOpen) && (
             <div className="truncate animate-fadeIn text-right">
               <h1 className="text-base font-black tracking-tight leading-tight truncate">
                 معهد ألفا العالمي
               </h1>
-              <p className="text-[9px] text-secondary font-medium uppercase tracking-widest mt-0.5 truncate">
+              <p className="text-[9px] text-accent font-medium uppercase tracking-widest mt-0.5 truncate">
                 نظام الإدارة المتكامل
               </p>
             </div>
@@ -309,7 +309,7 @@ const Sidebar = () => {
                         onClick={() => toggleGroup(item.id)}
                         title={isTabletCollapsed ? item.label : undefined}
                         className={cn(
-                          'flex items-center rounded-lg text-sm font-medium transition-all duration-150 w-full text-right hover:bg-white/4 hover:text-white',
+                          'flex items-center rounded-lg text-sm font-medium transition-all duration-150 w-full text-right hover:bg-white/5 hover:text-white',
                           isTabletCollapsed && !isMobileOpen
                             ? 'justify-center p-3 h-10 w-10 mx-auto'
                             : 'gap-3 px-4 py-2 justify-between text-primary-foreground/75'
@@ -329,7 +329,7 @@ const Sidebar = () => {
                           <ChevronDown
                             className={cn(
                               'h-4 w-4 transition-transform duration-200 text-primary-foreground/40',
-                              isExpanded && 'transform rotate-180 text-secondary'
+                              isExpanded && 'transform rotate-180 text-accent'
                             )}
                           />
                         )}
@@ -369,7 +369,7 @@ const Sidebar = () => {
                     title={isTabletCollapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       cn(
-                        'flex items-center rounded-lg text-sm font-medium transition-all duration-150 group relative hover:bg-white/4 hover:text-white',
+                        'flex items-center rounded-lg text-sm font-medium transition-all duration-150 group relative hover:bg-white/5 hover:text-white',
                         isTabletCollapsed && !isMobileOpen
                           ? 'justify-center p-3 h-10 w-10 mx-auto'
                           : 'gap-3 px-4 py-2',
@@ -382,13 +382,13 @@ const Sidebar = () => {
                     {({ isActive }) => (
                       <>
                         {isActive && (
-                          <span className="absolute right-0 top-1.5 bottom-1.5 w-1 bg-secondary rounded-l-md" />
+                          <span className="absolute right-0 top-1.5 bottom-1.5 w-1 bg-accent rounded-l-md" />
                         )}
                         <item.icon
                           className={cn(
                             'h-4.5 w-4.5 transition-transform duration-150 shrink-0',
                             isActive
-                              ? 'text-secondary scale-105'
+                              ? 'text-accent scale-105'
                               : 'text-primary-foreground/60 group-hover:text-white group-hover:scale-105'
                           )}
                         />
@@ -408,7 +408,7 @@ const Sidebar = () => {
       </nav>
 
       {/* User profile details & actions */}
-      <div className="p-4 border-t border-primary-foreground/10 space-y-2 bg-black/10 text-right">
+      <div className="p-4 border-t border-white/5 space-y-2 bg-black/15 text-right">
         <div
           className={cn(
             'flex items-center gap-3',
@@ -417,16 +417,16 @@ const Sidebar = () => {
               : 'px-4 py-2'
           )}
         >
-          <div className="h-10 w-10 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-sm shadow-md shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm shadow-premium-md shrink-0">
             {user?.firstName?.[0]}
             {user?.lastName?.[0]}
           </div>
           {(!isTabletCollapsed || isMobileOpen) && (
             <div className="flex-1 overflow-hidden text-right animate-fadeIn">
-              <p className="text-sm font-bold truncate">
+              <p className="text-sm font-bold truncate text-white">
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-[11px] text-primary-foreground/60 truncate font-medium">
+              <p className="text-[11px] text-white/65 truncate font-medium">
                 {user?.role === 'ADMIN' ? 'مدير النظام' : user?.role}
               </p>
             </div>
@@ -495,7 +495,7 @@ const Sidebar = () => {
       {/* Desktop / Tablet Persistent Sidebar */}
       <aside
         className={cn(
-          'hidden lg:flex flex-col h-screen sticky top-0 shadow-xl transition-all duration-300 bg-primary dark:bg-slate-950 z-30 shrink-0',
+          'hidden lg:flex flex-col h-screen sticky top-0 shadow-premium-xl transition-all duration-300 bg-[#0d121f] dark:bg-[#070a13] z-30 shrink-0',
           isTabletCollapsed ? 'w-20' : 'w-64'
         )}
         dir="rtl"
