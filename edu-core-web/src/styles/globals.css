@@ -310,37 +310,38 @@
 
 /* Unified Platform-wide Global Overrides & Design Language Token Enforcement */
 /* Intercept Hardcoded Utilities completely to guarantee a Premium SaaS product */
+/* Exclude the sidebar (aside) and its children to allow dedicated sidebar styling */
 
 /* Background Intercepts */
-.bg-white, .bg-card, .bg-background {
+:not(aside):not(aside *) .bg-white, :not(aside):not(aside *) .bg-card, :not(aside):not(aside *) .bg-background {
   background-color: hsl(var(--card)) !important;
 }
-body, .bg-slate-50, .bg-gray-50, .bg-slate-50\/50, .bg-slate-50\/30 {
+body, :not(aside):not(aside *) .bg-slate-50, :not(aside):not(aside *) .bg-gray-50, :not(aside):not(aside *) .bg-slate-50\/50, :not(aside):not(aside *) .bg-slate-50\/30 {
   background-color: hsl(var(--background)) !important;
 }
-.bg-slate-100, .bg-gray-100, .bg-muted {
+:not(aside):not(aside *) .bg-slate-100, :not(aside):not(aside *) .bg-gray-100, :not(aside):not(aside *) .bg-muted {
   background-color: hsl(var(--surface)) !important;
 }
-.bg-slate-200, .bg-gray-200 {
+:not(aside):not(aside *) .bg-slate-200, :not(aside):not(aside *) .bg-gray-200 {
   background-color: hsl(var(--surface-elevated)) !important;
 }
 
-/* Text Color Intercepts */
-.text-slate-900, .text-slate-800, .text-gray-900, .text-gray-800, .text-black, .text-foreground {
+/* Text Color Intercepts - Significantly higher contrast opacities to eliminate visual color blindness/dropouts */
+:not(aside):not(aside *) .text-slate-900, :not(aside):not(aside *) .text-slate-800, :not(aside):not(aside *) .text-gray-900, :not(aside):not(aside *) .text-gray-800, :not(aside):not(aside *) .text-black, :not(aside):not(aside *) .text-foreground {
   color: hsl(var(--foreground)) !important;
 }
-.text-slate-700, .text-gray-700 {
-  color: hsl(var(--foreground) / 0.8) !important;
+:not(aside):not(aside *) .text-slate-700, :not(aside):not(aside *) .text-gray-700 {
+  color: hsl(var(--foreground) / 0.95) !important;
 }
-.text-slate-600, .text-gray-600, .text-muted-foreground {
-  color: hsl(var(--foreground) / 0.6) !important;
+:not(aside):not(aside *) .text-slate-600, :not(aside):not(aside *) .text-gray-600, :not(aside):not(aside *) .text-muted-foreground {
+  color: hsl(var(--foreground) / 0.82) !important;
 }
-.text-slate-500, .text-slate-400, .text-gray-500, .text-gray-400 {
-  color: hsl(var(--foreground) / 0.45) !important;
+:not(aside):not(aside *) .text-slate-500, :not(aside):not(aside *) .text-slate-400, :not(aside):not(aside *) .text-gray-500, :not(aside):not(aside *) .text-gray-400 {
+  color: hsl(var(--foreground) / 0.70) !important;
 }
 
 /* Border Color Intercepts */
-.border-slate-100, .border-slate-200, .border-slate-300, .border-gray-100, .border-gray-200, .border-slate-200\/50, .border-border, .border-input {
+:not(aside):not(aside *) .border-slate-100, :not(aside):not(aside *) .border-slate-200, :not(aside):not(aside *) .border-slate-300, :not(aside):not(aside *) .border-gray-100, :not(aside):not(aside *) .border-gray-200, :not(aside):not(aside *) .border-slate-200\/50, :not(aside):not(aside *) .border-border, :not(aside):not(aside *) .border-input {
   border-color: hsl(var(--border)) !important;
 }
 
@@ -420,22 +421,22 @@ option {
 
 /* Dark Mode Deep Layer Specifics */
 .dark {
-  /* Dynamic Layer System Mapping */
-  .bg-white, .bg-card {
+  /* Dynamic Layer System Mapping - Excluding aside */
+  :not(aside):not(aside *) .bg-white, :not(aside):not(aside *) .bg-card {
     background-color: hsl(var(--card)) !important;
   }
-  body, .bg-slate-50, .bg-gray-50 {
+  body, :not(aside):not(aside *) .bg-slate-50, :not(aside):not(aside *) .bg-gray-50 {
     background-color: hsl(var(--background)) !important;
   }
-  .bg-slate-100, .bg-gray-100, .bg-muted {
+  :not(aside):not(aside *) .bg-slate-100, :not(aside):not(aside *) .bg-gray-100, :not(aside):not(aside *) .bg-muted {
     background-color: hsl(var(--surface)) !important;
   }
-  .bg-slate-200, .bg-gray-200, .bg-surface-elevated {
+  :not(aside):not(aside *) .bg-slate-200, :not(aside):not(aside *) .bg-gray-200, :not(aside):not(aside *) .bg-surface-elevated {
     background-color: hsl(var(--surface-elevated)) !important;
   }
 
-  /* Intercept Hovers */
-  .hover\:bg-slate-50:hover, .hover\:bg-gray-50:hover, .hover\:bg-slate-100:hover, .hover\:bg-gray-100:hover {
+  /* Intercept Hovers - Excluding aside */
+  :not(aside):not(aside *) .hover\:bg-slate-50:hover, :not(aside):not(aside *) .hover\:bg-gray-50:hover, :not(aside):not(aside *) .hover\:bg-slate-100:hover, :not(aside):not(aside *) .hover\:bg-gray-100:hover {
     background-color: hsl(var(--surface-elevated)) !important;
   }
 
@@ -520,4 +521,13 @@ option {
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
+}
+
+/* Radix Tabs and general active/inactive button states high-contrast improvements */
+[data-state="active"] {
+  color: hsl(var(--foreground)) !important;
+  font-weight: 700 !important;
+}
+[data-state="inactive"] {
+  color: hsl(var(--foreground) / 0.7) !important;
 }
