@@ -204,6 +204,109 @@ export const createLesson = async (lessonData, userId) => {
 };
 
 /**
+ * Update lesson date/time (Drag and Drop / manual reschedule)
+ */
+export const updateLessonTime = async (id, updateData, userId) => {
+  return withTransaction(async (session) => {
+    const lesson = await lessonRepository.findById(id, session);
+    if (!lesson) {
+      throw new NotFoundError('الحصة غير موجودة');
+    }
+
+    const previousValue = lesson.toObject();
+    const { lessonDate, startTime, endTime } = updateData;
+
+    // 1. Check teacher conflict if time/date changes
+    if (lessonDate || startTime || endTime) {
+      const targetDate = lessonDate ? new Date(lessonDate) : lesson.lessonDate;
+      const targetStart = startTime || lesson.startTime;
+      const targetEnd = endTime || lesson.endTime;
+
+      const teacherConflict = await checkConflict(
+        lesson.teacherId,
+        'teacher',
+        targetDate,
+        targetStart,
+        targetEnd,
+        lesson._id
+      );
+      if (teacherConflict) {
+        throw new ConflictError('المعلم لديه حصة أخرى في هذا الوقت');
+      }
+
+      // 2. Check student conflict
+      const studentConflict = await checkConflict(
+        lesson.studentId,
+        'student',
+        targetDate,
+        targetStart,
+        targetEnd,
+        lesson._id
+      );
+      if (studentConflict) {
+        throw new ConflictError('الطالب لديه حصة أخرى في هذا الوقت');
+      }
+
+      // 3. Check room conflict if room exists
+      if (lesson.roomId) {
+        const { RoomService } = await import('../rooms/room.service.js');
+        const roomConflict = await RoomService.checkRoomConflict({
+          roomId: lesson.roomId,
+          lessonDate: targetDate,
+          startTime: targetStart,
+          endTime: targetEnd,
+          excludeLessonId: lesson._id
+        });
+        if (roomConflict) {
+          throw new ConflictError('الغرفة محجوزة لحصة أخرى في هذا الوقت');
+        }
+      }
+
+      lesson.lessonDate = targetDate;
+      lesson.startTime = targetStart;
+      lesson.endTime = targetEnd;
+
+      // Update dayOfWeek
+      const dateObj = new Date(targetDate);
+      lesson.dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    }
+
+    await lesson.save({ session });
+
+    // Record audit transaction
+    await PayrollTransaction.create(
+      [
+        {
+          lessonId: lesson._id,
+          teacherId: lesson.teacherId,
+          userId,
+          action: 'UPDATE_TIME',
+          previousValue,
+          newValue: lesson.toObject(),
+        },
+      ],
+      { session }
+    );
+
+    // Activity Log
+    await auditLogger.logActivity({
+      userId,
+      action: 'UPDATE_LESSON_TIME',
+      entityType: 'Lesson',
+      entityId: lesson._id,
+      details: {
+        previousDate: previousValue.lessonDate,
+        previousStart: previousValue.startTime,
+        newDate: lesson.lessonDate,
+        newStart: lesson.startTime
+      },
+    });
+
+    return lesson;
+  });
+};
+
+/**
  * Get all lessons
  */
 export const getAllLessons = async (query = {}) => {

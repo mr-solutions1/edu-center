@@ -25,6 +25,11 @@ router.patch(
   validate(updateStatusSchema),
   lessonController.updateStatus
 );
+router.patch(
+  '/:id',
+  authorize(UserRole.ADMIN, UserRole.RECEPTIONIST),
+  lessonController.updateLessonTime
+);
 
 // Attendance routes
 router.get('/:lessonId/attendance', attendanceController.getLessonAttendance);

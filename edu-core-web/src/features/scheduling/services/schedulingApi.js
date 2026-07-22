@@ -19,6 +19,14 @@ export const schedulingApi = {
     return response.data;
   },
 
+  updateLessonTime: async (id, timeData) => {
+    const response = await apiClient.patch(
+      `/v1/lessons/${id}`,
+      timeData
+    );
+    return response.data;
+  },
+
   markAttendance: async (lessonId, attendanceData) => {
     const response = await apiClient.post(
       `/v1/lessons/${lessonId}/attendance`,
