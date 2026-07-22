@@ -33,6 +33,7 @@ import { kuwaitGeodata } from '@/shared/constants/kuwaitGeodata';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { toKWD } from '@/shared/utils/money';
+import { useFormErrorHandler } from '@/shared/hooks/useFormErrorHandler';
 
 const classYearsByGrade = {
   'تأسيس': [
@@ -80,9 +81,11 @@ const StudentFormDialog = ({
   onSubmit,
   initialData,
   isSubmitting,
+  error,
 }) => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('personal');
+  const { handleFormError } = useFormErrorHandler();
 
   // Custom states for payment installment logic
   const [isInstallment, setIsInstallment] = useState('no');
@@ -127,6 +130,7 @@ const StudentFormDialog = ({
     reset,
     watch,
     setValue,
+    setError,
   } = useForm({
     resolver: zodResolver(studentSchema),
     defaultValues: initialData || {
@@ -241,6 +245,13 @@ const StudentFormDialog = ({
 
   const teachers = teachersRes?.data || [];
   const courses = coursesRes?.data || [];
+
+  // Propagate backend errors into form fields
+  useEffect(() => {
+    if (error) {
+      handleFormError(error, setError);
+    }
+  }, [error, setError, handleFormError]);
 
   // Dynamic smart price calculator spanning across all added dynamic registrations packages
   const calculatedTotalAmount = dynamicRegistrations.reduce((sum, r) => {

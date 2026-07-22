@@ -7,6 +7,7 @@ import StudentFormDialog from '../components/StudentFormDialog';
 import { studentApi } from '../services/studentApi';
 
 import ConfirmDialog from '@/shared/components/ConfirmDialog/ConfirmDialog';
+import { parseApiError } from '@/shared/utils/errorParser';
 import DataTable from '@/shared/components/DataTable/DataTable';
 import PageHeader from '@/shared/components/PageHeader/PageHeader';
 import SearchFilterBar from '@/shared/components/SearchFilterBar/SearchFilterBar';
@@ -23,6 +24,8 @@ const StudentsListPage = () => {
   // Listen to global sidebar add student form trigger
   React.useEffect(() => {
     const handleGlobalOpen = () => {
+      createMutation.reset();
+      updateMutation.reset();
       setEditingStudent(null);
       setFormOpen(true);
     };
@@ -30,7 +33,7 @@ const StudentsListPage = () => {
     return () => {
       window.removeEventListener('edu:open_new_student', handleGlobalOpen);
     };
-  }, []);
+  }, [createMutation, updateMutation]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['students', { search }],
@@ -63,6 +66,8 @@ const StudentsListPage = () => {
   });
 
   const handleEdit = (student) => {
+    createMutation.reset();
+    updateMutation.reset();
     setEditingStudent(student);
     setFormOpen(true);
   };
@@ -159,6 +164,8 @@ const StudentsListPage = () => {
       <PageHeader title="الطلاب" description="إدارة سجلات الطلاب والاشتراكات لدولة الكويت">
         <Button
           onClick={() => {
+            createMutation.reset();
+            updateMutation.reset();
             setEditingStudent(null);
             setFormOpen(true);
           }}
@@ -190,6 +197,13 @@ const StudentsListPage = () => {
         onSubmit={handleSubmit}
         initialData={editingStudent}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+        error={
+          createMutation.error
+            ? parseApiError(createMutation.error)
+            : updateMutation.error
+            ? parseApiError(updateMutation.error)
+            : null
+        }
       />
 
       <ConfirmDialog
