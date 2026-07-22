@@ -251,7 +251,7 @@ const Sidebar = () => {
   };
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-[#0d121f] dark:bg-[#070a13] border-l border-border/30 text-primary-foreground">
+    <div className="flex flex-col h-full bg-[#0d121f] dark:bg-[#070a13] border-l border-border/30 text-slate-100">
       {/* Brand Header */}
       <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/10">
         <Link
@@ -266,7 +266,7 @@ const Sidebar = () => {
           />
           {(!isTabletCollapsed || isMobileOpen) && (
             <div className="truncate animate-fadeIn text-right">
-              <h1 className="text-base font-black tracking-tight leading-tight truncate">
+              <h1 className="text-base font-black tracking-tight leading-tight truncate text-white">
                 معهد ألفا العالمي
               </h1>
               <p className="text-[9px] text-accent font-medium uppercase tracking-widest mt-0.5 truncate">
@@ -279,7 +279,7 @@ const Sidebar = () => {
         {isMobileOpen && (
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-primary-foreground lg:hidden"
+            className="p-1.5 rounded-lg hover:bg-white/10 text-slate-200 lg:hidden"
             aria-label="Close sidebar"
           >
             <X className="h-5 w-5" />
@@ -293,7 +293,7 @@ const Sidebar = () => {
           <div key={categoryName} className="space-y-1.5">
             {/* Category Header (Hidden when collapsed) */}
             {(!isTabletCollapsed || isMobileOpen) && (
-              <h3 className="text-[10px] font-black text-primary-foreground/40 uppercase tracking-widest px-4 mb-2 select-none text-right">
+              <h3 className="text-[10px] font-black text-slate-400/60 uppercase tracking-widest px-4 mb-2 select-none text-right">
                 {categoryName}
               </h3>
             )}
@@ -312,13 +312,13 @@ const Sidebar = () => {
                           'flex items-center rounded-lg text-sm font-medium transition-all duration-150 w-full text-right hover:bg-white/5 hover:text-white',
                           isTabletCollapsed && !isMobileOpen
                             ? 'justify-center p-3 h-10 w-10 mx-auto'
-                            : 'gap-3 px-4 py-2 justify-between text-primary-foreground/75'
+                            : 'gap-3 px-4 py-2 justify-between text-slate-300'
                         )}
                       >
                         <div className="flex items-center gap-3 truncate">
                           <item.icon
                             className={cn(
-                              'h-4.5 w-4.5 transition-transform duration-150 shrink-0 text-primary-foreground/60'
+                              'h-4.5 w-4.5 transition-transform duration-150 shrink-0 text-slate-400'
                             )}
                           />
                           {(!isTabletCollapsed || isMobileOpen) && (
@@ -328,7 +328,7 @@ const Sidebar = () => {
                         {(!isTabletCollapsed || isMobileOpen) && (
                           <ChevronDown
                             className={cn(
-                              'h-4 w-4 transition-transform duration-200 text-primary-foreground/40',
+                              'h-4 w-4 transition-transform duration-200 text-slate-400/60',
                               isExpanded && 'transform rotate-180 text-accent'
                             )}
                           />
@@ -346,7 +346,7 @@ const Sidebar = () => {
                               className={({ isActive }) =>
                                 cn(
                                   'flex items-center rounded-lg text-xs font-medium transition-all duration-150 gap-3 px-4 py-2 hover:bg-white/4 hover:text-white',
-                                  isActive ? 'text-secondary font-bold bg-white/5' : 'text-primary-foreground/60'
+                                  isActive ? 'text-accent font-bold bg-white/10' : 'text-slate-400'
                                 )
                               }
                             >
@@ -374,8 +374,8 @@ const Sidebar = () => {
                           ? 'justify-center p-3 h-10 w-10 mx-auto'
                           : 'gap-3 px-4 py-2',
                         isActive
-                          ? 'bg-white/8 text-white font-bold'
-                          : 'text-primary-foreground/75'
+                          ? 'bg-white/10 text-white font-black'
+                          : 'text-slate-300'
                       )
                     }
                   >
@@ -389,7 +389,7 @@ const Sidebar = () => {
                             'h-4.5 w-4.5 transition-transform duration-150 shrink-0',
                             isActive
                               ? 'text-accent scale-105'
-                              : 'text-primary-foreground/60 group-hover:text-white group-hover:scale-105'
+                              : 'text-slate-400 group-hover:text-white group-hover:scale-105'
                           )}
                         />
                         {(!isTabletCollapsed || isMobileOpen) && (
