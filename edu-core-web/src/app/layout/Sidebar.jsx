@@ -251,7 +251,7 @@ const Sidebar = () => {
   };
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-primary text-primary-foreground">
+    <div className="flex flex-col h-full bg-primary dark:bg-slate-950 text-primary-foreground">
       {/* Brand Header */}
       <div className="p-5 border-b border-primary-foreground/10 flex items-center justify-between bg-black/5">
         <Link
@@ -495,7 +495,7 @@ const Sidebar = () => {
       {/* Desktop / Tablet Persistent Sidebar */}
       <aside
         className={cn(
-          'hidden lg:flex flex-col h-screen sticky top-0 shadow-xl transition-all duration-300 bg-primary z-30 shrink-0',
+          'hidden lg:flex flex-col h-screen sticky top-0 shadow-xl transition-all duration-300 bg-primary dark:bg-slate-950 z-30 shrink-0',
           isTabletCollapsed ? 'w-20' : 'w-64'
         )}
         dir="rtl"

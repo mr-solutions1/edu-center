@@ -23,7 +23,6 @@ import morgan from 'morgan';
 
 import { env } from './config/env.js';
 import activityLogRoutes from './modules/activity-log/activityLog.routes.js';
-import aiRoutes from './modules/auth/ai.routes.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import courseRoutes from './modules/courses/course.routes.js';
 import crmRoutes from './modules/crm/lead.routes.js';
@@ -301,7 +300,6 @@ app.get(
 );
 
 // 9. API Routes Integration
-app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/crm', crmRoutes);
 app.use('/api/v1/inbox', inboxRoutes);

@@ -2,12 +2,11 @@ import React from 'react';
 
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
-import AiAssistantWidget from '../../shared/components/AiAssistantWidget/AiAssistantWidget';
 import CommandPalette from '../../shared/components/CommandPalette/CommandPalette';
 
 const AppShell = ({ children }) => {
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAFC]" dir="rtl">
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground" dir="rtl">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar />
@@ -15,7 +14,6 @@ const AppShell = ({ children }) => {
           {children}
         </main>
       </div>
-      <AiAssistantWidget />
       <CommandPalette />
     </div>
   );
