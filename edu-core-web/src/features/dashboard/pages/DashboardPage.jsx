@@ -193,8 +193,8 @@ const DashboardPage = () => {
               <path d="M10,120 Q80,70 150,90 T290,40 T400,60" fill="none" stroke="#22c55e" strokeWidth="3" />
               <circle cx="150" cy="90" r="4" fill="#22c55e" />
               <circle cx="290" cy="40" r="4" fill="#22c55e" />
-              <text x="150" y="80" fontSize="8" fill="#1e293b" textAnchor="middle">{formatMoney(stats.monthlyRevenue ?? 0)}</text>
-              <text x="350" y="145" fontSize="8" fill="#94a3b8">الشهر الحالي</text>
+              <text x="150" y="80" fontSize="10" className="fill-foreground font-black text-right" fill="currentColor" textAnchor="middle">{formatMoney(stats.monthlyRevenue ?? 0)}</text>
+              <text x="350" y="145" fontSize="9" className="fill-muted-foreground" fill="currentColor">الشهر الحالي</text>
             </svg>
           </CardContent>
         </Card>
@@ -218,8 +218,8 @@ const DashboardPage = () => {
               <path d="M10,130 Q100,110 200,80 T400,100 L400,150 L10,150 Z" fill="url(#gradExp)" />
               <path d="M10,130 Q100,110 200,80 T400,100" fill="none" stroke="#ef4444" strokeWidth="3" />
               <circle cx="200" cy="80" r="4" fill="#ef4444" />
-              <text x="200" y="70" fontSize="8" fill="#1e293b" textAnchor="middle">{formatMoney(stats.monthlyExpenses ?? 0)}</text>
-              <text x="350" y="145" fontSize="8" fill="#94a3b8">الشهر الحالي</text>
+              <text x="200" y="70" fontSize="10" className="fill-foreground font-black text-right" fill="currentColor" textAnchor="middle">{formatMoney(stats.monthlyExpenses ?? 0)}</text>
+              <text x="350" y="145" fontSize="9" className="fill-muted-foreground" fill="currentColor">الشهر الحالي</text>
             </svg>
           </CardContent>
         </Card>
@@ -244,8 +244,8 @@ const DashboardPage = () => {
               <path d="M10,140 Q100,100 200,60 T400,30" fill="none" stroke="#3b82f6" strokeWidth="3" />
               <circle cx="200" cy="60" r="4" fill="#3b82f6" />
               <circle cx="400" cy="30" r="4" fill="#3b82f6" />
-              <text x="200" y="50" fontSize="8" fill="#1e293b" textAnchor="middle">{stats.activeStudents ?? 0} طالب</text>
-              <text x="350" y="145" fontSize="8" fill="#94a3b8">الشهر الحالي</text>
+              <text x="200" y="50" fontSize="10" className="fill-foreground font-black text-right" fill="currentColor" textAnchor="middle">{stats.activeStudents ?? 0} طالب</text>
+              <text x="350" y="145" fontSize="9" className="fill-muted-foreground" fill="currentColor">الشهر الحالي</text>
             </svg>
           </CardContent>
         </Card>
@@ -269,8 +269,8 @@ const DashboardPage = () => {
               <path d="M10,120 Q120,90 240,110 T400,50 L400,150 L10,150 Z" fill="url(#gradTeach)" />
               <path d="M10,120 Q120,90 240,110 T400,50" fill="none" stroke="#6366f1" strokeWidth="3" />
               <circle cx="400" cy="50" r="4" fill="#6366f1" />
-              <text x="350" y="40" fontSize="8" fill="#1e293b" textAnchor="middle">{formatMoney(stats.teacherCost ?? 0)}</text>
-              <text x="350" y="145" fontSize="8" fill="#94a3b8">الشهر الحالي</text>
+              <text x="350" y="40" fontSize="10" className="fill-foreground font-black text-right" fill="currentColor" textAnchor="middle">{formatMoney(stats.teacherCost ?? 0)}</text>
+              <text x="350" y="145" fontSize="9" className="fill-muted-foreground" fill="currentColor">الشهر الحالي</text>
             </svg>
           </CardContent>
         </Card>

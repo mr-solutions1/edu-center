@@ -310,38 +310,37 @@
 
 /* Unified Platform-wide Global Overrides & Design Language Token Enforcement */
 /* Intercept Hardcoded Utilities completely to guarantee a Premium SaaS product */
-/* Exclude the sidebar (aside) and its children to allow dedicated sidebar styling */
 
 /* Background Intercepts */
-:not(aside):not(aside *) .bg-white, :not(aside):not(aside *) .bg-card, :not(aside):not(aside *) .bg-background {
+.bg-white, .bg-card, .bg-background {
   background-color: hsl(var(--card)) !important;
 }
-body, :not(aside):not(aside *) .bg-slate-50, :not(aside):not(aside *) .bg-gray-50, :not(aside):not(aside *) .bg-slate-50\/50, :not(aside):not(aside *) .bg-slate-50\/30 {
+body, .bg-slate-50, .bg-gray-50, .bg-slate-50\/50, .bg-slate-50\/30 {
   background-color: hsl(var(--background)) !important;
 }
-:not(aside):not(aside *) .bg-slate-100, :not(aside):not(aside *) .bg-gray-100, :not(aside):not(aside *) .bg-muted {
+.bg-slate-100, .bg-gray-100, .bg-muted {
   background-color: hsl(var(--surface)) !important;
 }
-:not(aside):not(aside *) .bg-slate-200, :not(aside):not(aside *) .bg-gray-200 {
+.bg-slate-200, .bg-gray-200 {
   background-color: hsl(var(--surface-elevated)) !important;
 }
 
 /* Text Color Intercepts - Significantly higher contrast opacities to eliminate visual color blindness/dropouts */
-:not(aside):not(aside *) .text-slate-900, :not(aside):not(aside *) .text-slate-800, :not(aside):not(aside *) .text-gray-900, :not(aside):not(aside *) .text-gray-800, :not(aside):not(aside *) .text-black, :not(aside):not(aside *) .text-foreground {
+.text-slate-900, .text-slate-800, .text-gray-900, .text-gray-800, .text-black, .text-foreground {
   color: hsl(var(--foreground)) !important;
 }
-:not(aside):not(aside *) .text-slate-700, :not(aside):not(aside *) .text-gray-700 {
+.text-slate-700, .text-gray-700 {
   color: hsl(var(--foreground) / 0.95) !important;
 }
-:not(aside):not(aside *) .text-slate-600, :not(aside):not(aside *) .text-gray-600, :not(aside):not(aside *) .text-muted-foreground {
+.text-slate-600, .text-gray-600, .text-muted-foreground {
   color: hsl(var(--foreground) / 0.82) !important;
 }
-:not(aside):not(aside *) .text-slate-500, :not(aside):not(aside *) .text-slate-400, :not(aside):not(aside *) .text-gray-500, :not(aside):not(aside *) .text-gray-400 {
+.text-slate-500, .text-slate-400, .text-gray-500, .text-gray-400 {
   color: hsl(var(--foreground) / 0.70) !important;
 }
 
 /* Border Color Intercepts */
-:not(aside):not(aside *) .border-slate-100, :not(aside):not(aside *) .border-slate-200, :not(aside):not(aside *) .border-slate-300, :not(aside):not(aside *) .border-gray-100, :not(aside):not(aside *) .border-gray-200, :not(aside):not(aside *) .border-slate-200\/50, :not(aside):not(aside *) .border-border, :not(aside):not(aside *) .border-input {
+.border-slate-100, .border-slate-200, .border-slate-300, .border-gray-100, .border-gray-200, .border-slate-200\/50, .border-border, .border-input {
   border-color: hsl(var(--border)) !important;
 }
 
@@ -421,22 +420,22 @@ option {
 
 /* Dark Mode Deep Layer Specifics */
 .dark {
-  /* Dynamic Layer System Mapping - Excluding aside */
-  :not(aside):not(aside *) .bg-white, :not(aside):not(aside *) .bg-card {
+  /* Dynamic Layer System Mapping */
+  .bg-white, .bg-card {
     background-color: hsl(var(--card)) !important;
   }
-  body, :not(aside):not(aside *) .bg-slate-50, :not(aside):not(aside *) .bg-gray-50 {
+  body, .bg-slate-50, .bg-gray-50 {
     background-color: hsl(var(--background)) !important;
   }
-  :not(aside):not(aside *) .bg-slate-100, :not(aside):not(aside *) .bg-gray-100, :not(aside):not(aside *) .bg-muted {
+  .bg-slate-100, .bg-gray-100, .bg-muted {
     background-color: hsl(var(--surface)) !important;
   }
-  :not(aside):not(aside *) .bg-slate-200, :not(aside):not(aside *) .bg-gray-200, :not(aside):not(aside *) .bg-surface-elevated {
+  .bg-slate-200, .bg-gray-200, .bg-surface-elevated {
     background-color: hsl(var(--surface-elevated)) !important;
   }
 
-  /* Intercept Hovers - Excluding aside */
-  :not(aside):not(aside *) .hover\:bg-slate-50:hover, :not(aside):not(aside *) .hover\:bg-gray-50:hover, :not(aside):not(aside *) .hover\:bg-slate-100:hover, :not(aside):not(aside *) .hover\:bg-gray-100:hover {
+  /* Intercept Hovers */
+  .hover\:bg-slate-50:hover, .hover\:bg-gray-50:hover, .hover\:bg-slate-100:hover, .hover\:bg-gray-100:hover {
     background-color: hsl(var(--surface-elevated)) !important;
   }
 
@@ -530,4 +529,88 @@ option {
 }
 [data-state="inactive"] {
   color: hsl(var(--foreground) / 0.7) !important;
+}
+
+/* Sidebar Specific Contrast Reset Lockdown Block */
+/* Ensures that regardless of global light/dark overrides, the sidebar stays perfectly high-contrast, premium, and readable */
+aside, aside * {
+  /* Prevent background colors inside the sidebar from being overridden by card or canvas variables */
+  background-color: transparent;
+}
+aside, aside div, aside nav, aside aside {
+  background-color: transparent;
+}
+/* Lock background on the persistent sidebar itself and active states */
+aside.w-64, aside.w-20, aside.relative {
+  background-color: #0d121f !important;
+}
+.dark aside.w-64, .dark aside.w-20, .dark aside.relative {
+  background-color: #070a13 !important;
+}
+aside .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+aside .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+aside .hover\:bg-white\/5:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+aside .hover\:bg-white\/10:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+aside .bg-black\/10 {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+aside .bg-black\/15 {
+  background-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Force perfect high contrast text color overrides on the dark sidebar container */
+aside .text-slate-100 {
+  color: rgba(255, 255, 255, 0.98) !important;
+}
+aside .text-slate-200 {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+aside .text-slate-300 {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+aside .text-slate-400 {
+  color: rgba(255, 255, 255, 0.70) !important;
+}
+aside .text-slate-400\/60 {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+aside .text-white {
+  color: #ffffff !important;
+}
+aside .text-accent {
+  color: hsl(var(--accent)) !important;
+}
+aside .text-red-300 {
+  color: #fca5a5 !important;
+}
+aside .hover\:text-white:hover {
+  color: #ffffff !important;
+}
+aside .hover\:text-red-200:hover {
+  color: #fecaca !important;
+}
+
+/* Force border styling contrast inside the sidebar */
+aside .border-white\/5 {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+aside .border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+aside .border-r-white\/10 {
+  border-right-color: rgba(255, 255, 255, 0.1) !important;
+}
+aside .border-r {
+  border-right-color: rgba(255, 255, 255, 0.15) !important;
+}
+aside .border-l {
+  border-left-color: rgba(255, 255, 255, 0.05) !important;
 }
